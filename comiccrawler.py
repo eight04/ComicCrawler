@@ -49,12 +49,12 @@ ERROR = 5
 INTERRUPT = 6
 UPDATE = 7
 
-_eventhandler = None
-def _evtcallback(msg, *arg):
+from queue import Queue
+messageBucket = Queue()
+def _evtcallback(msg, *args):
 	"""GUI Message control"""
 	
-	if callable(_eventhandler):
-		_eventhandler(msg, *arg)
+	messageBucket.put((msg, args))
 	
 def getext(byte):
 	"""Test the file type according byte stream with imghdr"""
@@ -878,7 +878,7 @@ class Controller:
 	def iLibShow(self, u):
 		safeprint(" ".join(self.library.libraryList.getList()))
 		
-	def iNewMission(self, url):
+	def iAddUrl(self, url):
 		downloader = self.moduleManager.getDownloader(url)
 		if not downloader:
 			print("Unknown url: {}\n".format(u))
@@ -889,10 +889,37 @@ class Controller:
 		m.downloader = downloader
 		print("Analyzing url: {}".format(m.url))
 		AnalyzeWorker(m).analyze()
+		
+	def iAddMission(self, mission):
 		if m.state != ANALYZED:
 			return
 		self.downloadManager.addmission(m)
+		
+	def iStart(self):
 		self.downloadManager.start()
+		
+	def iStop(self):
+		self.downloadManager.stop()
+		
+	def iClean(self):
+		self.downloadManager.missionque.cleanfinished()
+		
+	def iReloadConfig(self):
+		self.configManager.load()
+		self.moduleManager.loadconfig()
+		self.downloadManager.loadconfig()
+		
+	def iRemoveMission(self, *args):
+		self.downloadManager.missionque.remove(args)
+		
+	def iLift(self, *args):
+		self.downloadManager.missionque.lift(args)
+		
+	def iDrop(self, *args):
+		self.downloadManager.missionque.drop(args)
+		
+	def iAddToLib(self, mission):
+		self.library.add(mission)
 		
 if __name__ == "__main__":
 	Controller()

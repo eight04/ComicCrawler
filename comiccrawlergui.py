@@ -95,7 +95,7 @@ class MainWindow(cc.Controller):
 	"""Main GUI window class."""
 		
 	def view(self):
-		"""Draw the widgets."""
+		"""Draw the window."""
 		self.gRoot = Tk()
 		
 		# ========GUI START========
@@ -154,6 +154,7 @@ class MainWindow(cc.Controller):
 		tvmenu.add_command(label="移至頂部")
 		tvmenu.add_command(label="移至底部")
 		tvmenu.add_command(label="改名")
+		tvmenu.add_command(label="加入圖書館")
 		self.gTvmenu = tvmenu
 		
 		frame = Frame(self.gNotebook)
@@ -187,16 +188,17 @@ class MainWindow(cc.Controller):
 		
 		# ========GUI END========
 		
-		# self.bindevent()
+		self.bindevent()
 		self.messageq = queue.Queue()
+		# cc._eventhandler = self.message
 		self.gRoot.after(100, self.tkloop)
 		self.gRoot.mainloop()
 		
 	def tkloop(self):
 		try:
 			while True:
-				f, a = self.messageq.get_nowait()
-				f(*a)
+				message, args = cc.messageBucket.get_nowait()
+				self.message(message, args)
 		except queue.Empty:
 			pass
 		# except Exception as er:
@@ -211,172 +213,161 @@ class MainWindow(cc.Controller):
 		def trieveclipboard(event):
 			nonlocal _presp
 			try:
-				s = self.clipboard_get(type="STRING")
+				s = self.gRoot.clipboard_get(type="STRING")
 			except Exception:
 				return
-			sp = self.entry_url.get()
-			if not sp and dlmm.validUrl(s) and s != _presp:
-				self.entry_url.insert(0, s)
-				self.entry_url.selection_range(0, "end")
+			sp = self.gEntry_url.get()
+			if not sp and self.moduleManager.validUrl(s) and s != _presp:
+				self.gEntry_url.insert(0, s)
+				self.gEntry_url.selection_range(0, "end")
 				_presp = s
-				self.entry_url.focus_set()
-		self.bind("<FocusIn>", trieveclipboard)	
+				self.gEntry_url.focus_set()
+		self.gRoot.bind("<FocusIn>", trieveclipboard)	
 		
 		def entrykeypress(event):
 			addurl()
-		self.entry_url.bind("<Return>", entrykeypress)
+		self.gEntry_url.bind("<Return>", entrykeypress)
 		
 		def addurl():
-			u = self.entry_url.get()
-			downloader = dlmm.getDownloader(u)
-			if downloader is None:
-				tkinter.messagebox.showerror("Comic Crawler","不支援的網址")
-			else:
-				m = cc.Mission()
-				m.url = u
-				m.downloader = downloader
-				_status("Trieving url: {}".format(m.url))
-
-				crawler.analyze(m)
-
-			self.entry_url.delete(0, len(u))
-		self.btnaddurl["command"] = addurl
+			self.gEntry_url.delete(0, "end")
+			self.iAddUrl(self.gEntry_url.get())
+		self.gBtnaddurl["command"] = addurl
 		
 		def startdownload():
-			crawler.start()
-		self.btnstart["command"] = startdownload
+			self.iStart()
+		self.gBtnstart["command"] = startdownload
 		
 		def stopdownload():
-			crawler.stop()
-		self.btnstop["command"] = stopdownload
+			self.iStop()
+		self.gBtnstop["command"] = stopdownload
 		
 		def cleanfinished():
-			crawler.missionque.cleanfinished()
-		self.btnclean["command"] = cleanfinished
+			self.iClean()
+		self.gBtnclean["command"] = cleanfinished
 		
 		def reloadconfig():
-			dlmm.loadconfig()
-			crawler.loadconfig()
-		self.btnconfig["command"] = reloadconfig
+			self.iReloadConfig()
+		self.gBtnconfig["command"] = reloadconfig
 		
 		def tvdelete():
 			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
-				s = self.tv.selection()
-				crawler.missionque.remove([self.iidholder[k] for k in s])
-		self.tvmenu.entryconfig(0, command=tvdelete)
+				s = self.gTv.selection()
+				self.iRemoveMission(*[self.iidholder[k] for k in s])
+		self.gTvmenu.entryconfig(0, command=tvdelete)
 		
 		def tvlift():
-			s = self.tv.selection()
-			crawler.missionque.lift([self.iidholder[k] for k in s])
-		self.tvmenu.entryconfig(1, command=tvlift)
+			s = self.gTv.selection()
+			self.iLift(*[self.iidholder[k] for k in s])
+		self.gTvmenu.entryconfig(1, command=tvlift)
 			
 		def tvdrop():
-			s = self.tv.selection()
-			crawler.missionque.drop([self.iidholder[k] for k in s])
-		self.tvmenu.entryconfig(2, command=tvdrop)
+			s = self.gTv.selection()
+			self.iDrop(*[self.iidholder[k] for k in s])
+		self.gTvmenu.entryconfig(2, command=tvdrop)
 		
 		def tvchangetitle():
-			s = self.tv.selection()
+			s = self.gTv.selection()
 			mission = self.iidholder[s[0]]
-			# selectTitle(self.iidholder[s[0]])
 			selectTitle(mission)
-		self.tvmenu.entryconfig(3, command=tvchangetitle)
+		self.gTvmenu.entryconfig(3, command=tvchangetitle)
+		
+		def tvAddToLib():
+			s = self.gTv.selection()
+			mission = self.iidholder[s[0]]
+			self.iAddToLib(mission)
+		self.gTvmenu.entryconfig(4, command=tvAddToLib)
 	
 		def tvmenucall(event):
-			self.tvmenu.post(event.x_root, event.y_root)
-		self.tv.bind("<Button-3>", tvmenucall)
+			self.gTvmenu.post(event.x_root, event.y_root)
+		self.gTv.bind("<Button-3>", tvmenucall)
+		
+		def libMenuDelete():
+			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
+				s = self.gLibTV.selection()
+				# self.iLibRemove(*[self.iidholder[k] for k in s])
+		self.gLibMenu.entryconfig(0, command=libMenuDelete)
 		
 		# close window event
 		def beforequit():
-			if crawler.state == cc.PAUSE or tkinter.messagebox.askokcancel(
-					"Comic Crawler", "任務下載中，確定結束？"):
-				crawler.stop()
-				self.destroy()
-		self.protocol("WM_DELETE_WINDOW", beforequit)
+			if (self.downloadManager.running and 
+					not tkinter.messagebox.askokcancel("Comic Crawler",
+						"任務下載中，確定結束？")):
+				return
+			self.downloadManager.stop()
+			self.gRoot.destroy()
+		self.gRoot.protocol("WM_DELETE_WINDOW", beforequit)
 		
 		def _qstatus(str):
 			self.messageq.put((_status, (str, )))
 			
 		def _status(str):
-			self.statusbar["text"] = str
+			self.gStatusbar["text"] = str
 		safeprint.addcallback(_qstatus)
 		
 		
 	def addtotree(self, mission):
 		"""Add item into treeview."""
-		
+
 		downloader = mission.downloader
 		m = mission
-		cid = self.tv.insert("","end",
+		cid = self.gTv.insert("","end",
 				values=(m.title, downloader.name, STATE[m.state]))
 		self.iidholder[cid] = m
 			
 	def load(self):
 		"""load mission from mission que"""
 		
-		missionlist = crawler.missionque.q
+		missionlist = self.downloadManager.missionque.q
 		for m in missionlist:
 			self.addtotree(m)
 	
 	def tvrefresh(self):
 		"""refresh treeview"""
 		
-		ids = self.tv.get_children()
-		self.tv.delete(*ids)
+		ids = self.gTv.get_children()
+		self.gTv.delete(*ids)
 		self.iidholder = {}
 		self.load()
 	
-	def message(self, msg, *arg):
+	def message(self, msg, args):
 		"""GUI Message control"""
 		
 		if msg is "ANALYZED_SUCCESS":
-			def _(mission):
-				if len(mission.episodelist) > 1 and not selectEp(mission):
-					return
-				crawler.addmission(mission)
-				safeprint.safeprint("Queued mission: {}".format(mission.title))
-			self.messageq.put((_, arg))
+			if len(mission.episodelist) > 1 and not selectEp(mission):
+				return
+			self.iAddMission(mission)
+			safeprint.safeprint("Queued mission: {}".format(mission.title))
 
 		elif msg is "ANALYZED_FAILED":
-			def _(mission, er):
-				tkinter.messagebox.showerror(
-					"Comic Crawler", "解析錯誤！\n{}".format(er))
-			self.messageq.put((_, arg))
+			tkinter.messagebox.showerror(
+				"Comic Crawler", "解析錯誤！\n{}".format(er))
 			
 		elif msg is "MISSION_STATE_CHANGE":
-			def _(mission):
-				for k in self.iidholder:
-					if self.iidholder[k] is mission:
-						cid = k
-						break
-						
-				self.tv.set(cid, "state", STATE[mission.state])
-				if mission.state is cc.FINISHED:
-					self.tv.item(cid, tags=["f"])
-			self.messageq.put((_, arg))
+			for k in self.iidholder:
+				if self.iidholder[k] is mission:
+					cid = k
+					break
+					
+			self.gTv.set(cid, "state", STATE[mission.state])
+			if mission.state is cc.FINISHED:
+				self.gTv.item(cid, tags=["f"])
 				
 		elif msg is "MISSION_TITLE_CHANGE":
-			def _(mission):
-				for k in self.iidholder:
-					if self.iidholder[k] is mission:
-						cid = k
-						break
-						
-				self.tv.set(cid, "name", mission.title)
-			self.messageq.put((_, arg))
+			for k in self.iidholder:
+				if self.iidholder[k] is mission:
+					cid = k
+					break
+					
+			self.gTv.set(cid, "name", mission.title)
 			
 		elif msg is "MISSIONQUE_ARRANGE":
-			def _():
-				self.tvrefresh()
-			self.messageq.put((_, arg))
+			self.tvrefresh()
 			
 		elif msg is "WORKER_TERMINATED":
-			def _(mission, er, er_msg):
-				tkinter.messagebox.showerror(
-					"Comic Crawler", "下載中斷！\n{}".format(er_msg))
-			self.messageq.put((_, arg))
-		else:
-			pass
+			tkinter.messagebox.showerror(
+				"Comic Crawler", "下載中斷！\n{}".format(er_msg))
+				
+		return
 
 def selectTitle(mission):
 	w = Dialog(root)
