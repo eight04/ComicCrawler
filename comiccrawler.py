@@ -107,25 +107,6 @@ def grabhtml(url, hd={}, encode=None):
 	rs = urllib.request.urlopen(req, timeout=20)
 	ot = rs.read()
 	
-	# auto cookie controler
-	"""
-	from http.cookies import SimpleCookie
-	c = SimpleCookie()
-	
-	try:
-		c.load(hd["Cookie"])
-	except Exception:
-		pass
-	try:
-		c.load(rs.getheader("Set-Cookie"))
-	except Exception:
-		pass
-	cookie = ""
-	for k in c:
-		cookie += "{}={};".format(k, c[k].value)
-	hd["Cookie"] = cookie
-	"""
-	
 	if encode is None:
 		try:
 			encode = re.search("<meta charset=(\"|')([^\"']+)(\"|')").group(2)
@@ -177,6 +158,7 @@ class Mission:
 	def __setstate__(self, state):
 		self.__dict__.update(state)
 		self.lock = threading.Lock()
+		# self.downloader..
 		
 	def setTitle(self, title):
 		self.title = title
@@ -831,7 +813,6 @@ class Controller:
 	def __init__(self):
 		self.loadClasses()
 		self.view()
-		self.getInput()
 		self.unloadClasses()
 	
 	def loadClasses(self):
@@ -862,26 +843,28 @@ class Controller:
 			" - Paste an url and press enter to start download.\n"
 			" - or use Ctrl+Z to exit.")
 			
+		while self.getInput():
+			pass
+			
 	def getInput(self):
-		self.ps1 = ">>> "
-		while True:
-			try:
-				u = input(self.ps1)
-			except EOFError:
-				break
-			command = None
-			if not u.startswith("http"):
-				command, sep, u = u.partition(" ")
-			if command == "lib":
-				self.iLib(u)
-			elif command == "show":
-				self.iShowList(u)
-			else:
-				self.iNewMission(u)
+		try:
+			u = input(">>> ")
+		except EOFError:
+			return False
+		command = None
+		if not u.startswith("http"):
+			command, sep, u = u.partition(" ")
+		if command == "lib":
+			self.iLib(u)
+		elif command == "show":
+			self.iShowList(u)
+		else:
+			self.iNewMission(u)
+		return True
 
 	def iShowList(self, u):
 		for m in self.downloadManager.missionque.q:
-			safeprint(m.title, m.url)
+			safeprint(m.title, m.url, m.state)
 				
 	def iLib(self, u):
 		command, sep, u = u.partition(" ")
@@ -893,22 +876,23 @@ class Controller:
 			self.iLibShow(command)
 			
 	def iLibShow(self, u):
-		safeprint(" ".join(library.libraryList.getList()))
+		safeprint(" ".join(self.library.libraryList.getList()))
 		
 	def iNewMission(self, url):
 		downloader = self.moduleManager.getDownloader(url)
 		if not downloader:
 			print("Unknown url: {}\n".format(u))
-		else:
-			# construct a mission
-			m = Mission()
-			m.url = url
-			m.downloader = downloader
-			print("Analyzing url: {}".format(m.url))
-			AnalyzeWorker(m).analyze()
-			if m.state == ANALYZED:
-				self.downloadManager.addmission(m)
-				self.downloadManager.start()
+			return
+		# construct a mission
+		m = Mission()
+		m.url = url
+		m.downloader = downloader
+		print("Analyzing url: {}".format(m.url))
+		AnalyzeWorker(m).analyze()
+		if m.state != ANALYZED:
+			return
+		self.downloadManager.addmission(m)
+		self.downloadManager.start()
 		
 if __name__ == "__main__":
 	Controller()

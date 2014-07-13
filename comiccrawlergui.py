@@ -27,9 +27,6 @@ STATE = {
 class Dialog(Toplevel):
 	def __init__(self, parent, title=None):
 		super().__init__(parent)
-		# self.group(parent)
-		# self.geometry("+{}+{}".format(parent.winfo_rootx()+50,
-                                  # parent.winfo_rooty()+50))
 		
 		if title:
 			self.title(title)
@@ -94,48 +91,54 @@ class Dialog(Toplevel):
 		self.wait_window(self)
 		return self.result
 	
-class MainWindow(Tk):
+class MainWindow(cc.Controller):
 	"""Main GUI window class."""
 		
-	def __init__(self):
+	def view(self):
 		"""Draw the widgets."""
-		super(MainWindow, self).__init__()
+		self.gRoot = Tk()
+		
+		# ========GUI START========
 
-		self.title("Comic Crawler")
-		self.geometry("500x400")
+		self.gRoot.title("Comic Crawler")
+		self.gRoot.geometry("500x400")
 		
-		Label(self,text="輸入連結︰").pack(anchor="w")
+		Label(self.gRoot,text="輸入連結︰").pack(anchor="w")
 		
-		entry_url = Entry(self)
+		entry_url = Entry(self.gRoot)
 		entry_url.pack(fill="x")
-		self.entry_url = entry_url
+		self.gEntry_url = entry_url
 		
-		buttonbox = Frame(self)
+		buttonbox = Frame(self.gRoot)
 		buttonbox.pack()
 		
 		btnaddurl = Button(buttonbox, text="加入連結")
 		btnaddurl.pack(side="left")
-		self.btnaddurl = btnaddurl
+		self.gBtnaddurl = btnaddurl
 		
 		btnstart = Button(buttonbox, text="開始下載")
 		btnstart.pack(side="left")
-		self.btnstart = btnstart
+		self.gBtnstart = btnstart
 		
 		btnstop = Button(buttonbox,text="停止下載")
 		btnstop.pack(side="left")
-		self.btnstop = btnstop
+		self.gBtnstop = btnstop
 			
 		btnclean = Button(buttonbox, text="移除已完成")
 		btnclean.pack(side="left")
-		self.btnclean = btnclean		
+		self.gBtnclean = btnclean		
 		
 		btnconfig = Button(buttonbox, text="重載設定檔")
 		btnconfig.pack(side="left")
-		self.btnconfig = btnconfig
+		self.gBtnconfig = btnconfig
 		
-		Label(self,text="任務列表︰").pack(anchor="w")
+		self.gNotebook = Notebook(self.gRoot)
+		self.gNotebook.pack(expand=True, fill="both")
 		
-		tv = Treeview(self, columns=("name","host","state"))
+		frame = Frame(self.gNotebook)
+		self.gNotebook.add(frame, text="任務列表")
+		
+		tv = Treeview(frame, columns=("name","host","state"))
 		tv.heading("#0", text="#")
 		tv.heading("name", text="任務")
 		tv.heading("host", text="主機")
@@ -144,21 +147,50 @@ class MainWindow(Tk):
 		tv.column("host", width="50", anchor="center")
 		tv.column("state", width="70", anchor="center")
 		tv.pack(expand=True, fill="both")
-		self.tv = tv
+		self.gTv = tv
 		
 		tvmenu = Menu(tv, tearoff=False)
 		tvmenu.add_command(label="刪除")
 		tvmenu.add_command(label="移至頂部")
 		tvmenu.add_command(label="移至底部")
 		tvmenu.add_command(label="改名")
-		self.tvmenu = tvmenu
-	
-		statusbar = Label(self, text="Comic Crawler", anchor="e")
-		statusbar.pack(anchor="e")
-		self.statusbar = statusbar
+		self.gTvmenu = tvmenu
 		
+		frame = Frame(self.gNotebook)
+		self.gNotebook.add(frame, text="圖書館")
+		
+		btnBar = Frame(frame)
+		btnBar.pack()
+		
+		self.gBtnUpdate = Button(btnBar, text="檢查更新")
+		self.gBtnUpdate.pack(side="left")
+		
+		self.gBtnDownloadUpdate = Button(btnBar, text="下載更新")
+		self.gBtnDownloadUpdate.pack(side="left")
+		
+		self.gLibTV = Treeview(frame, columns=("name","host","state"))
+		self.gLibTV.heading("#0", text="#")
+		self.gLibTV.heading("name", text="任務")
+		self.gLibTV.heading("host", text="主機")
+		self.gLibTV.heading("state", text="狀態")
+		self.gLibTV.column("#0", width="25")
+		self.gLibTV.column("host", width="50", anchor="center")
+		self.gLibTV.column("state", width="70", anchor="center")
+		self.gLibTV.pack(expand=True, fill="both")
+		
+		self.gLibMenu = Menu(self.gLibTV, tearoff=False)
+		self.gLibMenu.add_command(label="刪除")
+	
+		statusbar = Label(self.gRoot, text="Comic Crawler", anchor="e")
+		statusbar.pack(anchor="e")
+		self.gStatusbar = statusbar
+		
+		# ========GUI END========
+		
+		# self.bindevent()
 		self.messageq = queue.Queue()
-		self.iidholder = {}
+		self.gRoot.after(100, self.tkloop)
+		self.gRoot.mainloop()
 		
 	def tkloop(self):
 		try:
@@ -170,12 +202,8 @@ class MainWindow(Tk):
 		# except Exception as er:
 			# safeprint.safeprint("Tkloop error: {}".format(er))
 			
-		self.after(100, self.tkloop)
-		
-	def mainloop(self):
-		self.tkloop()
-		super().mainloop()
-		
+		self.gRoot.after(100, self.tkloop)
+
 	def bindevent(self):
 		"""Binding event. Should I try to implement together?"""
 		
@@ -455,130 +483,5 @@ def selectEp(mission):
 	
 	return w.wait()
 
-"""
-def selectEp_(mission):
-	""Show selecting episodes panel.""
-
-	# create new window
-	w = Toplevel()
-	
-	# scrollbar
-	xscrollbar = Scrollbar(w, orient="horizontal")
-	
-	# scrolling canvas and inner frame
-	canvas = Canvas(w, xscrollcommand=xscrollbar.set, highlightthickness="0")
-	inner = Frame(canvas)
-	
-	# list of checkbutton
-	vs = []
-	i = 0
-	
-	# make checkbutton into inner frame
-	for ep in mission.episodelist:
-		ck = Checkbutton(inner, text=ep.title)
-		ck.state(("!alternate",))
-		if not ep.skip:
-			ck.state(("selected",))
-		ck.grid(column=i // 20, row=i % 20, sticky="w")
-		vs.append((ck, ep))
-		i += 1
-		
-	def colsel(gck, c):
-		def _():
-			for i in range(c*20, (c+1)*20):
-				if i >= len(vs):
-					break
-				ck, ep = vs[i]
-				if gck.instate(("selected", )):
-					ck.state(("selected", ))
-				else:
-					ck.state(("!selected", ))
-		return _
-		
-	from math import ceil
-	for i in range(ceil(len(mission.episodelist) / 20)):
-		ck = Checkbutton(inner)
-		ck.state(("!alternate", "selected"))
-		# print(ck.state())
-		ck.grid(column=i, row=20, sticky="w")
-		ck.config(command=colsel(ck, i))
-		
-	# caculates frame size after inner frame configured and resize canvas
-	def t(event):
-		canvas.config(scrollregion=inner.bbox("ALL"), 
-				height=inner.bbox("ALL")[3], 
-				width=inner.bbox("ALL")[2])
-		inner.unbind("<Configure>")
-	inner.bind("<Configure>", t)
-	
-	# caculates canvas's size then deside wether to show scrollbar
-	def t(event):
-		if canvas.winfo_width() >= canvas.winfo_reqwidth():
-			xscrollbar.pack_forget()
-		canvas.unbind("<Configure>")
-	canvas.bind("<Configure>", t)
-	
-	# draw innerframe on canvas then show
-	canvas.create_window((0,0),window=inner, anchor='nw')
-	canvas.pack()
-	
-	# link scrollbar to canvas then show
-	xscrollbar.config(command=canvas.xview)
-	xscrollbar.pack(fill="x")
-	
-	# buttons container
-	lb = Frame(w)
-	
-	def inselectep():
-		for v in vs:
-			ck, ep = v
-			ep.skip = not ck.instate(("selected",))
-		w.destroy()
-		
-	cancel_ = False
-	def cancel():
-		nonlocal cancel_
-		cancel_ = True
-		w.destroy()
-	
-	def toggle():
-		for v in vs:
-			ck, ep = v
-			if ck.instate(("selected", )):
-				ck.state(("!selected", ))
-			else:
-				ck.state(("selected", ))
-	
-	Button(lb, text="反相", command=toggle).pack(side="left")
-	Button(lb, text="確定", command=inselectep).pack(side="left")
-	Button(lb, text="取消", command=cancel).pack(side="left")
-	
-	# show button container
-	lb.pack()
-	
-	# wait window close
-	w.wait_window(w)
-	
-	if cancel_:
-		return -1
-"""
-
-
 if __name__ == "__main__":
-
-	root = MainWindow()
-	dlmm = cc.DLModuleManager()
-	crawler = cc.ComicCrawler(dlmm, root.message)
-		
-	root.bindevent()
-	
-	crawler.load()
-	root.load()
-	
-	root.mainloop()
-	
-	if crawler.thread:
-		crawler.thread.join()	
-		
-	crawler.save()
-	
+	MainWindow()
