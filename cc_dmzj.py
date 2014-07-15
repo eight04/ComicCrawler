@@ -14,7 +14,10 @@ List domain. If the input url match the domain, the downloader will be
 set to this module.
 String name. Module name, will be show on the gui.
 """
-header = {}
+header = {
+	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:30.0) Gecko/20100101 Firefox/30.0",
+	"Referer": "http://manhua.dmzj.com/se/"
+}
 domain = ["manhua.dmzj.com"]
 name = "動漫之家"
 
@@ -67,7 +70,7 @@ def getimgurls(html, url):
 	s = re.search("page = '';(.+?);var g_comic_name", html).group(1)
 	ctx = execjs.compile(s)
 	pages = execjs.eval(ctx.eval("pages"))
-	base = "http://imgfast.dmzj.com/"
+	base = "http://images.dmzj.com/"
 	
 	return [base + page for page in pages]
 	

@@ -19,10 +19,7 @@ def safeprint(*ss):
 	print("")
 	
 	for f in _callbacklist:
-		try:
-			f(s)
-		except Exception:
-			pass
+		f(s)
 
 		
 _callbacklist = []

@@ -2,6 +2,9 @@
 
 """this is deviant module for comiccrawler, support deviantart.com
 
+2014/7/13
+JDownloader2 now support　deviantart.com!
+
 """
 
 import re
@@ -38,6 +41,8 @@ def gettitle(html, **kw):
 	return t.replace("&#039;", "'")
 	
 def getepisodelist(html, url):
+	if '"loggedIn":true' not in html:
+		raise Exception("you didn't log in!")
 	base = re.search("(https?://[^/]+)", url).group(1)
 	s = []
 	while True:
@@ -66,6 +71,8 @@ def getepisodelist(html, url):
 
 
 def getimgurls(html, **kw):
+	if '"loggedIn":true' not in html:
+		raise Exception("you didn't log in!")
 	loggedin = re.search('"loggedIn":true', html)
 	if not loggedin:
 		safeprint("Warning! You didn't log in.")

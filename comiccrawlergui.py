@@ -190,9 +190,12 @@ class MainWindow(cc.Controller):
 		
 		self.bindevent()
 		self.messageq = queue.Queue()
-		# cc._eventhandler = self.message
+		safeprint.addcallback(self.sendToBucket)
 		self.tkloop()
 		self.gRoot.mainloop()
+		
+	def sendToBucket(self, text):
+		cc._evtcallback("MESSAGE", text)
 		
 	def tkloop(self):
 		try:
@@ -229,8 +232,8 @@ class MainWindow(cc.Controller):
 		self.gEntry_url.bind("<Return>", entrykeypress)
 		
 		def addurl():
-			self.gEntry_url.delete(0, "end")
 			self.iAddUrl(self.gEntry_url.get())
+			self.gEntry_url.delete(0, "end")
 		self.gBtnaddurl["command"] = addurl
 		
 		def startdownload():
@@ -268,7 +271,7 @@ class MainWindow(cc.Controller):
 		def tvchangetitle():
 			s = self.gTv.selection()
 			mission = self.iidholder[s[0]]
-			selectTitle(mission)
+			selectTitle(self.gRoot, mission)
 		self.gTvmenu.entryconfig(3, command=tvchangetitle)
 		
 		def tvAddToLib():
@@ -309,13 +312,6 @@ class MainWindow(cc.Controller):
 			self.gRoot.destroy()
 		self.gRoot.protocol("WM_DELETE_WINDOW", beforequit)
 		
-		def _qstatus(str):
-			self.messageq.put((_status, (str, )))
-			
-		def _status(str):
-			self.gStatusbar["text"] = str
-		safeprint.addcallback(_qstatus)
-		
 		
 	def addtotree(self, mission):
 		"""Add item into treeview."""
@@ -340,20 +336,23 @@ class MainWindow(cc.Controller):
 		self.gTv.delete(*ids)
 		self.iidholder = {}
 		self.load()
-	
-	def message(self, msg, args):
-		"""GUI Message control"""
 		
-		if msg is "ANALYZED_SUCCESS":
-			if len(mission.episodelist) > 1 and not selectEp(mission):
-				return
-			self.iAddMission(mission)
-			safeprint.safeprint("Queued mission: {}".format(mission.title))
-
-		elif msg is "ANALYZED_FAILED":
+	def iAnalyzeFinished(self, mission, error=None):
+		if error:
 			tkinter.messagebox.showerror(
 				"Comic Crawler", "解析錯誤！\n{}".format(er))
-			
+			return
+		if len(mission.episodelist) > 1 and not selectEp(self.gRoot, mission):
+			return
+		self.iAddMission(mission)
+	
+	def message(self, msg, args=None):
+		"""GUI Message control"""
+		
+		if msg is "MESSAGE":
+			text, = args
+			self.gStatusbar["text"] = text
+		
 		elif msg is "MISSION_STATE_CHANGE":
 			for k in self.iidholder:
 				if self.iidholder[k] is mission:
@@ -379,10 +378,11 @@ class MainWindow(cc.Controller):
 			tkinter.messagebox.showerror(
 				"Comic Crawler", "下載中斷！\n{}".format(er_msg))
 				
-		return
+		else:
+			pass
 
-def selectTitle(mission):
-	w = Dialog(root)
+def selectTitle(parent, mission):
+	w = Dialog(parent)
 	
 	entry = Entry(w.body)
 	entry.insert(0, mission.title)
@@ -400,8 +400,8 @@ def selectTitle(mission):
 	ret = w.wait()
 	return ret
 	
-def selectEp(mission):
-	w = Dialog(root)
+def selectEp(parent, mission):
+	w = Dialog(parent)
 	
 	xscrollbar = Scrollbar(w.body, orient="horizontal")
 	canvas = Canvas(w.body, xscrollcommand=xscrollbar.set, highlightthickness="0")

@@ -8,7 +8,7 @@ Ex:
 """
 
 import re
-import comiccrawler
+from comiccrawler import Episode, ConfigManager, grabhtml, LastPageError
 from safeprint import safeprint
 
 header = {
@@ -22,14 +22,14 @@ noepfolder = True
 def loadconfig(config):
 	if name not in config:
 		config[name] = {}
-	config = config[name]
-	if "SESSID" in config:
-		global header
-		header["Cookie"] = "PHPSESSID=" + config["SESSID"]
-	else:
-		config["SESSID"] = "請輸入Cookie中的PHPSESSID"
+	ConfigManager.apply(config[name], {
+		"SESSID": "請輸入Cookie中的PHPSESSID"
+	})
+	header["Cookie"] = "PHPSESSID=" + config[name]["SESSID"]
 
 def gettitle(html, **kw):
+	if "pixiv.user.loggedIn = true" not in html:
+		raise Exception("you didn't login!")
 	user = re.search("class=\"user\">(.+?)</h1>", html).group(1)
 	id = re.search("pixiv.context.userId = '(\d+)'", html).group(1)
 	return "{} - {}".format(id, user)
@@ -38,12 +38,12 @@ def getepisodelist(html, url=""):
 	s = []
 	base = re.search("(https?://.+)\?", url).group(1)
 	while True:
-		ms = re.findall("<a href=\"([^\"]+)\" class=\"work ?\"><img[^>]+><h1 class=\"title\" title=\"([^\"]+)\">", html)
+		ms = re.findall("<a href=\"([^\"]+)\" class=\"work ?\"><div class=\"_layout-thumbnail\"><img[^>]+></div><h1 class=\"title\" title=\"([^\"]+)\">", html)
 		# safeprint(ms)
 		for m in ms:
 			url, title = m
 			uid = re.search("id=(\d+)", url).group(1)
-			e = comiccrawler.Episode()
+			e = Episode()
 			e.title = "{} - {}".format(uid, title)
 			e.firstpageurl = base + url
 			s.append(e)
@@ -53,11 +53,13 @@ def getepisodelist(html, url=""):
 			break
 		u = un.group(1).replace("&amp;", "&")
 		safeprint(base + u)
-		html = comiccrawler.grabhtml(base + u, hd=header)
+		html = grabhtml(base + u, hd=header)
 	# safeprint(s)
 	return s[::-1]
 
 def getimgurls(html, url=""):
+	if "pixiv.user.loggedIn = true" not in html:
+		raise Exception("you didn't login!")
 	try:
 		img = re.search("\"works_display\"><[^>]+><img src=\"([^\"]+)\"", html).group(1)
 		pages = re.search("(\d+)P</li>", html)
@@ -78,7 +80,7 @@ class RestrictPageError(Exception):
 def errorhandler(er, ep):
 	if type(er) == RestrictPageError:
 		ep.skip = True
-		raise comiccrawler.LastPageError
+		raise LastPageError
 		
 	# http://i1.pixiv.net/img21/img/raven1109/10841650_big_p0.jpg
 	from urllib.error import HTTPError

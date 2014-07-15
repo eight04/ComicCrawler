@@ -97,9 +97,9 @@ def grabhtml(url, hd={}, encode=None):
 	rs = urllib.request.urlopen(req, timeout=20)
 	ot = rs.read()
 	
-	if encode is None:
+	if not encode:
 		try:
-			encode = re.search("<meta charset=(\"|')([^\"']+)(\"|')").group(2)
+			encode = re.search(r"<meta charset=[\"']?([^\"'>]+)[\"']?").group(1)
 			return ot.decode(encode, "replace")
 		except Exception:
 			pass
@@ -124,13 +124,15 @@ class Mission:
 	
 	def __init__(self):
 		"""Use title, url, episodelist, state, downloader, lock"""
+		from threading import Lock
 		
 		self.title = ""
 		self.url = ""
 		self.episodelist = []
 		self.state = INIT
 		self.downloader = None
-		self.lock = threading.Lock()
+		self.lock = Lock()
+		self.update = False
 		
 	def state_(self, state=None):
 		"""Call this method to make a MISSION_STATE_CHANGE message"""
@@ -150,9 +152,10 @@ class Mission:
 		
 	def __setstate__(self, state):
 		"""unpickle"""
+		from threading import Lock
 		
 		self.__dict__.update(state)
-		self.lock = threading.Lock()
+		self.lock = Lock()
 		
 	def setTitle(self, title):
 		"""set new title"""
@@ -462,22 +465,25 @@ class AnalyzeWorker(Worker):
 		
 		downloader = mission.downloader
 		html = grabhtml(mission.url, hd=downloader.header)
-		
+		print("getting title")
 		mission.title = downloader.gettitle(html, url=mission.url)
+		print("getting episode list")
 		epList = downloader.getepisodelist(html, url=mission.url)
-		if not mission.episodeList:
-			mission.episodeList = epList
+		if not mission.episodelist:
+			# new mission
+			mission.episodelist = epList
 		else:
+			# re-analyze
 			for ep in epList:
-				for oep in mission.episodeList:
+				for oep in mission.episodelist:
 					if oep.url == ep.url:
 						break
 				else:
-					mission.episodeList.append(ep)
+					mission.episodelist.append(ep)
 					mission.update = True
 			if not mission.update:
 				return
-
+		
 		if not mission.episodelist:
 			raise Exception("get episode list failed!")
 		
@@ -529,6 +535,7 @@ class FreeQue:
 		"""Delete specify items."""
 		self.q = [ i for i in self.q if i not in items]
 		_evtcallback("MISSIONQUE_ARRANGE")
+		_evtcallback("MESSAGE", "Deleted {} mission(s)".format(len(items)))
 
 	def take(self, n=1):
 		"""Return a list containing n valid missions. If n <= 1 return a valid 
@@ -571,6 +578,7 @@ class FreeQue:
 			print("no lib file")
 			return
 		self.q = pickle.load(f)
+		_evtcallback("MISSIONQUE_ARRANGE", self)
 		
 	def save(self, path):
 		"""pickle list to file"""
@@ -587,7 +595,8 @@ class ConfigManager:
 		import configparser as cp
 		self.path = path
 		self.config = cp.ConfigParser(interpolation=None)
-
+		
+		self.load()
 		
 	def get(self):
 		"""return config"""
@@ -924,19 +933,25 @@ class Controller:
 	def iAddUrl(self, url):
 		downloader = self.moduleManager.getDownloader(url)
 		if not downloader:
-			print("Unknown url: {}\n".format(u))
+			print("Unknown url: {}\n".format(url))
 			return
 		# construct a mission
 		m = Mission()
 		m.url = url
 		m.downloader = downloader
 		print("Analyzing url: {}".format(m.url))
-		AnalyzeWorker(m).analyze()
+		AnalyzeWorker(m, self.iAnalyzeFinished).start()
+		
+	def iAnalyzeFinished(self, mission, error=None):
+		if error:
+			print("Analyze Failed! " + error)
+		else:
+			self.iAddMission(mission)
 		
 	def iAddMission(self, mission):
-		if m.state != ANALYZED:
-			return
-		self.downloadManager.addmission(m)
+		self.downloadManager.addmission(mission)
+		_evtcallback("MESSAGE", "Queued mission: " + mission.title)
+		
 		
 	def iStart(self):
 		self.downloadManager.start()
