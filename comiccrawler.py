@@ -11,33 +11,6 @@ import urllib.request
 import urllib.parse
 import urllib.error
 
-import imghdr
-
-# imghdr issue: http://bugs.python.org/issue16512
-def _test_jpeg(h, f):
-	if h[:2] == b"\xff\xd8":
-		return "JPEG"
-	return None
-imghdr.tests.append(_test_jpeg)
-
-def _test_swf(h, f):
-	if h[:3] == b"CWS" or h[:3] == b"FWS":
-		return "SWF"
-	return None
-imghdr.tests.append(_test_swf)
-
-def _test_psd(h, f):
-	if h[:4] == b"8BPS":
-		return "PSD"
-	return None
-imghdr.tests.append(_test_psd)
-
-def _test_rar(h, f):
-	if h[:7] == b"Rar!\x1a\x07\x00":
-		return "RAR"
-	return None
-imghdr.tests.append(_test_rar)
-
 from safeprint import safeprint
 
 INIT = 0
@@ -52,20 +25,37 @@ UPDATE = 7
 from queue import Queue
 messageBucket = Queue()
 def _evtcallback(msg, *args):
-	"""GUI Message control"""
+	"""Message collector"""
 	
 	messageBucket.put((msg, args))
 	
 def getext(byte):
-	"""Test the file type according byte stream with imghdr"""
+	"""Test the file type according byte stream with imghdr
 	
+	imghdr issue: http://bugs.python.org/issue16512
+	"""
+	
+	import imghdr
 	r = imghdr.what("", byte)
-	if not r:
-		return None
-		
-	if r.lower() == "jpeg":
+	if r:
+		if r.lower() == "jpeg":
+			return "jpg"
+		return r.lower()
+	
+	h = byte
+	if h[:2] == b"\xff\xd8":
 		return "jpg"
-	return r.lower()
+	
+	if h[:3] == b"CWS" or h[:3] == b"FWS":
+		return "swf"
+
+	if h[:4] == b"8BPS":
+		return "psd"
+
+	if h[:7] == b"Rar!\x1a\x07\x00":
+		return "rar"
+		
+	return None
 			
 def createdir(path):
 	"""Create folder of filepath. 
@@ -85,7 +75,7 @@ def createdir(path):
 			_evtcallback("MAKEDIR_EXC", er)
 
 def safefilepath(s):
-	"""Return a safe dir name. Return string."""
+	"""Return a safe directory name. Return string."""
 
 	return re.sub("[/\\\?\|<>:\"\*]","_",s).strip()
 	
@@ -133,41 +123,56 @@ class Mission:
 	"""Mission data class. Contains a mission's information."""
 	
 	def __init__(self):
+		"""Use title, url, episodelist, state, downloader, lock"""
+		
 		self.title = ""
 		self.url = ""
 		self.episodelist = []
 		self.state = INIT
-		# self.statechangecallback = None
 		self.downloader = None
 		self.lock = threading.Lock()
 		
 	def state_(self, state=None):
+		"""Call this method to make a MISSION_STATE_CHANGE message"""
+		
 		if not state:
 			return self.state
 		self.state = state
 		_evtcallback("MISSION_STATE_CHANGE", self)
 			
 	def __getstate__(self):
+		"""pickle"""
+	
 		state = self.__dict__.copy()
 		del state["downloader"]
 		del state["lock"]
-		# if "statechangecallback" in state:
-			# del state["statechangecallback"]
 		return state
 		
 	def __setstate__(self, state):
+		"""unpickle"""
+		
 		self.__dict__.update(state)
 		self.lock = threading.Lock()
-		# self.downloader..
 		
 	def setTitle(self, title):
+		"""set new title"""
+		
 		self.title = title
 		_evtcallback("MISSION_TITLE_CHANGE", self)
+		
+	def set(self, **kwargs):
+		"""Set new attribute, may replace setTitle later."""
+		
+		for key, value in kwargs.items():
+			if key in self:
+				setattr(self, key, value)
 
 class Episode:
 	"""Episode data class. Contains a book's information."""
 	
 	def __init__(self):
+		"""init"""
+		
 		self.title = ""
 		self.firstpageurl = ""
 		self.currentpageurl = ""
@@ -188,6 +193,7 @@ class Worker:
 	
 	def __init__(self, callback=None):
 		"""init"""
+		
 		if callable(callback):
 			self.callback = callback
 		self.running = False
@@ -200,13 +206,15 @@ class Worker:
 	def worker(self):
 		"""should be overwrite"""
 		
-		# after doing something		
+		# after doing something?
 		self.callback()
 		
 		# reset it if you want to reuse the worker
 		self.reset()
 		
 	def start(self):
+		"""call this method and self.worker will run in new thread"""
+	
 		import threading
 		if self.running:
 			return False
@@ -215,6 +223,8 @@ class Worker:
 		self.threading.start()
 		
 	def reset(self):
+		"""reset state so you can start it again"""
+		
 		self.running = False
 		self._stop = False
 		self.threading = None
@@ -224,6 +234,7 @@ class Worker:
 		
 		you should use join() to ensure the thread was killed.
 		"""
+		
 		self._stop = True
 		
 	def pausecallback(self):
@@ -231,25 +242,33 @@ class Worker:
 		
 		you should call this method in worker when meeting a break point.
 		"""		
+		
 		if self._stop:
 			raise InterruptError
 			
 	def join(self):
 		"""thread join method."""
+		
 		self.threading.join()
 
+		
 class DownloadWorker(Worker):
+	"""The main core of Comic Crawler"""
 
-	def __init__(self, mission=None, callback=None):
+	def __init__(self, mission=None, savepath=".", callback=None):
+		"""set the mission"""
+		
 		super().__init__(callback)
 		self.mission = mission
+		self.savepath = savepath
 	
 	def worker(self):
+		"""download worker"""
+		
 		try:
 			self.mission.lock.acquire()
-			self.download(self.mission)
+			self.download(self.mission, self.savepath)
 		except Exception as er:
-			# safeprint("Analyzed failed: {}".format(er))
 			self.mission.state = ERROR
 			self.callback(self.mission, er)
 		else:
@@ -258,8 +277,8 @@ class DownloadWorker(Worker):
 		finally:
 			self.mission.lock.release()
 
-	def download(self, mission):
-		"""Start mission download. This method will call self.crawlpage()
+	def download(self, mission, savepath):
+		"""Start mission download. This method will call cls.crawlpage()
 		for each episode.
 		
 		"""
@@ -273,10 +292,10 @@ class DownloadWorker(Worker):
 			# image file in one folder. Ex. pixiv.net
 			if ("noepfolder" in mission.downloader.__dict__ and 
 					mission.downloader.noepfolder):
-				efd = "{}\\{}\\".format(self.savepath, safefilepath(mission.title))
+				efd = "{}\\{}\\".format(savepath, safefilepath(mission.title))
 				fexp = safefilepath(ep.title) + "_{:03}"
 			else:
-				efd = "{}\\{}\\{}\\".format(self.savepath, safefilepath(mission.title), safefilepath(ep.title))
+				efd = "{}\\{}\\{}\\".format(savepath, safefilepath(mission.title), safefilepath(ep.title))
 				fexp = "{:03}"
 			createdir(efd)
 			
@@ -287,7 +306,7 @@ class DownloadWorker(Worker):
 				safeprint("Episode download complete!")
 				print("")
 				ep.complete = True
-				self.crawler.save()
+				_evtcallback("DOWNLOAD_EP_COMPLETE", mission, ep)
 				"""
 			except InterruptError:
 				safeprint("Download interrupted.")
@@ -298,16 +317,6 @@ class DownloadWorker(Worker):
 		else:
 			safeprint("Mission complete!")
 			mission.state_(FINISHED)
-			
-			# run after download
-			command = self.crawler.runafterdownload
-			if not command:
-				return
-			try:
-				import subprocess
-				subprocess.call((command, "{}/{}".format(self.savepath, safefilepath(mission.title))))
-			except Exception as er:
-				safeprint("failed to run process: {}".format(er))
 			mission.update = False
 
 	def crawlpage(self, ep, savepath, mission, fexp):
@@ -338,11 +347,8 @@ class DownloadWorker(Worker):
 					imgurls = downloader.getimgurls(html, url=ep.firstpageurl)
 				except Exception as er:
 					safeprint("get imgurls failed: {}".format(er))
-					# import traceback
-					# print(traceback.format_exc())
 					errorcount += 1
 					if errorcount >= 10:
-						# self.crawler.missionque.drop((mission, ))
 						raise TooManyRetryError
 					if "errorhandler" in downloader.__dict__:
 						downloader.errorhandler(er, ep)
@@ -350,7 +356,7 @@ class DownloadWorker(Worker):
 					time.sleep(5)
 		ep.imgurls = imgurls
 		
-		# downloaded list for later use
+		# some file already in directory
 		import os
 		downloadedlist = [ i.rpartition(".")[0] for i in os.listdir(savepath) ]
 		
@@ -379,7 +385,6 @@ class DownloadWorker(Worker):
 					nextpageurl = ep.currentpagenumber < len(imgurls)
 				
 				# generate file name
-				# ext = getimgext(imgurl)
 				fn = fexp.format(ep.currentpagenumber)
 				
 				# file already exist
@@ -412,9 +417,8 @@ class DownloadWorker(Worker):
 				
 			else:
 				# everything is ok, save image
-				f = open(savepath + fn + "." + ext, "wb")
-				f.write(oi)
-				f.close()
+				with open(savepath + fn + "." + ext, "wb") as f:
+					f.write(oi)
 				
 			# call pause
 			self.pausecallback(mission)
@@ -428,16 +432,21 @@ class DownloadWorker(Worker):
 			print("")
 	
 class AnalyzeWorker(Worker):
+	"""Analyze the mission.url, also the core of Comic Crawler"""
+
 	def __init__(self, mission=None, callback=None):
+		"""set mission"""
+		
 		super().__init__(callback)
 		self.mission = mission
 	
 	def worker(self):
+		"""analyze worker"""
+		
 		try:
 			self.mission.lock.acquire()
 			self.analyze(self.mission)
 		except Exception as er:
-			# safeprint("Analyzed failed: {}".format(er))
 			self.mission.state = ERROR
 			self.callback(self.mission, er)
 		else:
@@ -453,7 +462,6 @@ class AnalyzeWorker(Worker):
 		
 		downloader = mission.downloader
 		html = grabhtml(mission.url, hd=downloader.header)
-		# print(html)
 		
 		mission.title = downloader.gettitle(html, url=mission.url)
 		epList = downloader.getepisodelist(html, url=mission.url)
@@ -479,26 +487,14 @@ class AnalyzeWorker(Worker):
 		else:
 			mission.state = ANALYZED
 
-			
-class FileExistError(Exception):
-	def __str__(self):
-		return "FileExistError"
-			
-class LastPageError(Exception):
-	def __str__(self):
-		return "LastPageError"
-		
-class ExitSignalError(Exception):
-	def __str__(self):
-		return repr(self)
-		
-class InterruptError(Exception):
-	def __str__(self):
-		return repr(self)
+# bunch of errors, may pack them later
+class InterruptError(Exception): pass
 
-class TooManyRetryError(Exception):
-	def __str__(self):
-		return repr(self)
+class FileExistError(Exception): pass
+			
+class LastPageError(Exception): pass
+		
+class TooManyRetryError(Exception): pass
 
 
 class FreeQue:
@@ -563,9 +559,11 @@ class FreeQue:
 			print(m.title)
 			
 	def getList(self):
+		"""return title list"""
 		return [m.title for m in self.q]
 		
 	def load(self, path):
+		"""unpickle list from file"""
 		import pickle
 		try:
 			f = open(path, "rb")
@@ -575,6 +573,7 @@ class FreeQue:
 		self.q = pickle.load(f)
 		
 	def save(self, path):
+		"""pickle list to file"""
 		import pickle
 		f = open(path, "wb")
 		pickle.dump(self.q, f)
@@ -584,22 +583,34 @@ class ConfigManager:
 	"""Load config for other classes"""
 
 	def __init__(self, path):
+		"""set config file path"""
 		import configparser as cp
 		self.path = path
 		self.config = cp.ConfigParser(interpolation=None)
 
 		
 	def get(self):
+		"""return config"""
 		return self.config
 		
 	def load(self):
+		"""read config from file
+		
+		There's a utf-8 issue with configparser:
+		http://bugs.python.org/issue14311
+		"""
 		self.config.read(self.path, "utf-8-sig")
 		
 	def save(self):
 		with open(self.path, "w", encoding="utf-8") as f:
 			self.config.write(f)
 		
-	def apply(self, config, dict, overwrite=False):
+	@classmethod
+	def apply(cls, config, dict, overwrite=False):
+		"""ConfigManager.apply(dict1, dict2, overwrite)
+		
+		copy dict2 into dict1
+		"""
 		for key, value in dict.items():
 			if not overwrite and key in config:
 				continue
@@ -607,10 +618,7 @@ class ConfigManager:
 		return
 
 class DownloadManager(DownloadWorker):
-	"""Downloader class. Do all the analyze job and control workers
-	
-	The main class of comiccrawler.
-	"""
+	"""DownloadManager class. Maintain the mission list."""
 	def __init__(self, controller):
 	
 		super().__init__()
@@ -647,7 +655,7 @@ class DownloadManager(DownloadWorker):
 			try:
 				mission.lock.acquire()
 				mission.state_(DOWNLOADING)
-				self.download(mission)
+				self.download(mission, self.setting["savepath"])
 			except (ExitSignalError, InterruptError):
 				print("kill download worker")
 				mission.state_(PAUSE)
@@ -662,6 +670,15 @@ class DownloadManager(DownloadWorker):
 				self.stop()
 				mission.state_(ERROR)
 				_evtcallback("WORKER_TERMINATED", mission, er, er_message)
+			else:
+				command = self.setting["runafterdownload"]
+				if not command:
+					return
+				try:
+					import subprocess
+					subprocess.call((command, "{}/{}".format(self.setting["savepath"], safefilepath(mission.title))))
+				except Exception as er:
+					safeprint("failed to run process: {}".format(er))
 			finally:
 				mission.lock.release()
 				
@@ -721,8 +738,8 @@ class Library(AnalyzeWorker):
 	def add(self, mission):
 		self.libraryList.put(mission)
 		
-	def remove(self, mission):
-		self.libraryList.remove([mission])
+	def remove(self, *missions):
+		self.libraryList.remove(missions)
 		
 	def worker(self):
 		try:
@@ -734,6 +751,9 @@ class Library(AnalyzeWorker):
 					self.analyze(m)
 				except Exception as er:
 					safeprint("analyze failed!\n" + er)
+				else:
+					if m.update:
+						self.libraryList.lift((m, ))
 				finally:
 					m.lock.release()
 				self.pausecallback()
@@ -773,9 +793,6 @@ class ModuleManager:
 		
 	def loadconfig(self):
 		"""Load setting.ini and set up module.
-		
-		There's a utf-8 issue with configparser:
-		http://bugs.python.org/issue14311
 		"""
 	
 		config = self.controller.configManager.get()
@@ -920,6 +937,15 @@ class Controller:
 		
 	def iAddToLib(self, mission):
 		self.library.add(mission)
+		
+	def iLibRemove(self, *args):
+		self.library.remove(*args)
+		
+	def iLibCheckUpdate(self):
+		self.library.checkUpdate()
+		
+	def iLibDownloadUpdate(self):
+		self.library.sendToDownloadManager()
 		
 if __name__ == "__main__":
 	Controller()

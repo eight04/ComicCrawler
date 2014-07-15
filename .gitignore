@@ -1,3 +1,4 @@
 *.dat
 *.ini
 __pycache__/*
+test*

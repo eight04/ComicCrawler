@@ -191,7 +191,7 @@ class MainWindow(cc.Controller):
 		self.bindevent()
 		self.messageq = queue.Queue()
 		# cc._eventhandler = self.message
-		self.gRoot.after(100, self.tkloop)
+		self.tkloop()
 		self.gRoot.mainloop()
 		
 	def tkloop(self):
@@ -281,11 +281,23 @@ class MainWindow(cc.Controller):
 			self.gTvmenu.post(event.x_root, event.y_root)
 		self.gTv.bind("<Button-3>", tvmenucall)
 		
+		def libCheckUpdate():
+			self.iLibCheckUpdate()
+		self.gBtnUpdate["command"] = libCheckUpdate
+		
+		def libDownloadUpdate():
+			self.iLibDownloadUpdate()
+		self.gBtnDownloadUpdate["command"] = libDownloadUpdate
+		
 		def libMenuDelete():
 			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
 				s = self.gLibTV.selection()
-				# self.iLibRemove(*[self.iidholder[k] for k in s])
+				self.iLibRemove(*[self.iidholder[k] for k in s])
 		self.gLibMenu.entryconfig(0, command=libMenuDelete)
+		
+		def libMenuCall(event):
+			self.gLibMenu.post(event.x_root, event.y_root)
+		self.gLibMenu.bind("<Button-3>", libMenuCall)
 		
 		# close window event
 		def beforequit():
@@ -323,7 +335,7 @@ class MainWindow(cc.Controller):
 	
 	def tvrefresh(self):
 		"""refresh treeview"""
-		
+
 		ids = self.gTv.get_children()
 		self.gTv.delete(*ids)
 		self.iidholder = {}
