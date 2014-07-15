@@ -619,18 +619,21 @@ class ConfigManager:
 
 class DownloadManager(DownloadWorker):
 	"""DownloadManager class. Maintain the mission list."""
+	
 	def __init__(self, controller):
+		"""set controller"""
 	
 		super().__init__()
 		self.controller = controller
 		self.missionque = FreeQue()
-		# self.state = PAUSE
 		self.skippagewhenfailed = False
 		
 		self.loadconfig()
 		self.load()
 	
 	def loadconfig(self):
+		"""Load config from controller. Set default"""
+		
 		manager = self.controller.configManager
 		self.setting = manager.get()["DEFAULT"]
 		default = {
@@ -640,10 +643,12 @@ class DownloadManager(DownloadWorker):
 		manager.apply(self.setting, default)
 		
 	def addmission(self, mission):
+		"""add mission"""
+		
 		self.missionque.put(mission)
 	
 	def worker(self):
-		"""overwrite"""
+		"""overwrite, take mission from missionlist and download."""
 		
 		while True:
 			mission = self.missionque.take()
@@ -689,6 +694,8 @@ class DownloadManager(DownloadWorker):
 		return
 
 	def start(self):
+		"""overwrite, add missionque check."""
+		
 		if self.missionque.empty():
 			safeprint("Misison que is empty.")
 			return
@@ -697,6 +704,7 @@ class DownloadManager(DownloadWorker):
 		
 	def save(self):
 		"""Save mission que."""
+		
 		try:
 			self.missionque.save("save.dat")
 		except Exception as er:
@@ -705,6 +713,8 @@ class DownloadManager(DownloadWorker):
 			print("Session saved success.")
 		
 	def load(self):
+		"""load mission que"""
+		
 		try:
 			self.missionque.load("save.dat")
 		except Exception as er:
@@ -720,6 +730,8 @@ class Library(AnalyzeWorker):
 	""" Library"""
 	
 	def __init__(self, controller):
+		"""init"""
+	
 		super().__init__()
 		self.controller = controller
 		self.libraryList = FreeQue()
@@ -728,20 +740,30 @@ class Library(AnalyzeWorker):
 		self.checkUpdate()
 		
 	def load(self):
+		"""load librarylist"""
+		
 		self.libraryList.load("library.dat")
 		for m in self.libraryList.q:
 			m.downloader = self.controller.moduleManager.getDownloader(m.url)
 			
 	def save(self):
+		"""save library list"""
+		
 		self.libraryList.save("library.dat")
 		
 	def add(self, mission):
+		"""add mission"""
+		
 		self.libraryList.put(mission)
 		
 	def remove(self, *missions):
+		"""remove missions"""
+		
 		self.libraryList.remove(missions)
 		
 	def worker(self):
+		"""overwrite, take mission from librarylist and analyze"""
+		
 		try:
 			for m in self.libraryList.q:
 				if m.state == DOWNLOADING:
@@ -762,9 +784,13 @@ class Library(AnalyzeWorker):
 		self.reset()
 			
 	def checkUpdate(self):
+		"""start analyze worker"""
+		
 		self.start()
 
 	def sendToDownloadManager(self):
+		"""send to controller"""
+		
 		for m in self.libraryList.q:
 			if m.update:
 				self.controller.downloadManager.addmission(m)
