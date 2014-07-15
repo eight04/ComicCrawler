@@ -6,7 +6,13 @@ eight04@gmail.com
 	
 使用需求:
 ==========================
-Python 3
+Python 3.4 up
+	Download from here: 
+	https://www.python.org/
+	
+PyExecJS
+	Run command line:
+	pip install pyexecjs
 	
 使用方法:
 ==========================

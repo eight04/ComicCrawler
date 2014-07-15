@@ -1,12 +1,12 @@
 @echo off
 md temp
 
-cp -a execjs 				temp 
+REM cp -a execjs 				temp 
 cp -a cc_*.py 				temp 
 cp -a comiccrawler.py 		temp 
 cp -a comiccrawlergui.py 	temp 
 cp -a safeprint.py			temp 
-cp -a readme.txt 			temp 
+cp -a readme.zh-tw.txt 		temp 
 cp -a zip.bat 				temp 
 cp -a winlaunch.pyw			temp 
 
