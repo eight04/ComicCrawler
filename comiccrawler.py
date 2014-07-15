@@ -93,27 +93,41 @@ def safeurl(url):
 	path = re.sub("[\u0080-\uffff]+", u, path)
 	return base + path
 	
-def grabhtml(url, hd={}, encode=None):
+def grabhtml(url, hd={}, encode="utf-8"):
 	"""Get html source of given url. Return String."""
 	
 	url = safeurl(url)
+	# bugged when header contains non latin character...
 	req = urllib.request.Request(url,headers=hd)
 	rs = urllib.request.urlopen(req, timeout=20)
 	ot = rs.read()
+	return ot.decode()
+
+	# print(ot)
+	# html = ot.decode("utf-8", "ignore")
+	# r = re.search(r"charset=[\"']?([^\"'>]+)", html)
+	# if r:
+		# encode = r.group(1)
+	# print("encode", encode, r)
+	# return ot.decode(encode, "ignore")
 	
+	
+	"""
 	if not encode:
 		try:
-			encode = re.search(r"<meta charset=[\"']?([^\"'>]+)[\"']?").group(1)
+			encode = re.search(r"<meta charset=[\"']?([^\"'>]+)[\"']?", 
+				ot.decode("utf-8", "replace")).group(1)
 			return ot.decode(encode, "replace")
 		except Exception:
 			pass
 		try:
-			encode = re.search("charset=([^\"'>]+)",ot.decode("utf-8","replace")).group(1)
+			encode = re.search("charset=([^\"'>]+)", ot.decode("utf-8","replace")).group(1)
 			return ot.decode(encode, "replace")
 		except Exception:
 			return ot.decode("utf-8", "replace")
 	else:
 		return ot.decode(encode,"replace")
+	"""
 
 def grabimg(url, hd={}):
 	"""Return byte stream."""
@@ -459,7 +473,10 @@ class AnalyzeWorker(Worker):
 			self.analyze(self.mission)
 		except Exception as er:
 			self.mission.state = ERROR
-			self.callback(self.mission, er)
+			import traceback
+			er_message = traceback.format_exc()
+
+			self.callback(self.mission, er, er_message)
 		else:
 			self.mission.state = ANALYZED
 			self.callback(self.mission)
@@ -475,6 +492,7 @@ class AnalyzeWorker(Worker):
 		mission.state_(ANALYZING)
 
 		downloader = mission.downloader
+		print("grabbing html")
 		html = grabhtml(mission.url, hd=downloader.header)
 		print("getting title")
 		mission.title = downloader.gettitle(html, url=mission.url)
@@ -977,7 +995,7 @@ class Controller:
 		print("Analyzing url: {}".format(m.url))
 		AnalyzeWorker(m, self.iAnalyzeFinished).start()
 		
-	def iAnalyzeFinished(self, mission, error=None):
+	def iAnalyzeFinished(self, mission, error=None, er_msg=None):
 		if error:
 			print("Analyze Failed! " + error)
 		else:

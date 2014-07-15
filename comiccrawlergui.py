@@ -352,14 +352,8 @@ class MainWindow(cc.Controller):
 				values=(m.title, m.downloader.name, STATE[m.state]))
 			self.libIdIndex[cid] = m
 		
-	def iAnalyzeFinished(self, mission, error=None):
-		if error:
-			tkinter.messagebox.showerror(
-				"Comic Crawler", "解析錯誤！\n{}".format(er))
-			return
-		if len(mission.episodelist) > 1 and not selectEp(self.gRoot, mission):
-			return
-		self.iAddMission(mission)
+	def iAnalyzeFinished(self, mission, error=None, er_msg=None):
+		cc._evtcallback("ANALYZED_FINISHED", mission, error, er_msg)
 	
 	def message(self, msg, args=None):
 		"""GUI Message control"""
@@ -400,6 +394,18 @@ class MainWindow(cc.Controller):
 			mission, er, er_msg = args
 			tkinter.messagebox.showerror(
 				"Comic Crawler", "下載中斷！\n{}".format(er_msg))
+				
+		elif msg is "ANALYZED_FINISHED":
+			mission, error, er_msg = args
+			if error:
+				# import sys
+				tkinter.messagebox.showerror(
+					"Comic Crawler", "解析錯誤！\n{}".format(er_msg))
+				return
+			if len(mission.episodelist) > 1 and not selectEp(self.gRoot, mission):
+				return
+			self.iAddMission(mission)
+
 				
 		else:
 			pass
