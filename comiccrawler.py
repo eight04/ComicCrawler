@@ -21,6 +21,7 @@ FINISHED = 4
 ERROR = 5
 INTERRUPT = 6
 UPDATE = 7
+ANALYZING = 8
 
 from queue import Queue
 messageBucket = Queue()
@@ -64,15 +65,18 @@ def createdir(path):
 	"this_doesnt_exist\sure_this_doesnt_exist_either\I_want_to_create_this"
 	
 	"""
+	import os, re
 	
-	dirpath = path.split("\\")
+	path = os.path.normpath(path)
+	
+	dirpath = re.split(r"[\\/]+", path)
 	create = ""
 	for d in dirpath:
-		create += d + "\\"
-		try:
+		if not d:
+			continue
+		create += d + os.sep
+		if not os.path.exists(create):
 			os.mkdir(create)
-		except Exception as er:
-			_evtcallback("MAKEDIR_EXC", er)
 
 def safefilepath(s):
 	"""Return a safe directory name. Return string."""
@@ -332,6 +336,7 @@ class DownloadWorker(Worker):
 		totalpages, episode.currentpageurl.
 		
 		"""
+		import time
 		
 		downloader = mission.downloader
 		
@@ -355,12 +360,15 @@ class DownloadWorker(Worker):
 						raise TooManyRetryError
 					if "errorhandler" in downloader.__dict__:
 						downloader.errorhandler(er, ep)
-					self.pausecallback(mission)
+					self.pausecallback()
+					
 					time.sleep(5)
+					
 		ep.imgurls = imgurls
 		
 		# some file already in directory
 		import os
+		createdir(savepath)
 		downloadedlist = [ i.rpartition(".")[0] for i in os.listdir(savepath) ]
 		
 		# crawl all pages
@@ -412,7 +420,7 @@ class DownloadWorker(Worker):
 				if errorcount >= 10:
 					# self.crawler.missionque.drop((mission, ))
 					raise TooManyRetryError
-				self.pausecallback(mission)
+				self.pausecallback()
 				
 				if not downloader.errorhandler(er, ep):
 					time.sleep(5)
@@ -424,7 +432,7 @@ class DownloadWorker(Worker):
 					f.write(oi)
 				
 			# call pause
-			self.pausecallback(mission)
+			self.pausecallback()
 				
 			if not nextpageurl:
 				ep.complete = True
@@ -461,8 +469,11 @@ class AnalyzeWorker(Worker):
 	def analyze(self, mission):
 		"""Analyze mission url."""
 		
+		# if mission.state in (ANALYZED, INIT):
+			# return
 		safeprint("start analyzing {}".format(mission.url))
-		
+		mission.state_(ANALYZING)
+
 		downloader = mission.downloader
 		html = grabhtml(mission.url, hd=downloader.header)
 		print("getting title")
@@ -476,12 +487,13 @@ class AnalyzeWorker(Worker):
 			# re-analyze
 			for ep in epList:
 				for oep in mission.episodelist:
-					if oep.url == ep.url:
+					if oep.firstpageurl == ep.firstpageurl and oep.complete:
 						break
 				else:
 					mission.episodelist.append(ep)
 					mission.update = True
 			if not mission.update:
+				mission.state_(FINISHED)
 				return
 		
 		if not mission.episodelist:
@@ -515,7 +527,7 @@ class FreeQue:
 	def put(self, item):
 		"""append item"""
 		self.q.append(item)
-		_evtcallback("MISSIONQUE_ARRANGE")
+		_evtcallback("MISSIONQUE_ARRANGE", self)
 		
 	def lift(self, items, reverse=False):
 		"""Move items to the top."""
@@ -525,7 +537,7 @@ class FreeQue:
 			self.q = a + b
 		else:
 			self.q = b + a
-		_evtcallback("MISSIONQUE_ARRANGE")
+		_evtcallback("MISSIONQUE_ARRANGE", self)
 	
 	def drop(self, items):
 		"""Move items to the bottom."""
@@ -534,7 +546,7 @@ class FreeQue:
 	def remove(self, items):
 		"""Delete specify items."""
 		self.q = [ i for i in self.q if i not in items]
-		_evtcallback("MISSIONQUE_ARRANGE")
+		_evtcallback("MISSIONQUE_ARRANGE", self)
 		_evtcallback("MESSAGE", "Deleted {} mission(s)".format(len(items)))
 
 	def take(self, n=1):
@@ -558,7 +570,7 @@ class FreeQue:
 	def cleanfinished(self):
 		"""delete fished missions"""
 		self.q = [ i for i in self.q if i.state is not FINISHED ]
-		_evtcallback("MISSIONQUE_ARRANGE")
+		_evtcallback("MISSIONQUE_ARRANGE", self)
 		
 	def printList(self):
 		"""print mission list"""
@@ -655,6 +667,7 @@ class DownloadManager(DownloadWorker):
 		"""add mission"""
 		
 		self.missionque.put(mission)
+		self.removeLibDuplicate(mission)
 	
 	def worker(self):
 		"""overwrite, take mission from missionlist and download."""
@@ -670,7 +683,7 @@ class DownloadManager(DownloadWorker):
 				mission.lock.acquire()
 				mission.state_(DOWNLOADING)
 				self.download(mission, self.setting["savepath"])
-			except (ExitSignalError, InterruptError):
+			except InterruptError:
 				print("kill download worker")
 				mission.state_(PAUSE)
 			except TooManyRetryError:
@@ -687,7 +700,7 @@ class DownloadManager(DownloadWorker):
 			else:
 				command = self.setting["runafterdownload"]
 				if not command:
-					return
+					continue
 				try:
 					import subprocess
 					subprocess.call((command, "{}/{}".format(self.setting["savepath"], safefilepath(mission.title))))
@@ -732,6 +745,21 @@ class DownloadManager(DownloadWorker):
 			for m in self.missionque.q:
 				m.downloader = self.controller.moduleManager.getDownloader(m.url)
 			print("Session loaded success.")
+		self.removeLibDuplicate()
+		
+	def removeLibDuplicate(self):
+		"""replace duplicate with library one"""
+		
+		if "library" not in vars(self.controller):
+			return False
+			
+		library = self.controller.library
+		mqlen = len(self.missionque.q)
+		for i in range(mqlen):
+			for lm in library.libraryList.q:
+				if self.missionque.q[i].url == lm.url:
+					self.missionque.q[i] = lm
+					break
 		
 
 		
@@ -746,10 +774,11 @@ class Library(AnalyzeWorker):
 		self.libraryList = FreeQue()
 		
 		self.load()
+		self.controller.downloadManager.removeLibDuplicate()
 		self.checkUpdate()
 		
 	def load(self):
-		"""load librarylist"""
+		"""load libraryList"""
 		
 		self.libraryList.load("library.dat")
 		for m in self.libraryList.q:
@@ -763,6 +792,11 @@ class Library(AnalyzeWorker):
 	def add(self, mission):
 		"""add mission"""
 		
+		# check duplicate
+		for m in self.libraryList.q[:]:
+			if m.url == mission.url:
+				# duplicate
+				return False
 		self.libraryList.put(mission)
 		
 	def remove(self, *missions):
@@ -771,7 +805,7 @@ class Library(AnalyzeWorker):
 		self.libraryList.remove(missions)
 		
 	def worker(self):
-		"""overwrite, take mission from librarylist and analyze"""
+		"""overwrite, take mission from libraryList and analyze"""
 		
 		try:
 			for m in self.libraryList.q:
@@ -781,7 +815,7 @@ class Library(AnalyzeWorker):
 					m.lock.acquire()
 					self.analyze(m)
 				except Exception as er:
-					safeprint("analyze failed!\n" + er)
+					safeprint("analyze failed!\n", er)
 				else:
 					if m.update:
 						self.libraryList.lift((m, ))
@@ -789,7 +823,7 @@ class Library(AnalyzeWorker):
 					m.lock.release()
 				self.pausecallback()
 		except Exception as er:
-			safeprint("check update interrupt!\n" + er)
+			safeprint("check update interrupt!\n", er)
 		self.reset()
 			
 	def checkUpdate(self):
@@ -874,6 +908,7 @@ class Controller:
 		self.library = Library(self)
 		
 		self.configManager.save()
+		self.downloadManager.removeLibDuplicate()
 		
 	def unloadClasses(self):
 		if self.library.running:

@@ -2,3 +2,4 @@
 *.ini
 __pycache__/*
 test*
+download/*

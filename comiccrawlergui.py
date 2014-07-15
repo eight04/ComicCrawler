@@ -21,7 +21,9 @@ STATE = {
 	cc.PAUSE: "停止",
 	cc.FINISHED: "完成",
 	cc.ERROR: "錯誤",
-	cc.INTERRUPT: "已刪除"
+	cc.INTERRUPT: "已刪除",
+	cc.UPDATE: "有更新",
+	cc.ANALYZING: "分析中"
 }
 
 class Dialog(Toplevel):
@@ -295,12 +297,12 @@ class MainWindow(cc.Controller):
 		def libMenuDelete():
 			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
 				s = self.gLibTV.selection()
-				self.iLibRemove(*[self.iidholder[k] for k in s])
+				self.iLibRemove(*[self.libIdIndex[k] for k in s])
 		self.gLibMenu.entryconfig(0, command=libMenuDelete)
 		
 		def libMenuCall(event):
 			self.gLibMenu.post(event.x_root, event.y_root)
-		self.gLibMenu.bind("<Button-3>", libMenuCall)
+		self.gLibTV.bind("<Button-3>", libMenuCall)
 		
 		# close window event
 		def beforequit():
@@ -337,6 +339,19 @@ class MainWindow(cc.Controller):
 		self.iidholder = {}
 		self.load()
 		
+	def libTvRefresh(self):
+		"""refresh lib treeview"""
+		
+		tv = self.gLibTV
+		ids = tv.get_children()
+		tv.delete(*ids)
+		self.libIdIndex = {}
+		list = self.library.libraryList.q
+		for m in list:
+			cid = tv.insert("","end",
+				values=(m.title, m.downloader.name, STATE[m.state]))
+			self.libIdIndex[cid] = m
+		
 	def iAnalyzeFinished(self, mission, error=None):
 		if error:
 			tkinter.messagebox.showerror(
@@ -352,8 +367,11 @@ class MainWindow(cc.Controller):
 		if msg is "MESSAGE":
 			text, = args
 			self.gStatusbar["text"] = text
-		
+	
 		elif msg is "MISSION_STATE_CHANGE":
+			self.tvrefresh()
+			self.libTvRefresh()
+			"""
 			for k in self.iidholder:
 				if self.iidholder[k] is mission:
 					cid = k
@@ -362,19 +380,24 @@ class MainWindow(cc.Controller):
 			self.gTv.set(cid, "state", STATE[mission.state])
 			if mission.state is cc.FINISHED:
 				self.gTv.item(cid, tags=["f"])
-				
+			"""
 		elif msg is "MISSION_TITLE_CHANGE":
+			self.tvrefresh()
+			self.libTvRefresh()
+			"""
 			for k in self.iidholder:
 				if self.iidholder[k] is mission:
 					cid = k
 					break
 					
 			self.gTv.set(cid, "name", mission.title)
-			
+			"""
 		elif msg is "MISSIONQUE_ARRANGE":
 			self.tvrefresh()
+			self.libTvRefresh()
 			
 		elif msg is "WORKER_TERMINATED":
+			mission, er, er_msg = args
 			tkinter.messagebox.showerror(
 				"Comic Crawler", "下載中斷！\n{}".format(er_msg))
 				
