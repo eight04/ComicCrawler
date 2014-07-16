@@ -93,11 +93,22 @@ def safeurl(url):
 	path = re.sub("[\u0080-\uffff]+", u, path)
 	return base + path
 	
+def safeheader(header):
+	"""Return a safe header, quote the unicode characters."""
+	
+	def u(match):
+		return urllib.parse.quote(match.group())
+	for key in header:
+		header[key] = re.sub("[\u0080-\uffff]+", u, header[key])
+		
+	return header
+	
 def grabhtml(url, hd={}, encode="utf-8"):
 	"""Get html source of given url. Return String."""
 	
 	url = safeurl(url)
 	# bugged when header contains non latin character...
+	hd = safeheader(hd)
 	req = urllib.request.Request(url,headers=hd)
 	rs = urllib.request.urlopen(req, timeout=20)
 	ot = rs.read()
@@ -363,10 +374,12 @@ class DownloadWorker(Worker):
 		if "getimgurls" in downloader.__dict__:
 			# we can get all img urls from first page
 			errorcount = 0
-			while not imgurls:
+			while True:
 				try:
 					html = grabhtml(ep.firstpageurl, hd=downloader.header)
 					imgurls = downloader.getimgurls(html, url=ep.firstpageurl)
+					if not imgurls:
+						raise EmptyImageError
 				except Exception as er:
 					safeprint("get imgurls failed: {}".format(er))
 					errorcount += 1
@@ -374,10 +387,12 @@ class DownloadWorker(Worker):
 						raise TooManyRetryError
 					if "errorhandler" in downloader.__dict__:
 						downloader.errorhandler(er, ep)
-					self.pausecallback()
-					
 					time.sleep(5)
-					
+				else:
+				
+					break
+				self.pausecallback()
+				
 		ep.imgurls = imgurls
 		
 		# some file already in directory
@@ -416,7 +431,8 @@ class DownloadWorker(Worker):
 				if fn in downloadedlist:
 					raise FileExistError
 					
-				safeprint("Downloading image: {}".format(imgurl))
+				safeprint("Downloading page {}: {}".format(
+						ep.currentpagenumber, imgurl))
 				oi = grabimg(imgurl,hd=header)
 				
 				# check image type
@@ -475,7 +491,7 @@ class AnalyzeWorker(Worker):
 			self.mission.state = ERROR
 			import traceback
 			er_message = traceback.format_exc()
-
+			safeprint(er_message)
 			self.callback(self.mission, er, er_message)
 		else:
 			self.mission.state = ANALYZED
@@ -531,6 +547,8 @@ class FileExistError(Exception): pass
 class LastPageError(Exception): pass
 		
 class TooManyRetryError(Exception): pass
+
+class EmptyImageError(Exception): pass
 
 
 class FreeQue:
@@ -685,7 +703,7 @@ class DownloadManager(DownloadWorker):
 		"""add mission"""
 		
 		self.missionque.put(mission)
-		self.removeLibDuplicate(mission)
+		self.removeLibDuplicate()
 	
 	def worker(self):
 		"""overwrite, take mission from missionlist and download."""
@@ -1019,6 +1037,7 @@ class Controller:
 		self.configManager.load()
 		self.moduleManager.loadconfig()
 		self.downloadManager.loadconfig()
+		safeprint("Reload config success!")
 		
 	def iRemoveMission(self, *args):
 		self.downloadManager.missionque.remove(args)

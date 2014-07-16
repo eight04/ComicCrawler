@@ -72,7 +72,7 @@ def getimgurls(html, url):
 	pages = execjs.eval(ctx.eval("pages"))
 	base = "http://images.dmzj.com/"
 	
-	return [base + page for page in pages]
+	return [base + page for page in pages if page]
 	
 def errorhandler(er, ep):
 	"""errorhandler(error, episode) -> void
@@ -81,5 +81,6 @@ def errorhandler(er, ep):
 	downloading image. Normally it does nothing.
 	"""
 	
-	pass
-	
+	if type(er) == comiccrawler.EmptyImageError:
+		ep.skip = True
+		raise comiccrawler.LastPageError
