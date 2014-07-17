@@ -11,8 +11,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 
-from safeprint import safeprint
-
+# state code definition
 INIT = 0
 ANALYZED = 1
 DOWNLOADING = 2
@@ -691,22 +690,26 @@ class DownloadManager(DownloadWorker):
 		while True:
 			mission = self.missionque.take()
 			if mission is None:
+				# all mission complete
 				self.stop()
 				safeprint("All download complete!")
 				break
-				
 			try:
+				# get mission lock and download
 				mission.lock.acquire()
 				mission.state_(DOWNLOADING)
 				self.download(mission, self.setting["savepath"])
 			except InterruptError:
+				# interrupt
 				print("kill download worker")
 				mission.state_(PAUSE)
 			except TooManyRetryError:
+				# too many retry, drop the mission
 				safeprint("Too many retry")
 				mission.state_(PAUSE)
 				self.missionque.drop((mission,))
 			except Exception as er:
+				# other exception, get traceback message
 				import traceback
 				er_message = traceback.format_exc()
 				print("worker terminate!\n{}".format(er_message))
@@ -714,22 +717,25 @@ class DownloadManager(DownloadWorker):
 				mission.state_(ERROR)
 				_evtcallback("WORKER_TERMINATED", mission, er, er_message)
 			else:
+				# download complete, run user defined command
 				command = self.setting["runafterdownload"]
 				if not command:
 					continue
 				try:
-					import subprocess
-					subprocess.call((command, "{}/{}".format(self.setting["savepath"], safefilepath(mission.title))))
+					from subprocess import call
+					call((command, "{}/{}".format(self.setting["savepath"], safefilepath(mission.title))))
 				except Exception as er:
 					safeprint("failed to run process: {}".format(er))
 			finally:
+				# be sure to release lock
 				mission.lock.release()
 				
 			if self._stop:
-				# safeprint("Download worker killed.")
+				# stop worker
 				break
+				
+		# reset for next use
 		self.reset()
-		return
 
 	def start(self):
 		"""overwrite, add missionque check."""
@@ -913,11 +919,15 @@ class Controller:
 	"""workflow logic"""
 	
 	def __init__(self):
+		"""Load class -> view -> unload class"""
+		
 		self.loadClasses()
 		self.view()
 		self.unloadClasses()
 	
 	def loadClasses(self):
+		"""Load classes"""
+		
 		self.configManager = ConfigManager("setting.ini")
 		self.moduleManager = ModuleManager(self)
 		self.downloadManager = DownloadManager(self)
@@ -927,19 +937,26 @@ class Controller:
 		self.downloadManager.removeLibDuplicate()
 		
 	def unloadClasses(self):
+		"""unload classes"""
+		
+		# wait library stop
 		if self.library.running:
 			self.library.stop()
 			self.library.join()
 		self.library.save()
 		
+		# wait download manager stop
 		if self.downloadManager.running:
 			self.downloadManager.stop()
 			self.downloadManager.join()
 		self.downloadManager.save()
 		
+		# save config
 		self.configManager.save()
 		
 	def view(self):
+		"""cli... INCOMPLETE!"""
+		
 		safeprint("Valid domains: " + " ".join(self.moduleManager.getdlHolder()))
 		safeprint("Library list: " + " ".join(self.library.libraryList.getList()))
 		safeprint("This is Comic Crawler version " + VERSION + "\n"
@@ -950,94 +967,139 @@ class Controller:
 			pass
 			
 	def getInput(self):
+		"""get input"""
+		
 		try:
 			u = input(">>> ")
 		except EOFError:
 			return False
+			
 		command = None
+		
 		if not u.startswith("http"):
 			command, sep, u = u.partition(" ")
+			
 		if command == "lib":
 			self.iLib(u)
+			
 		elif command == "show":
 			self.iShowList(u)
+			
 		else:
 			self.iNewMission(u)
+			
 		return True
 
 	def iShowList(self, u):
+		"""interface: show mission list"""
+		
 		for m in self.downloadManager.missionque.q:
 			safeprint(m.title, m.url, m.state)
 				
 	def iLib(self, u):
+		"""interface: lib command"""
+		
 		command, sep, u = u.partition(" ")
+		
 		if command == "add":
 			self.iLibAdd(u)
+			
 		elif command == "remove":
 			self.iLibRemove(u)
+			
 		else:
 			self.iLibShow(command)
 			
 	def iLibShow(self, u):
+		"""interface: show lib"""
+		
 		safeprint(" ".join(self.library.libraryList.getList()))
 		
 	def iAddUrl(self, url):
+		"""interface: when input is an url..."""
+		
 		downloader = self.moduleManager.getDownloader(url)
 		if not downloader:
 			print("Unknown url: {}\n".format(url))
-			return
+			return	
 		# construct a mission
 		m = Mission()
 		m.url = url
 		m.downloader = downloader
-		print("Analyzing url: {}".format(m.url))
+		
 		AnalyzeWorker(m, self.iAnalyzeFinished).start()
 		
 	def iAnalyzeFinished(self, mission, error=None, er_msg=None):
+		"""interface: when finished analyzing..."""
+		
 		if error:
 			print("Analyze Failed! " + error)
 		else:
 			self.iAddMission(mission)
 		
 	def iAddMission(self, mission):
+		"""interface: add mission to download manager"""
+		
 		self.downloadManager.addmission(mission)
 		_evtcallback("MESSAGE", "Queued mission: " + mission.title)
 		
-		
 	def iStart(self):
+		"""interface: start download manager"""
+		
 		self.downloadManager.start()
 		
 	def iStop(self):
+		"""interface: stop download manager"""
+		
 		self.downloadManager.stop()
 		
 	def iClean(self):
+		"""interface: remove finished mission in download manager"""
+		
 		self.downloadManager.missionque.cleanfinished()
 		
 	def iReloadConfig(self):
+		"""interface: reload config"""
+		
 		self.configManager.load()
 		self.moduleManager.loadconfig()
 		self.downloadManager.loadconfig()
+		
 		safeprint("Reload config success!")
 		
 	def iRemoveMission(self, *args):
+		"""interface: remove mission from download manager"""
+		
 		self.downloadManager.missionque.remove(args)
 		
 	def iLift(self, *args):
+		"""interface: lift missions from download manager"""
+		
 		self.downloadManager.missionque.lift(args)
 		
 	def iDrop(self, *args):
+		"""interface: drop missions from download manager"""
+		
 		self.downloadManager.missionque.drop(args)
 		
 	def iAddToLib(self, mission):
+		"""interface: add mission into library"""
+	
 		self.library.add(mission)
 		
 	def iLibRemove(self, *args):
+		"""interface: remove mission from library"""
+		
 		self.library.remove(*args)
 		
 	def iLibCheckUpdate(self):
+		"""interface: start library analyzer"""
+		
 		self.library.checkUpdate()
 		
 	def iLibDownloadUpdate(self):
+		"""interface: add updated mission to download manager"""
+		
 		self.library.sendToDownloadManager()
 		
 if __name__ == "__main__":
