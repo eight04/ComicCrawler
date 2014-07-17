@@ -38,7 +38,7 @@ PyExecJS
 	zip.bat是預先寫好的Windows批次檔，會呼叫7z命令將檔案壓縮後刪除資料夾（小心！）
 	與runafterdownload配合使用。
 	
-	什麼是7z？它是個又小又快的壓縮、解壓縮軟體︰
+	什麼是7z？它是個又小又快的壓縮軟體︰
 		http://www.developershome.com/7-zip/
 
 其它︰
@@ -50,6 +50,8 @@ PyExecJS
 	
 	下載後會檢查圖片格式是否正確。
 	
+====================================
+
 有發現任意 bug 歡迎寄 email 給我或到 PTT 留言！
 最近有在練習用 Github，所以也可以試試上面的 Issue Tracker︰
 	https://github.com/eight04/ComicCrawler
