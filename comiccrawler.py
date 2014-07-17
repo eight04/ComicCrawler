@@ -112,33 +112,13 @@ def grabhtml(url, hd={}, encode="utf-8"):
 	req = urllib.request.Request(url,headers=hd)
 	rs = urllib.request.urlopen(req, timeout=20)
 	ot = rs.read()
-	return ot.decode()
-
-	# print(ot)
-	# html = ot.decode("utf-8", "ignore")
-	# r = re.search(r"charset=[\"']?([^\"'>]+)", html)
-	# if r:
-		# encode = r.group(1)
-	# print("encode", encode, r)
-	# return ot.decode(encode, "ignore")
 	
-	
-	"""
-	if not encode:
-		try:
-			encode = re.search(r"<meta charset=[\"']?([^\"'>]+)[\"']?", 
-				ot.decode("utf-8", "replace")).group(1)
-			return ot.decode(encode, "replace")
-		except Exception:
-			pass
-		try:
-			encode = re.search("charset=([^\"'>]+)", ot.decode("utf-8","replace")).group(1)
-			return ot.decode(encode, "replace")
-		except Exception:
-			return ot.decode("utf-8", "replace")
-	else:
-		return ot.decode(encode,"replace")
-	"""
+	# find html defined encoding
+	html = ot.decode("utf-8", "replace")
+	r = re.search(r"charset=[\"']?([^\"'>]+)", html)
+	if r:
+		encode = r.group(1)
+	return ot.decode(encode, "replace")
 
 def grabimg(url, hd={}):
 	"""Return byte stream."""
