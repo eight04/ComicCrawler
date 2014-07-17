@@ -76,15 +76,6 @@ def createdir(path):
 		createdir(a)
 		createdir(path)
 	
-	# dirpath = re.split(r"[\\/]+", path)
-	# create = ""
-	# for d in dirpath:
-		# if not d:
-			# continue
-		# create += d + os.sep
-		# if not os.path.exists(create):
-			# os.mkdir(create)
-
 def safefilepath(s):
 	"""Return a safe directory name. Return string."""
 
@@ -684,6 +675,9 @@ class DownloadManager(DownloadWorker):
 			"runafterdownload": ""
 		}
 		manager.apply(self.setting, default)
+		
+		import os.path
+		self.setting["savepath"] = os.path.normpath(self.setting["savepath"])
 		
 	def addmission(self, mission):
 		"""add mission"""
