@@ -1,9 +1,6 @@
 Comic Crawler Readme v.20140417
 
-聯絡作者︰
-==========================
-eight04@gmail.com
-	
+
 使用需求:
 ==========================
 Python 3.4 up
@@ -13,8 +10,27 @@ Python 3.4 up
 PyExecJS
 	1. 先安裝完 Python
 	2. 按 Windows + R，輸入 cmd 後按 Enter
-	3. 輸入 pip install pyexecjs 後按 Enter
-	4. 沒了
+	3. 輸入 pip install pyexecjs 後按 Enter。安裝時應該會跑出類似︰
+		====
+		Downloading/unpacking pyexecjs
+		  Downloading PyExecJS-1.0.4.tar.gz
+		  Running setup.py (path:C:\User.......
+
+		Installing collected packages: pyexecjs
+		  Running setup.py install for pyexecjs
+
+		Successfully installed pyexecjs
+		Cleaning up...
+		====
+	4. 安裝完畢
+	
+	
+目前支援網址
+======================
+comic.ck101.com www.pixiv.net www.99comic.com manhua.dmzj.com 
+deviantart.com www.8comic.com konachan.com www.dm5.com 
+comic.sfacg.com 
+
 	
 使用方法︰
 ==========================
@@ -50,8 +66,15 @@ PyExecJS
 	
 	下載後會檢查圖片格式是否正確。
 	
-====================================
 
+====================================
 有發現任意 bug 歡迎寄 email 給我或到 PTT 留言！
-最近有在練習用 Github，所以也可以試試上面的 Issue Tracker︰
+最近有在練習用 Github，也可以試試上面的 Issue Tracker︰
 	https://github.com/eight04/ComicCrawler
+
+
+聯絡作者︰
+==========================
+eight04@gmail.com
+
+

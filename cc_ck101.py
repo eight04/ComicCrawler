@@ -46,11 +46,11 @@ def getepisodelist(html, url=""):
 
 def getimgurl(html, page=0, url=""):
 	"""
-	Since ck101 has plenty bug, something like this: 
+	Since ck101 has lots of bugs, something like this: 
 		http://comic.ck101.com/vols/9206635/1
 	or this:
 		http://comic.ck101.com/vols/9285077/15
-	we raise LastPageError if getting losted page
+	we raise SkipEpisodeError if getting losted page
 	"""
 	try:
 		pic = re.search("'defualtPagePic' src=\"(.+?)\"", html).group(1)
@@ -58,16 +58,15 @@ def getimgurl(html, page=0, url=""):
 	except Exception as er:
 		ex = re.search("李組長眉頭一皺，快翻下一頁→", html)
 		if ex:
-			raise Exception("explicit_error_lostpage")
+			raise LostPageError
 		else:
 			raise er
+			
+class LostPageError(Exception): pass
 
 def errorhandler(er, ep):
-	"""
-	if er.args[0] == "explicit_error_lostpage":
-		raise comiccrawler.LastPageError
-	"""
-	pass
+	if type(er) == LostPageError:
+		raise comiccrawler.SkipEpisodeError
 
 def getnextpageurl(pagenumber, html, url=""):
 	base = re.search("(https?://[^/]+)", url).group(1)

@@ -83,4 +83,4 @@ def errorhandler(er, ep):
 	
 	if type(er) == comiccrawler.EmptyImageError:
 		ep.skip = True
-		raise comiccrawler.LastPageError
+		raise comiccrawler.SkipEpisodeError

@@ -275,17 +275,22 @@ class DownloadWorker(Worker):
 	def worker(self):
 		"""download worker"""
 		
+		# why so ugly? XD
 		try:
 			self.mission.lock.acquire()
 			self.download(self.mission, self.savepath)
+		except InterruptError:
+			self.mission.state = PAUSE
+			self.mission.lock.release()
+			self.callback(self.mission)
 		except Exception as er:
 			self.mission.state = ERROR
+			self.mission.lock.release()
 			self.callback(self.mission, er)
 		else:
-			self.mission.state = ANALYZED
-			self.callback(self.mission)
-		finally:
+			self.mission.state = FINISHED
 			self.mission.lock.release()
+			self.callback(self.mission)
 
 	def download(self, mission, savepath):
 		"""Start mission download. This method will call cls.crawlpage()
@@ -306,7 +311,8 @@ class DownloadWorker(Worker):
 				efd = os.path.join(savepath, safefilepath(mission.title))
 				fexp = safefilepath(ep.title) + "_{:03}"
 			else:
-				efd = os.path.join(savepath, safefilepath(mission.title), safefilepath(ep.title))
+				efd = os.path.join(savepath, safefilepath(mission.title), 
+						safefilepath(ep.title))
 				fexp = "{:03}"
 			
 			safeprint("Downloading ep {}".format(ep.title))
@@ -317,13 +323,9 @@ class DownloadWorker(Worker):
 				print("")
 				ep.complete = True
 				_evtcallback("DOWNLOAD_EP_COMPLETE", mission, ep)
-				"""
-			except InterruptError:
-				safeprint("Download interrupted.")
-				mission.state_(PAUSE)
-				self.crawler.save()
-				break
-				"""
+			except SkipEpisodeError:
+				safeprint("Something bad happened, skip the episode.")
+				continue
 		else:
 			safeprint("Mission complete!")
 			mission.state_(FINISHED)
@@ -493,9 +495,9 @@ class AnalyzeWorker(Worker):
 	def analyze(self, mission):
 		"""Analyze mission url."""
 		
+		# debug
 		self.removeDuplicateEP(mission)
-		# if mission.state in (ANALYZED, INIT):
-			# return
+		
 		safeprint("start analyzing {}".format(mission.url))
 		mission.state_(ANALYZING)
 
@@ -521,7 +523,7 @@ class AnalyzeWorker(Worker):
 					mission.episodelist.append(ep)
 			# check if there are incomplete ep
 			for ep in mission.episodelist:
-				if not ep.complete:
+				if not ep.complete and not ep.skip:
 					mission.state_(UPDATE)
 					mission.update = True
 					break
@@ -533,16 +535,18 @@ class AnalyzeWorker(Worker):
 		
 		safeprint("analyzed succeed!")
 
-# bunch of errors, may pack them later
+# bunch of errors
 class InterruptError(Exception): pass
 
 class ImageExistsError(Exception): pass
-			
+
 class LastPageError(Exception): pass
-		
+
 class TooManyRetryError(Exception): pass
 
 class EmptyImageError(Exception): pass
+
+class SkipEpisodeError(Exception): pass
 
 
 class FreeQue:
@@ -700,7 +704,7 @@ class DownloadManager(DownloadWorker):
 		"""add mission"""
 		
 		self.missionque.put(mission)
-		self.removeLibDuplicate()
+		# self.removeLibDuplicate()
 	
 	def worker(self):
 		"""overwrite, take mission from missionlist and download."""
@@ -883,7 +887,14 @@ class Library(AnalyzeWorker):
 		for m in self.libraryList.q:
 			if m.update:
 				self.controller.downloadManager.addmission(m)
-
+				
+	def exists(self, mission):
+		"""check duplicate mission url"""
+		
+		for m in self.libraryList.q:
+			if m.url == mission.url:
+				return m
+		return False
 		
 class ModuleManager:
 	"""Import all the downloader module.
@@ -1051,6 +1062,9 @@ class Controller:
 		m.url = url
 		m.downloader = downloader
 		
+		lm = self.library.exists(m)
+		if lm:
+			m = lm
 		AnalyzeWorker(m, self.iAnalyzeFinished).start()
 		
 	def iAnalyzeFinished(self, mission, error=None, er_msg=None):
