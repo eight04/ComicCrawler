@@ -62,20 +62,31 @@ def createdir(path):
 	
 	This function can handle sub-folder like 
 	"this_doesnt_exist\sure_this_doesnt_exist_either\I_want_to_create_this"
-	
 	"""
-	import os, re
+	import os, os.path
 	
 	path = os.path.normpath(path)
 	
-	dirpath = re.split(r"[\\/]+", path)
-	create = ""
-	for d in dirpath:
-		if not d:
-			continue
-		create += d + os.sep
-		if not os.path.exists(create):
-			os.mkdir(create)
+	try:
+		os.mkdir(path)
+	except FileExistsError:
+		pass
+	except FileNotFoundError as er:
+		if er.winerror == 3:
+			a, b = os.path.split(path)
+			createdir(a)
+			createdir(path)
+		else:
+			raise er
+	
+	# dirpath = re.split(r"[\\/]+", path)
+	# create = ""
+	# for d in dirpath:
+		# if not d:
+			# continue
+		# create += d + os.sep
+		# if not os.path.exists(create):
+			# os.mkdir(create)
 
 def safefilepath(s):
 	"""Return a safe directory name. Return string."""
@@ -293,6 +304,7 @@ class DownloadWorker(Worker):
 		for each episode.
 		
 		"""
+		import os.path
 		
 		safeprint("total {} episode.".format(len(mission.episodelist)))
 		for ep in mission.episodelist:
@@ -300,15 +312,14 @@ class DownloadWorker(Worker):
 				continue
 				
 			# deside wether to generate Episode folder, or it will put every 
-			# image file in one folder. Ex. pixiv.net
+			# images file in one folder. Ex. pixiv.net
 			if ("noepfolder" in mission.downloader.__dict__ and 
 					mission.downloader.noepfolder):
-				efd = "{}\\{}\\".format(savepath, safefilepath(mission.title))
+				efd = os.path.join(savepath, safefilepath(mission.title))
 				fexp = safefilepath(ep.title) + "_{:03}"
 			else:
-				efd = "{}\\{}\\{}\\".format(savepath, safefilepath(mission.title), safefilepath(ep.title))
+				efd = os.path.join(savepath, safefilepath(mission.title), safefilepath(ep.title))
 				fexp = "{:03}"
-			createdir(efd)
 			
 			safeprint("Downloading ep {}".format(ep.title))
 			try:
@@ -340,7 +351,7 @@ class DownloadWorker(Worker):
 		totalpages, episode.currentpageurl.
 		
 		"""
-		import time
+		import time, os, os.path
 		
 		downloader = mission.downloader
 		
@@ -375,7 +386,6 @@ class DownloadWorker(Worker):
 		ep.imgurls = imgurls
 		
 		# some file already in directory
-		import os
 		createdir(savepath)
 		downloadedlist = [ i.rpartition(".")[0] for i in os.listdir(savepath) ]
 		
@@ -408,7 +418,7 @@ class DownloadWorker(Worker):
 				
 				# file already exist
 				if fn in downloadedlist:
-					raise FileExistError
+					raise ImageExistsError
 					
 				safeprint("Downloading page {}: {}".format(
 						ep.currentpagenumber, imgurl))
@@ -419,7 +429,7 @@ class DownloadWorker(Worker):
 				if not ext:
 					raise Exception("Invalid image type.")
 					
-			except FileExistError:
+			except ImageExistsError:
 				safeprint("...page {} already exist".format(
 						ep.currentpagenumber))
 						
@@ -437,7 +447,7 @@ class DownloadWorker(Worker):
 				
 			else:
 				# everything is ok, save image
-				with open(savepath + fn + "." + ext, "wb") as f:
+				with open(os.path.join(savepath, "{}.{}".format(fn, ext)), "wb") as f:
 					f.write(oi)
 				
 			# call pause
@@ -521,7 +531,7 @@ class AnalyzeWorker(Worker):
 # bunch of errors, may pack them later
 class InterruptError(Exception): pass
 
-class FileExistError(Exception): pass
+class ImageExistsError(Exception): pass
 			
 class LastPageError(Exception): pass
 		
