@@ -476,9 +476,24 @@ class AnalyzeWorker(Worker):
 		finally:
 			self.mission.lock.release()
 
+	def removeDuplicateEP(self, mission):
+		"""remove duplicate episode"""
+		
+		list = []
+		for ep in mission.episodelist:
+			for e in list:
+				if ep.firstpageurl == e.firstpageurl:
+					print("duplicate")
+					break
+			else:
+				list.append(ep)
+		mission.episodelist = list
+	
+			
 	def analyze(self, mission):
 		"""Analyze mission url."""
 		
+		self.removeDuplicateEP(mission)
 		# if mission.state in (ANALYZED, INIT):
 			# return
 		safeprint("start analyzing {}".format(mission.url))
@@ -494,27 +509,29 @@ class AnalyzeWorker(Worker):
 		if not mission.episodelist:
 			# new mission
 			mission.episodelist = epList
+			mission.state_(ANALYZED)
 		else:
-			# re-analyze
+			# re-analyze, put new ep into eplist
 			for ep in epList:
 				for oep in mission.episodelist:
-					if oep.firstpageurl == ep.firstpageurl and oep.complete:
+					if oep.firstpageurl == ep.firstpageurl:
+						# found
 						break
 				else:
 					mission.episodelist.append(ep)
+			# check if there are incomplete ep
+			for ep in mission.episodelist:
+				if not ep.complete:
+					mission.state_(UPDATE)
 					mission.update = True
-			if not mission.update:
+					break
+			else:
 				mission.state_(FINISHED)
-				return
 		
 		if not mission.episodelist:
 			raise Exception("get episode list failed!")
 		
 		safeprint("analyzed succeed!")
-		if mission.update:
-			mission.state_(UPDATE)
-		else:
-			mission.state = ANALYZED
 
 # bunch of errors, may pack them later
 class InterruptError(Exception): pass
@@ -831,6 +848,7 @@ class Library(AnalyzeWorker):
 		"""overwrite, take mission from libraryList and analyze"""
 		
 		try:
+			update = False
 			for m in self.libraryList.q:
 				if m.state == DOWNLOADING:
 					continue
@@ -842,11 +860,16 @@ class Library(AnalyzeWorker):
 				else:
 					if m.update:
 						self.libraryList.lift((m, ))
+						update = True
 				finally:
 					m.lock.release()
 				self.pausecallback()
+			if update:
+				safeprint("Found update in library!")
+			else:
+				safeprint("No update in library")
 		except Exception as er:
-			safeprint("check update interrupt!\n", er)
+			safeprint("Check update interrupt!\n", er)
 		self.reset()
 			
 	def checkUpdate(self):
