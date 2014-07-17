@@ -4,8 +4,6 @@
 
 """
 
-import threading
-
 from tkinter import *
 from tkinter.ttk import *
 import tkinter.messagebox
@@ -27,9 +25,14 @@ STATE = {
 }
 
 class Dialog(Toplevel):
+	"""Dialog class"""
+	
 	def __init__(self, parent, title=None):
+		"""Create some base method and elements"""
+		
 		super().__init__(parent)
 		
+		# body
 		if title:
 			self.title(title)
 		self.parent = parent
@@ -38,34 +41,40 @@ class Dialog(Toplevel):
 		self.body = Frame(self)
 		self.body.pack()
 		
+		# button bar
 		box = Frame(self)
 		Button(box, text="確定", command=self.ok, default=ACTIVE).pack(side="left")
 		Button(box, text="取消", command=self.cancel).pack(side="left")
 		box.pack()
 		self.buttonbox = box
 
+		# bind event
 		self.bind("<Return>", self.ok)
 		self.bind("<Escape>", self.cancel)
-
+		
+		# show dialog and disable parent
 		self.grab_set()
 		self.protocol("WM_DELETE_WINDOW", self.cancel)
 		self.focus_set()
 
-	def buttonbox(self):
-		# add standard button box. override if you don't want the
-		# standard buttons
+	# def buttonbox(self):
+		# """add standard button box. 
+		
+		# override if you don't want the standard buttons
+		# """
 
-		box = Frame(self)
+		# box = Frame(self)
 
-		Button(box, text="確定", command=self.ok, default=ACTIVE).pack(side="left")
-		Button(box, text="取消", command=self.cancel).pack(side="left")
+		# Button(box, text="確定", command=self.ok, default=ACTIVE).pack(side="left")
+		# Button(box, text="取消", command=self.cancel).pack(side="left")
 
-		self.bind("<Return>", self.ok)
-		self.bind("<Escape>", self.cancel)
+		# self.bind("<Return>", self.ok)
+		# self.bind("<Escape>", self.cancel)
 
-		box.pack()
+		# box.pack()
 		
 	def ok(self, event=None):
+		"""When you press ok"""
 
 		if not self.validate():
 			self.initial_focus.focus_set() # put focus back
@@ -78,18 +87,25 @@ class Dialog(Toplevel):
 		self.cancel()
 
 	def cancel(self, event=None):
+		"""When you press cancel"""
 
 		# put focus back to the parent window
 		self.parent.focus_set()
 		self.destroy()
 
 	def validate(self):
-		return 1 # override
+		"""overwrite with your validate method here"""
+		
+		return 1
 
 	def apply(self):
-		pass # override
+		"""overwrite with your post data method"""
+		
+		pass
 
 	def wait(self):
+		"""wait the dialog to close"""
+		
 		self.wait_window(self)
 		return self.result
 	
@@ -107,10 +123,12 @@ class MainWindow(cc.Controller):
 		
 		Label(self.gRoot,text="輸入連結︰").pack(anchor="w")
 		
+		# url entry
 		entry_url = Entry(self.gRoot)
 		entry_url.pack(fill="x")
 		self.gEntry_url = entry_url
 		
+		# bunch of buttons
 		buttonbox = Frame(self.gRoot)
 		buttonbox.pack()
 		
@@ -134,12 +152,15 @@ class MainWindow(cc.Controller):
 		btnconfig.pack(side="left")
 		self.gBtnconfig = btnconfig
 		
+		# notebook
 		self.gNotebook = Notebook(self.gRoot)
 		self.gNotebook.pack(expand=True, fill="both")
 		
+		# download manager
 		frame = Frame(self.gNotebook)
 		self.gNotebook.add(frame, text="任務列表")
 		
+		# mission list
 		tv = Treeview(frame, columns=("name","host","state"))
 		tv.heading("#0", text="#")
 		tv.heading("name", text="任務")
@@ -151,6 +172,7 @@ class MainWindow(cc.Controller):
 		tv.pack(expand=True, fill="both")
 		self.gTv = tv
 		
+		# mission context menu
 		tvmenu = Menu(tv, tearoff=False)
 		tvmenu.add_command(label="刪除")
 		tvmenu.add_command(label="移至頂部")
@@ -159,9 +181,11 @@ class MainWindow(cc.Controller):
 		tvmenu.add_command(label="加入圖書館")
 		self.gTvmenu = tvmenu
 		
+		# library
 		frame = Frame(self.gNotebook)
 		self.gNotebook.add(frame, text="圖書館")
 		
+		# library buttons
 		btnBar = Frame(frame)
 		btnBar.pack()
 		
@@ -171,6 +195,7 @@ class MainWindow(cc.Controller):
 		self.gBtnDownloadUpdate = Button(btnBar, text="下載更新")
 		self.gBtnDownloadUpdate.pack(side="left")
 		
+		# library list
 		self.gLibTV = Treeview(frame, columns=("name","host","state"))
 		self.gLibTV.heading("#0", text="#")
 		self.gLibTV.heading("name", text="任務")
@@ -181,9 +206,11 @@ class MainWindow(cc.Controller):
 		self.gLibTV.column("state", width="70", anchor="center")
 		self.gLibTV.pack(expand=True, fill="both")
 		
+		# library context menu
 		self.gLibMenu = Menu(self.gLibTV, tearoff=False)
 		self.gLibMenu.add_command(label="刪除")
 	
+		# status bar
 		statusbar = Label(self.gRoot, text="Comic Crawler", anchor="e")
 		statusbar.pack(anchor="e")
 		self.gStatusbar = statusbar
@@ -197,23 +224,26 @@ class MainWindow(cc.Controller):
 		self.gRoot.mainloop()
 		
 	def sendToBucket(self, text):
+		"""hook with safeprint"""
+		
 		cc._evtcallback("MESSAGE", text)
 		
 	def tkloop(self):
+		"""get message from comiccrawler.messageBucket"""
+		
 		try:
 			while True:
 				message, args = cc.messageBucket.get_nowait()
 				self.message(message, args)
 		except queue.Empty:
 			pass
-		# except Exception as er:
-			# safeprint.safeprint("Tkloop error: {}".format(er))
 			
 		self.gRoot.after(100, self.tkloop)
 
 	def bindevent(self):
-		"""Binding event. Should I try to implement together?"""
+		"""Bind events"""
 		
+		# something about entry
 		_presp = ""
 		def trieveclipboard(event):
 			nonlocal _presp
@@ -233,6 +263,7 @@ class MainWindow(cc.Controller):
 			addurl()
 		self.gEntry_url.bind("<Return>", entrykeypress)
 		
+		# interface for download manager
 		def addurl():
 			self.iAddUrl(self.gEntry_url.get())
 			self.gEntry_url.delete(0, "end")
@@ -254,6 +285,7 @@ class MainWindow(cc.Controller):
 			self.iReloadConfig()
 		self.gBtnconfig["command"] = reloadconfig
 		
+		# interface for mission list
 		def tvdelete():
 			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
 				s = self.gTv.selection()
@@ -281,11 +313,12 @@ class MainWindow(cc.Controller):
 			mission = self.iidholder[s[0]]
 			self.iAddToLib(mission)
 		self.gTvmenu.entryconfig(4, command=tvAddToLib)
-	
+		
 		def tvmenucall(event):
 			self.gTvmenu.post(event.x_root, event.y_root)
 		self.gTv.bind("<Button-3>", tvmenucall)
 		
+		# interface for library
 		def libCheckUpdate():
 			self.iLibCheckUpdate()
 		self.gBtnUpdate["command"] = libCheckUpdate
@@ -294,6 +327,7 @@ class MainWindow(cc.Controller):
 			self.iLibDownloadUpdate()
 		self.gBtnDownloadUpdate["command"] = libDownloadUpdate
 		
+		# interface for library list
 		def libMenuDelete():
 			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
 				s = self.gLibTV.selection()
@@ -353,6 +387,8 @@ class MainWindow(cc.Controller):
 			self.libIdIndex[cid] = m
 		
 	def iAnalyzeFinished(self, mission, error=None, er_msg=None):
+		"""overwrite, send to message bucket"""
+		
 		cc._evtcallback("ANALYZED_FINISHED", mission, error, er_msg)
 	
 	def message(self, msg, args=None):
@@ -365,52 +401,40 @@ class MainWindow(cc.Controller):
 		elif msg is "MISSION_STATE_CHANGE":
 			self.tvrefresh()
 			self.libTvRefresh()
-			"""
-			for k in self.iidholder:
-				if self.iidholder[k] is mission:
-					cid = k
-					break
-					
-			self.gTv.set(cid, "state", STATE[mission.state])
-			if mission.state is cc.FINISHED:
-				self.gTv.item(cid, tags=["f"])
-			"""
+
 		elif msg is "MISSION_TITLE_CHANGE":
 			self.tvrefresh()
 			self.libTvRefresh()
-			"""
-			for k in self.iidholder:
-				if self.iidholder[k] is mission:
-					cid = k
-					break
-					
-			self.gTv.set(cid, "name", mission.title)
-			"""
+
 		elif msg is "MISSIONQUE_ARRANGE":
 			self.tvrefresh()
 			self.libTvRefresh()
 			
 		elif msg is "WORKER_TERMINATED":
 			mission, er, er_msg = args
+			
 			tkinter.messagebox.showerror(
 				"Comic Crawler", "下載中斷！\n{}".format(er_msg))
 				
 		elif msg is "ANALYZED_FINISHED":
 			mission, error, er_msg = args
+			
 			if error:
-				# import sys
 				tkinter.messagebox.showerror(
 					"Comic Crawler", "解析錯誤！\n{}".format(er_msg))
 				return
+				
 			if len(mission.episodelist) > 1 and not selectEp(self.gRoot, mission):
 				return
+				
 			self.iAddMission(mission)
-
 				
 		else:
 			pass
 
 def selectTitle(parent, mission):
+	"""change mission title dialog"""
+	
 	w = Dialog(parent)
 	
 	entry = Entry(w.body)
@@ -430,6 +454,8 @@ def selectTitle(parent, mission):
 	return ret
 	
 def selectEp(parent, mission):
+	"""select episode dialog"""
+	
 	w = Dialog(parent)
 	
 	xscrollbar = Scrollbar(w.body, orient="horizontal")
