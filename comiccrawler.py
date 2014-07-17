@@ -72,12 +72,9 @@ def createdir(path):
 	except FileExistsError:
 		pass
 	except FileNotFoundError as er:
-		if er.winerror == 3:
-			a, b = os.path.split(path)
-			createdir(a)
-			createdir(path)
-		else:
-			raise er
+		a, b = os.path.split(path)
+		createdir(a)
+		createdir(path)
 	
 	# dirpath = re.split(r"[\\/]+", path)
 	# create = ""
