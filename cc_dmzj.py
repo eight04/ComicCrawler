@@ -72,7 +72,9 @@ def getimgurls(html, url):
 	pages = execjs.eval(ctx.eval("pages"))
 	base = "http://images.dmzj.com/"
 	
-	return [base + page for page in pages if page]
+	# thumbs.db?!
+	# http://manhua.dmzj.com/zhuoyandexiana/3488-20.shtml
+	return [base + page for page in pages if page and not page.lower().endswith("thumbs.db")]
 	
 def errorhandler(er, ep):
 	"""errorhandler(error, episode) -> void

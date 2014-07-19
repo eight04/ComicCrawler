@@ -275,22 +275,22 @@ class DownloadWorker(Worker):
 	def worker(self):
 		"""download worker"""
 		
-		# why so ugly? XD
+		# warning there is a deadlock, 
+		# never do mission.lock.acquire in callback...
 		try:
 			self.mission.lock.acquire()
 			self.download(self.mission, self.savepath)
 		except InterruptError:
 			self.mission.state = PAUSE
-			self.mission.lock.release()
 			self.callback(self.mission)
 		except Exception as er:
 			self.mission.state = ERROR
-			self.mission.lock.release()
 			self.callback(self.mission, er)
 		else:
 			self.mission.state = FINISHED
-			self.mission.lock.release()
 			self.callback(self.mission)
+		finally:
+			self.mission.lock.release()
 
 	def download(self, mission, savepath):
 		"""Start mission download. This method will call cls.crawlpage()
@@ -375,6 +375,10 @@ class DownloadWorker(Worker):
 				
 		ep.imgurls = imgurls
 		
+		if imgurls and len(imgurls) < ep.currentpagenumber:
+			raise LastPageError
+
+		
 		# some file already in directory
 		createdir(savepath)
 		downloadedlist = [ i.rpartition(".")[0] for i in os.listdir(savepath) ]
@@ -443,6 +447,8 @@ class DownloadWorker(Worker):
 			# call pause
 			self.pausecallback()
 				
+			# something have to rewrite, check currentpage url rather than
+			# nextpage. Cuz sometime currentpage doesn't exist either.
 			if not nextpageurl:
 				ep.complete = True
 				raise LastPageError

@@ -9,7 +9,7 @@ from tkinter.ttk import *
 import tkinter.messagebox
 
 import comiccrawler as cc
-import safeprint
+from safeprint import safeprint, addcallback
 import queue
 
 STATE = {
@@ -219,7 +219,7 @@ class MainWindow(cc.Controller):
 		
 		self.bindevent()
 		self.messageq = queue.Queue()
-		safeprint.addcallback(self.sendToBucket)
+		addcallback(self.sendToBucket)
 		self.tkloop()
 		self.gRoot.mainloop()
 		
@@ -310,8 +310,12 @@ class MainWindow(cc.Controller):
 		
 		def tvAddToLib():
 			s = self.gTv.selection()
-			mission = self.iidholder[s[0]]
-			self.iAddToLib(mission)
+			# mission = self.iidholder[s[0]]
+			missions = [ self.iidholder[i] for i in s ]
+			titles = [ m.title for m in missions ]
+			for mission in missions:
+				self.iAddToLib(mission)
+			safeprint("已加入圖書館︰{}".format(", ".join(titles)))
 		self.gTvmenu.entryconfig(4, command=tvAddToLib)
 		
 		def tvmenucall(event):
