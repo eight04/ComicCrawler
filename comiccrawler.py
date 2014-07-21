@@ -163,6 +163,9 @@ class Mission:
 		
 		self.__dict__.update(state)
 		self.lock = Lock()
+		# backward compatibility
+		if not hasattr(self, "update"):
+			self.update = False
 		
 	def setTitle(self, title):
 		"""set new title"""
