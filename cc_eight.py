@@ -20,7 +20,7 @@ def getepisodelist(html, **kw):
 	html = html.replace("\n","")
 	ms = re.findall("<a href='#' onclick=\"cview\('(.+?)',(\d+?)\);return "
 			"false;\" id=\"\w+?\" class=\"\w+?\">(.+?)</a>", html, re.M)
-	safeprint(ms)
+	# safeprint(ms)
 	s = []
 	for m in ms:
 		url, catid, title = m
