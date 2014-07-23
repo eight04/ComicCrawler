@@ -179,6 +179,7 @@ class MainWindow(cc.Controller):
 		tvmenu.add_command(label="移至底部")
 		tvmenu.add_command(label="改名")
 		tvmenu.add_command(label="加入圖書館")
+		tvmenu.add_command(label="重新選擇集數")
 		self.gTvmenu = tvmenu
 		
 		# library
@@ -209,6 +210,7 @@ class MainWindow(cc.Controller):
 		# library context menu
 		self.gLibMenu = Menu(self.gLibTV, tearoff=False)
 		self.gLibMenu.add_command(label="刪除")
+		self.gLibMenu.add_command(label="重新選擇集數")
 	
 		# status bar
 		statusbar = Label(self.gRoot, text="Comic Crawler", anchor="e")
@@ -318,6 +320,15 @@ class MainWindow(cc.Controller):
 			safeprint("已加入圖書館︰{}".format(", ".join(titles)))
 		self.gTvmenu.entryconfig(4, command=tvAddToLib)
 		
+		def tvReselectEP():
+			s = self.gTv.selection()
+			# mission = self.iidholder[s[0]]
+			missions = [ self.iidholder[i] for i in s ]
+			titles = [ m.title for m in missions ]
+			for mission in missions:
+				selectEp(self.gRoot, mission)
+		self.gTvmenu.entryconfig(5, command=tvReselectEP)
+		
 		def tvmenucall(event):
 			self.gTvmenu.post(event.x_root, event.y_root)
 		self.gTv.bind("<Button-3>", tvmenucall)
@@ -329,6 +340,8 @@ class MainWindow(cc.Controller):
 		
 		def libDownloadUpdate():
 			self.iLibDownloadUpdate()
+			self.gNotebook.select(0)
+			self.iStart()
 		self.gBtnDownloadUpdate["command"] = libDownloadUpdate
 		
 		# interface for library list
@@ -337,6 +350,13 @@ class MainWindow(cc.Controller):
 				s = self.gLibTV.selection()
 				self.iLibRemove(*[self.libIdIndex[k] for k in s])
 		self.gLibMenu.entryconfig(0, command=libMenuDelete)
+		
+		def libMenuReselectEP():
+			s = self.gLibTV.selection()
+			missions = [self.libIdIndex[k] for k in s]
+			for mission in missions:
+				selectEp(self.gRoot, mission)
+		self.gLibMenu.entryconfig(1, command=libMenuReselectEP)
 		
 		def libMenuCall(event):
 			self.gLibMenu.post(event.x_root, event.y_root)

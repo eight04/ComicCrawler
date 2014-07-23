@@ -60,39 +60,46 @@ def getepisodelist(html, url=""):
 def getimgurls(html, url=""):
 	if "pixiv.user.loggedIn = true" not in html:
 		raise Exception("you didn't login!")
-	try:
-		img = re.search("\"works_display\"><[^>]+><img src=\"([^\"]+)\"", html).group(1)
+	
+	# image
+	rs = re.search("\"works_display\"><[^>]+><img src=\"([^\"]+)\"", html)
+	if rs:
+		img = rs.group(1)
 		pages = re.search("(\d+)P</li>", html)
 		if pages is None:
 			return [img.replace("_m", "")]
 		pages = int(pages.group(1))
 		s = [img.replace("_m", "_big_p{}".format(i)) for i in range(pages)]
 		return s
-	except Exception as er:
-		restrict = re.search('<section class="restricted-content">', html)
-		if restrict:
-			raise RestrictPageError
-		raise er
+		
+	# ugoku
+	rs = re.search(r"pixiv\.context\.ugokuIllustFullscreenData\s+= ([^;]+)", html)
+	if rs:
+		from execjs import eval
+		json = rs.group(1)
+		o = eval(json)
+		return [o["src"]]
+		
+	# restricted
+	rs = re.search('<section class="restricted-content">', html)
+	if rs:
+		raise SkipEpisodeError
+	
+	# error page
+	rs = re.search('class="error"', html)
+	if rs:
+		raise SkipEpisodeError
 
 class RestrictPageError(Exception):
 	pass
 		
 def errorhandler(er, ep):
-	if type(er) == RestrictPageError:
-		ep.skip = True
-		raise LastPageError
-		
+	
 	# http://i1.pixiv.net/img21/img/raven1109/10841650_big_p0.jpg
 	from urllib.error import HTTPError
 	if type(er) == HTTPError and er.code == 404 and "imgurls" in dir(ep):
 		p = ep.currentpagenumber - 1
 		ep.imgurls[p] = ep.imgurls[p].replace("_big_", "_")
-		return True
-		
-	# http://www.pixiv.net/member_illust.php?mode=medium&illust_id=43620872
-	if (type(er) == HTTPError and er.code == 404 and 
-			'span class="error"' in er.read().decode()):
-		ep.skip = True
 		return True
 
 def getnextpageurl(pagenumber, html, url=""):

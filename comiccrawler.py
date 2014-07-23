@@ -55,6 +55,9 @@ def getext(byte):
 	if h[:7] == b"Rar!\x1a\x07\x00":
 		return "rar"
 		
+	if h[:4] == b"PK\x03\x04":
+		return "zip"
+		
 	return None
 			
 def createdir(path):
@@ -328,6 +331,7 @@ class DownloadWorker(Worker):
 				_evtcallback("DOWNLOAD_EP_COMPLETE", mission, ep)
 			except SkipEpisodeError:
 				safeprint("Something bad happened, skip the episode.")
+				ep.skip = True
 				continue
 		else:
 			safeprint("Mission complete!")
@@ -363,6 +367,8 @@ class DownloadWorker(Worker):
 					imgurls = downloader.getimgurls(html, url=ep.firstpageurl)
 					if not imgurls:
 						raise EmptyImageError
+				except (LastPageError, SkipEpisodeError) as er:
+					raise er
 				except Exception as er:
 					safeprint("get imgurls failed: {}".format(er))
 					errorcount += 1
@@ -438,8 +444,8 @@ class DownloadWorker(Worker):
 					raise TooManyRetryError
 				self.pausecallback()
 				
-				if not downloader.errorhandler(er, ep):
-					time.sleep(5)
+				downloader.errorhandler(er, ep)
+				time.sleep(5)
 				continue
 				
 			else:
@@ -894,7 +900,7 @@ class Library(AnalyzeWorker):
 		"""send to controller"""
 		
 		for m in self.libraryList.q:
-			if m.update:
+			if m.state == UPDATE:
 				self.controller.downloadManager.addmission(m)
 				
 	def exists(self, mission):
