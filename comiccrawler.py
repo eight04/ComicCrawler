@@ -923,7 +923,7 @@ class ModuleManager:
 		import importlib, os
 		self.controller = controller
 		self.dlHolder = {}
-		modsfile = [mod.replace(".py","") for mod in os.listdir() if re.search("^cc_.+\.py$", mod)]
+		modsfile = [mod.replace(".py","") for mod in os.listdir(controller.scriptDir) if re.search("^cc_.+\.py$", mod)]
 		mods = [importlib.import_module(mod) for mod in modsfile]
 		for d in mods:
 			for dm in d.domain:
@@ -964,12 +964,13 @@ class ModuleManager:
 				return self.dlHolder[d]
 		return None
 		
-		
 class Controller:
 	"""workflow logic"""
 	
 	def __init__(self):
 		"""Load class -> view -> unload class"""
+		
+		self.scriptDir = os.path.dirname(os.path.realpath(__file__))
 		
 		self.loadClasses()
 		self.view()
@@ -1156,4 +1157,45 @@ class Controller:
 		self.library.sendToDownloadManager()
 		
 if __name__ == "__main__":
-	Controller()
+	
+	class CLI:
+		def __init__(self):
+			import os
+			
+			self.workingDir = os.getcwd()
+			self.scriptDir = os.path.dirname(os.path.realpath(__file__))
+			os.chdir(self.scriptDir)
+			
+			self.configManager = ConfigManager("setting.ini")
+			self.moduleManager = ModuleManager(self)
+			
+			from sys import argv
+			if len(argv) <= 1:
+				return
+				
+			if argv[1] == "domains":
+				self.listDomains()
+			elif argv[1] == "download":	
+				kw = {
+					"url": argv[2],
+					"savepath": self.workingDir
+				}
+				if len(argv) >= 5 and argv[3] == "-d":
+					kw["savepath"] = os.path.join(self.workingDir, argv[4])
+				
+				self.start(**kw)
+				
+		def start(self, url=None, savepath="."):
+			if not url:
+				return
+				
+			mission = Mission()
+			mission.url = url
+			mission.downloader = self.moduleManager.getDownloader(url)
+			AnalyzeWorker().analyze(mission)
+			DownloadWorker().download(mission, savepath)
+			
+		def listDomains(self):
+			safeprint("Valid domains:\n{}".format(", ".join(self.moduleManager.getdlHolder())))
+
+	CLI()
