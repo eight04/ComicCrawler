@@ -1,4 +1,4 @@
-Comic Crawler Readme v.20140417
+Comic Crawler Readme v.20140726
 
 
 使用需求:
