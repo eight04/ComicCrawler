@@ -111,7 +111,7 @@ class Dialog(Toplevel):
 	
 class MainWindow(cc.Controller):
 	"""Main GUI window class."""
-		
+	
 	def view(self):
 		"""Draw the window."""
 		self.gRoot = Tk()
@@ -222,7 +222,9 @@ class MainWindow(cc.Controller):
 		self.bindevent()
 		self.messageq = queue.Queue()
 		addcallback(self.sendToBucket)
-		self.tkloop()
+		self.tvrefresh()
+		self.libTvRefresh()
+		self.gRoot.after(100, self.tkloop)
 		self.gRoot.mainloop()
 		
 	def sendToBucket(self, text):
@@ -404,6 +406,7 @@ class MainWindow(cc.Controller):
 		ids = tv.get_children()
 		tv.delete(*ids)
 		self.libIdIndex = {}
+		
 		list = self.library.libraryList.q
 		for m in list:
 			cid = tv.insert("","end",
@@ -423,16 +426,35 @@ class MainWindow(cc.Controller):
 			self.gStatusbar["text"] = text
 	
 		elif msg is "MISSION_STATE_CHANGE":
-			self.tvrefresh()
-			self.libTvRefresh()
+			mission, = args
+			if "iidholder" in vars(self):
+				for cid, m in self.iidholder.items():
+					if m is mission:
+						self.gTv.set(cid, "state", STATE[m.state])
+			
+			if "libIdIndex" in vars(self):
+				for cid, m in self.libIdIndex.items():
+					if m is mission:
+						self.gLibTV.set(cid, "state", STATE[m.state])
 
 		elif msg is "MISSION_TITLE_CHANGE":
-			self.tvrefresh()
-			self.libTvRefresh()
+			mission, = args
+			if "iidholder" in vars(self):
+				for cid, m in self.iidholder.items():
+					if m is mission:
+						self.gTv.set(cid, "name", m.title)
+			
+			if "libIdIndex" in vars(self):
+				for cid, m in self.libIdIndex.items():
+					if m is mission:
+						self.gLibTV.set(cid, "name", m.title)
 
 		elif msg is "MISSIONQUE_ARRANGE":
-			self.tvrefresh()
-			self.libTvRefresh()
+			q, = args
+			if q == self.downloadManager.missionque.q:
+				self.tvrefresh()
+			if q == self.library.libraryList.q:
+				self.libTvRefresh()
 			
 		elif msg is "WORKER_TERMINATED":
 			mission, er, er_msg = args

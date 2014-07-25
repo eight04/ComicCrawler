@@ -7,6 +7,8 @@ Python 3.4 up
 	下載網站︰
 	https://www.python.org/
 	
+	記得要選「Add python.exe to path」，否則安裝 PyExecJS 時會找不到 pip 命令。
+	
 PyExecJS
 	1. 先安裝完 Python
 	2. 按 Windows + R，輸入 cmd 後按 Enter
