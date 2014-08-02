@@ -57,22 +57,6 @@ class Dialog(Toplevel):
 		self.protocol("WM_DELETE_WINDOW", self.cancel)
 		self.focus_set()
 
-	# def buttonbox(self):
-		# """add standard button box. 
-		
-		# override if you don't want the standard buttons
-		# """
-
-		# box = Frame(self)
-
-		# Button(box, text="確定", command=self.ok, default=ACTIVE).pack(side="left")
-		# Button(box, text="取消", command=self.cancel).pack(side="left")
-
-		# self.bind("<Return>", self.ok)
-		# self.bind("<Escape>", self.cancel)
-
-		# box.pack()
-		
 	def ok(self, event=None):
 		"""When you press ok"""
 
