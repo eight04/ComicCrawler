@@ -970,6 +970,7 @@ class Controller:
 	def __init__(self):
 		"""Load class -> view -> unload class"""
 		
+		import os
 		self.scriptDir = os.path.dirname(os.path.realpath(__file__))
 		
 		self.loadClasses()

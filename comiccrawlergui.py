@@ -451,9 +451,9 @@ class MainWindow(cc.Controller):
 
 		elif msg is "MISSIONQUE_ARRANGE":
 			q, = args
-			if q == self.downloadManager.missionque.q:
+			if q == self.downloadManager.missionque:
 				self.tvrefresh()
-			if q == self.library.libraryList.q:
+			if q == self.library.libraryList:
 				self.libTvRefresh()
 			
 		elif msg is "WORKER_TERMINATED":
