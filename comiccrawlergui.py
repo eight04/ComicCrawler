@@ -180,8 +180,20 @@ class MainWindow(cc.Controller):
 		self.gBtnDownloadUpdate = Button(btnBar, text="下載更新")
 		self.gBtnDownloadUpdate.pack(side="left")
 		
-		# library list
-		self.gLibTV = Treeview(frame, columns=("name","host","state"))
+		# library treeview scrollbar container
+		self.gLibFrame = Frame(frame)
+		self.gLibFrame.pack(expand=True, fill="both")
+		
+		# scrollbar
+		self.gLibScrbar = Scrollbar(self.gLibFrame)
+		self.gLibScrbar.pack(side="right", fill="y")
+	
+		# library treeview
+		self.gLibTV = Treeview(
+			self.gLibFrame, 
+			columns=("name","host","state"), 
+			yscrollcommand=self.gLibScrbar.set
+		)
 		self.gLibTV.heading("#0", text="#")
 		self.gLibTV.heading("name", text="任務")
 		self.gLibTV.heading("host", text="主機")
@@ -189,13 +201,15 @@ class MainWindow(cc.Controller):
 		self.gLibTV.column("#0", width="25")
 		self.gLibTV.column("host", width="50", anchor="center")
 		self.gLibTV.column("state", width="70", anchor="center")
-		self.gLibTV.pack(expand=True, fill="both")
+		self.gLibTV.pack(side="left", expand=True, fill="both")
+		
+		self.gLibScrbar.config(command=self.gLibTV.yview)
 		
 		# library context menu
 		self.gLibMenu = Menu(self.gLibTV, tearoff=False)
 		self.gLibMenu.add_command(label="刪除")
 		self.gLibMenu.add_command(label="重新選擇集數")
-	
+		
 		# status bar
 		statusbar = Label(self.gRoot, text="Comic Crawler", anchor="e")
 		statusbar.pack(anchor="e")
@@ -407,6 +421,7 @@ class MainWindow(cc.Controller):
 		
 		if msg is "MESSAGE":
 			text, = args
+			text = text.splitlines()[-1]
 			self.gStatusbar["text"] = text
 	
 		elif msg is "MISSION_STATE_CHANGE":
