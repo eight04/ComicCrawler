@@ -38,7 +38,8 @@ def getepisodelist(html, url=""):
 	s = []
 	base = re.search("(https?://.+)\?", url).group(1)
 	while True:
-		ms = re.findall("<a href=\"([^\"]+)\" class=\"work ?\"><div class=\"_layout-thumbnail(?: ugoku-illust)?\"><img[^>]+></div><h1 class=\"title\" title=\"([^\"]+)\">", html)
+		# ms = re.findall("<a href=\"([^\"]+)\" class=\"work ?\"><div class=\"_layout-thumbnail(?: ugoku-illust)?\"><img[^>]+></div><h1 class=\"title\" title=\"([^\"]+)\">", html)
+		ms = re.findall(r'<a href="([^"]+)" class="work ?"><div[^>]+><img[^>]+></div><h1 class="title" title="([^"]+)">', html)
 		# safeprint(ms)
 		for m in ms:
 			url, title = m
