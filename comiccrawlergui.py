@@ -144,8 +144,12 @@ class MainWindow(cc.Controller):
 		frame = Frame(self.gNotebook)
 		self.gNotebook.add(frame, text="任務列表")
 		
+		# mission list scrollbar		
+		self.gTvScrbar = Scrollbar(frame)
+		self.gTvScrbar.pack(side="right", fill="y")
+		
 		# mission list
-		tv = Treeview(frame, columns=("name","host","state"))
+		tv = Treeview(frame, columns=("name","host","state"), yscrollcommand=self.gTvScrbar.set)
 		tv.heading("#0", text="#")
 		tv.heading("name", text="任務")
 		tv.heading("host", text="主機")
@@ -155,6 +159,8 @@ class MainWindow(cc.Controller):
 		tv.column("state", width="70", anchor="center")
 		tv.pack(expand=True, fill="both")
 		self.gTv = tv
+		
+		self.gTvScrbar.config(command=tv.yview)
 		
 		# mission context menu
 		tvmenu = Menu(tv, tearoff=False)
