@@ -19,21 +19,9 @@ domain = ["konachan.com"]
 name = "Konachan"
 noepfolder = True
 
-"""
-def loadconfig(config):
-	if name not in config:
-		config[name] = {}
-	config = config[name]
-	if "SESSID" in config:
-		global header
-		header["Cookie"] = "PHPSESSID=" + config["SESSID"]
-	else:
-		config["SESSID"] = "請輸入Cookie中的PHPSESSID"
-"""
-
 def gettitle(html, **kw):
-	title = re.search(r"<title>/?(.+?) \|", html).group(1) + " [konachan]"
-	return title
+	title = re.search(r"<title>/?(.+?) \|", html).group(1)
+	return "[konachan] " + title
 	
 def getepisodelist(html, url=""):
 	s = []
