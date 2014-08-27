@@ -91,7 +91,8 @@ def safeurl(url):
 	path = url.replace(base, "")
 	def u(match):
 		return urllib.parse.quote(match.group())
-	path = re.sub("[\u0080-\uffff]+", u, path)
+	path = re.sub("[\u0080-\uffff \[\]]+", u, path)
+	# safeprint(base + path)
 	return base + path
 	
 def safeheader(header):
@@ -876,6 +877,7 @@ class Library(AnalyzeWorker):
 					self.analyze(m)
 				except Exception as er:
 					safeprint("analyze failed!\n", er)
+					m.state_(ERROR)
 				else:
 					if m.update:
 						self.libraryList.lift((m, ))
