@@ -832,11 +832,23 @@ class Library(AnalyzeWorker):
 		super().__init__()
 		self.controller = controller
 		self.libraryList = FreeQue()
+		self.loadconfig()
 		
 		self.load()
 		self.controller.downloadManager.removeLibDuplicate()
-		self.checkUpdate()
+		if self.setting["libraryautocheck"] == "true":
+			self.checkUpdate()
+
+	def loadconfig(self):
+		"""Load config from controller. Set default"""
 		
+		manager = self.controller.configManager
+		self.setting = manager.get()["DEFAULT"]
+		default = {
+			"libraryautocheck": "true"
+		}
+		manager.apply(self.setting, default)
+
 	def load(self):
 		"""load libraryList"""
 		
