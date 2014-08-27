@@ -16,7 +16,7 @@ header = {
 	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0",
 	"Cookie": "isAdult=1"
 }
-domain = ["www.dm5.com"]
+domain = ["www.dm5.com", "tel.dm5.com"]
 name = "動漫屋"
 
 def gettitle(html, **kw):
