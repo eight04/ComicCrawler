@@ -8,7 +8,7 @@ Ex:
 """
 
 import re
-from comiccrawler import Episode, ConfigManager, grabhtml, LastPageError
+from comiccrawler import Episode, ConfigManager, grabhtml, LastPageError, SkipEpisodeError
 from safeprint import safeprint
 
 header = {
@@ -89,6 +89,11 @@ def getimgurls(html, url=""):
 	# error page
 	rs = re.search('class="error"', html)
 	if rs:
+		raise SkipEpisodeError
+		
+	# id doesn't exist
+	rs = re.search("pixiv.context.illustId", html)
+	if not rs:
 		raise SkipEpisodeError
 
 class RestrictPageError(Exception):
