@@ -551,19 +551,20 @@ class AnalyzeWorker(Worker):
 		
 		safeprint("analyzed succeed!")
 
-# bunch of errors
-class InterruptError(Exception): pass
+# Error classes
+class Error(Exception): pass
 
-class ImageExistsError(Exception): pass
+class InterruptError(Error): pass
 
-class LastPageError(Exception): pass
+class ImageExistsError(Error): pass
 
-class TooManyRetryError(Exception): pass
+class LastPageError(Error): pass
 
-class EmptyImageError(Exception): pass
+class TooManyRetryError(Error): pass
 
-class SkipEpisodeError(Exception): pass
+class EmptyImageError(Error): pass
 
+class SkipEpisodeError(Error): pass
 
 class FreeQue:
 	"""Mission queue data class."""
@@ -648,7 +649,6 @@ class FreeQue:
 		f = open(path, "wb")
 		pickle.dump(self.q, f)
 
-		
 class ConfigManager:
 	"""Load config for other classes"""
 
@@ -691,11 +691,13 @@ class ConfigManager:
 class DownloadManager(DownloadWorker):
 	"""DownloadManager class. Maintain the mission list."""
 	
-	def __init__(self, controller):
+	def __init__(self, moduleManager=None, configManager=None):
 		"""set controller"""
 	
 		super().__init__()
-		self.controller = controller
+		# self.controller = controller
+		self.moduleManager = moduleManager
+		self.configManager = configManager
 		self.missionque = FreeQue()
 		self.skippagewhenfailed = False
 		
@@ -705,7 +707,7 @@ class DownloadManager(DownloadWorker):
 	def loadconfig(self):
 		"""Load config from controller. Set default"""
 		
-		manager = self.controller.configManager
+		manager = self.configManager
 		self.setting = manager.get()["DEFAULT"]
 		default = {
 			"savepath": "download",
@@ -803,46 +805,47 @@ class DownloadManager(DownloadWorker):
 			_evtcallback("DAT_LOAD_FAILED", er)
 		else:
 			for m in self.missionque.q:
-				m.downloader = self.controller.moduleManager.getDownloader(m.url)
+				m.downloader = self.moduleManager.getDownloader(m.url)
 			print("Session loaded success.")
-		self.removeLibDuplicate()
+		# self.removeLibDuplicate()
 		
-	def removeLibDuplicate(self):
-		"""replace duplicate with library one"""
+	# def removeLibDuplicate(self):
+		# """replace duplicate with library one"""
 		
-		if "library" not in vars(self.controller):
-			return False
+		# if "library" not in vars(self.controller):
+			# return False
 			
-		library = self.controller.library
-		mqlen = len(self.missionque.q)
-		for i in range(mqlen):
-			for lm in library.libraryList.q:
-				if self.missionque.q[i].url == lm.url:
-					self.missionque.q[i] = lm
-					break
-		
-
+		# library = self.controller.library
+		# mqlen = len(self.missionque.q)
+		# for i in range(mqlen):
+			# for lm in library.libraryList.q:
+				# if self.missionque.q[i].url == lm.url:
+					# self.missionque.q[i] = lm
+					# break
 		
 class Library(AnalyzeWorker):
 	""" Library"""
 	
-	def __init__(self, controller):
+	def __init__(self, configManager = None, moduleManager = None, downloadManager = None):
 		"""init"""
 	
 		super().__init__()
-		self.controller = controller
+		# self.controller = controller
+		self.configManager = configManager
+		self.moduleManager = moduleManager
+		self.downloadManager = downloadManager
 		self.libraryList = FreeQue()
 		self.loadconfig()
 		
 		self.load()
-		self.controller.downloadManager.removeLibDuplicate()
+		self.downloadManager.removeLibDuplicate()
 		if self.setting["libraryautocheck"] == "true":
 			self.checkUpdate()
 
 	def loadconfig(self):
 		"""Load config from controller. Set default"""
 		
-		manager = self.controller.configManager
+		manager = self.configManager
 		self.setting = manager.get()["DEFAULT"]
 		default = {
 			"libraryautocheck": "true"
@@ -854,7 +857,7 @@ class Library(AnalyzeWorker):
 		
 		self.libraryList.load("library.dat")
 		for m in self.libraryList.q:
-			m.downloader = self.controller.moduleManager.getDownloader(m.url)
+			m.downloader = self.moduleManager.getDownloader(m.url)
 			
 	def save(self):
 		"""save library list"""
@@ -915,7 +918,7 @@ class Library(AnalyzeWorker):
 		
 		for m in self.libraryList.q:
 			if m.state == UPDATE:
-				self.controller.downloadManager.addmission(m)
+				self.downloadManager.addmission(m)
 				
 	def exists(self, mission):
 		"""check duplicate mission url"""
@@ -933,24 +936,40 @@ class ModuleManager:
 	
 	"""
 	
-	def __init__(self, controller):
-		import importlib, os
-		self.controller = controller
+	def __init__(self, configManager = None):
+		import os
+		self.configManager = configManager
 		self.dlHolder = {}
-		modsfile = [mod.replace(".py","") for mod in os.listdir(controller.scriptDir) if re.search("^cc_.+\.py$", mod)]
-		mods = [importlib.import_module(mod) for mod in modsfile]
-		for d in mods:
-			for dm in d.domain:
-				self.dlHolder[dm] = d
-		self.mods = mods
+		self.mods = []
+		self.mod_dir = os.path.dirname(os.path.realpath(__file__))
 		
 		self.loadconfig()
+		self.loadMods()
+		self.registHolders()
+		
+	def loadMods(self):
+		"""Load mods to self.mods"""
+		import importlib
+		
+		for f in os.listdir(self.mod_dir):
+			if not re.search("^cc_.+\.py$", mod):
+				continue
+			mod = f.replace(".py","")
+			self.mods.append(importlib.import_module(mod))
+		
+	def registHolders(self):
+		"""Regist domain with mod to self.dlHolder"""
+		
+		for mod in mods:
+			for url in mod.domain:
+				self.dlHolder[url] = mod
+
 		
 	def loadconfig(self):
 		"""Load setting.ini and set up module.
 		"""
 	
-		config = self.controller.configManager.get()
+		config = self.configManager.get()
 		for d in self.mods:
 			if "loadconfig" in d.__dict__:
 				d.loadconfig(config)
