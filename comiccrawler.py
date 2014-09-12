@@ -809,19 +809,16 @@ class DownloadManager(DownloadWorker):
 			print("Session loaded success.")
 		# self.removeLibDuplicate()
 		
-	# def removeLibDuplicate(self):
-		# """replace duplicate with library one"""
+	def replaceDuplicate(self, list):
+		"""replace duplicate with library one"""
 		
-		# if "library" not in vars(self.controller):
-			# return False
+		if "library" not in vars(self.controller):
+			return False
 			
-		# library = self.controller.library
-		# mqlen = len(self.missionque.q)
-		# for i in range(mqlen):
-			# for lm in library.libraryList.q:
-				# if self.missionque.q[i].url == lm.url:
-					# self.missionque.q[i] = lm
-					# break
+		for mission in self.get():
+			for new_mission in list:
+				if mission.url == new_mission.url:
+					mission = new_mission
 		
 class Library(AnalyzeWorker):
 	""" Library"""
@@ -841,6 +838,11 @@ class Library(AnalyzeWorker):
 		self.downloadManager.removeLibDuplicate()
 		if self.setting["libraryautocheck"] == "true":
 			self.checkUpdate()
+			
+	def get(self):
+		"""Get queue"""
+		
+		return self.libraryList.q
 
 	def loadconfig(self):
 		"""Load config from controller. Set default"""
@@ -1003,9 +1005,6 @@ class Controller:
 	def __init__(self):
 		"""Load class -> view -> unload class"""
 		
-		import os
-		self.scriptDir = os.path.dirname(os.path.realpath(__file__))
-		
 		self.loadClasses()
 		self.view()
 		self.unloadClasses()
@@ -1014,12 +1013,19 @@ class Controller:
 		"""Load classes"""
 		
 		self.configManager = ConfigManager("setting.ini")
-		self.moduleManager = ModuleManager(self)
-		self.downloadManager = DownloadManager(self)
-		self.library = Library(self)
+		self.moduleManager = ModuleManager(configManager=self.configManager)
+		self.downloadManager = DownloadManager(
+			configManager = self.configManager, 
+			moduleManager = self.moduleManager
+		)
+		self.library = Library(
+			configManager = self.configManager,
+			moduleManager = self.moduleManager,
+			downloadManager = self.downloadManager
+		)
 		
 		self.configManager.save()
-		self.downloadManager.removeLibDuplicate()
+		self.downloadManager.replaceDuplicate(self.library.get())
 		
 	def unloadClasses(self):
 		"""unload classes"""
