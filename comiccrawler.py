@@ -219,15 +219,17 @@ class Episode:
 		self.errorpages = 0
 		self.totalpages = 0
 
-# message flag
+		
+"""Message flag"""
+
 BUBBLE = 1
 BROADCAST = 2
 		
 class Worker:
-	"""wrap Thread class
+	"""Wrap Thread class
 	
-	Inherit this class so you can run as thread.
-	It will auto reset after stopping. So it could start again.
+	Threading library. Use queue to past message and with child/parent thread
+	implement.
 	"""
 	
 	def __init__(self, parent):
@@ -241,9 +243,12 @@ class Worker:
 		
 		flags: BUBBLE/BROADCAST
 		"""
+		
 		self.messageBucket.put((message, param, flag))
 		
 	def transferMessage(self, message, param, flag):
+		"""Bubble and broadcast"""
+		
 		if BUBBLE & flag:
 			self.parent.message((message, param, BUBBLE))
 			
@@ -252,18 +257,25 @@ class Worker:
 				thread.message(message, param, BROADCAST)
 	
 	def _onMessage(self, message, param, flag)
+		"""Message holder container"""
+		
 		self.transferMessage(message, param, flag)
 		
 		ret = onMessage(message, param)
+		ret2 = _onMessageDefault(message, param)
+		
+		return ret or ret2
+		
+	def _onMessageDefault(self, message, param):
+		"""Default message handler"""
 		
 		if message == "STOP_THREAD":
 			raise InterruptError
 			
 		if message == "CHILD_THREAD_END":
 			self.childThreads.remove(param)
-			
-		return ret
-		
+			return param
+
 	def onMessage(self, message, param):
 		"""Should be overwrite"""
 		pass
@@ -273,6 +285,7 @@ class Worker:
 		
 		self.wait(5) -> wait 5 sec
 		self.wait("MSG") -> wait for message "MSG"
+		self.wait("MSG", param) -> wait for message "MSG" and recieved_param == param
 		"""
 		
 		if type(arg) in [int, float]:
@@ -306,11 +319,11 @@ class Worker:
 				self.messageCached.append((message, ret))
 
 	def callback(self, *args, **kwargs):
-		"""Sould be overwrite"""
+		"""Should be overwrite"""
 		pass
 		
 	def _worker(self):
-		"""Real target to pass to threading"""
+		"""Real target to pass to threading.Thread"""
 
 		self.running = True
 		
@@ -325,10 +338,20 @@ class Worker:
 			self.callback()
 		except Exception as er:
 			self.error.put(er)
-			
-		self.running = False
-		self.parent.message("CHILD_THREAD_END", self)		
 		
+		self.stopChildThread()
+		while len(self.childThreads):
+			self.wait("CHILD_THREAD_END")
+		
+		self.running = False
+		self.parent.message("CHILD_THREAD_END", self)
+		
+	def stopChildThread(self):
+		"""Stop all child threads"""
+		
+		for thread in self.childThreads:
+			thread.stop()
+
 	def worker(self):
 		"""should be overwrite"""
 		pass
