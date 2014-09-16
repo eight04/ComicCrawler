@@ -127,6 +127,27 @@ def grabimg(url, hd={}):
 	req = urllib.request.Request(url, headers=hd)
 	rs = urllib.request.urlopen(req, timeout=20)
 	return rs.read()
+	
+class HTMLGrabber(Worker):
+	def __init__(self, url, header={}, encode=None):
+		super().__init__()
+		
+		self.url = url
+		self.header = header
+		self.encode = encode
+		
+	def worker(self):
+		self.html = grabhtml(self.url, self.header, self.encode)
+		
+class ImageGrabber(Worker):
+	def __init__(self, url, header={}):
+		super().__init__()
+		
+		self.url = url
+		self.header = header
+		
+	def worker(self):
+		self.image = grabimg(self.url, self.header)
 
 class Mission:
 	"""Mission data class. Contains a mission's information."""
@@ -198,6 +219,9 @@ class Episode:
 		self.errorpages = 0
 		self.totalpages = 0
 
+# message flag
+BUBBLE = 1
+BROADCAST = 2
 		
 class Worker:
 	"""wrap Thread class
@@ -206,33 +230,81 @@ class Worker:
 	It will auto reset after stopping. So it could start again.
 	"""
 	
-	def __init__(self, callback=None):
+	def __init__(self, parent):
 		"""init"""
 		
-		if callable(callback):
-			self.callback = callback
-		self.running = False
-		self.messageBucket = queue.Queue()
-		self.threading = None
-		slef.error = queue.Queue()
+		self.parent = parent
+		self.reset()
 		
-	def message(self, *args):
-		"""Put message into messagBucket"""
+	def message(self, message, param=None, flag=0):
+		"""Put message into messagBucket
 		
-		self.messageBucket.put(args)
+		flags: BUBBLE/BROADCAST
+		"""
+		self.messageBucket.put((message, param, flag))
 		
-	def wait(self, timeout=None):
-		"""Wait message"""
+	def transferMessage(self, message, param, flag):
+		if BUBBLE & flag:
+			self.parent.message((message, param, BUBBLE))
+			
+		if BROADCAST & flag:
+			for thread in self.childThreads:
+				thread.message(message, param, BROADCAST)
+	
+	def _onMessage(self, message, param, flag)
+		self.transferMessage(message, param, flag)
 		
-		try:
-			message = self.messageBucket.get(timeout=timeout)
-		except queue.Empty:
-			pass
-		else:
-			if message[0] == "STOP_THREAD":
-				raise InterruptError
-		return message
+		ret = onMessage(message, param)
 		
+		if message == "STOP_THREAD":
+			raise InterruptError
+			
+		if message == "CHILD_THREAD_END":
+			self.childThreads.remove(param)
+			
+		return ret
+		
+	def onMessage(self, message, param):
+		"""Should be overwrite"""
+		pass
+
+	def wait(self, arg, param=None):
+		"""Wait message
+		
+		self.wait(5) -> wait 5 sec
+		self.wait("MSG") -> wait for message "MSG"
+		"""
+		
+		if type(arg) in [int, float]:
+			import time
+			
+			while True:
+				timeIn = time.time()
+				try:
+					message = self.messageBucket.get(timeout=arg)
+				except queue.Empty:
+					return
+				else:
+					ret = self._onMessage(*message)
+					self.messageCached.append((message, ret))
+					arg -= time.time() - timeIn
+				
+		elif type(arg) is str:
+			cached = None
+			for cache in self.messageCached:
+				if cache[0][0] == arg and (not param or param == cache[0][1]):
+					cached = cache
+			if cached:
+				self.messageCached.remove(cached)
+				return cached[1]
+				
+			while True:
+				message = self.messageBucket.get()
+				ret = self._onMessage(*message)
+				if message[0] == arg and (not param or param == message[1]):
+					return ret
+				self.messageCached.append((message, ret))
+
 	def callback(self, *args, **kwargs):
 		"""Sould be overwrite"""
 		pass
@@ -240,6 +312,8 @@ class Worker:
 	def _worker(self):
 		"""Real target to pass to threading"""
 
+		self.running = True
+		
 		try:
 			self.worker()
 		except InterruptError:
@@ -252,7 +326,8 @@ class Worker:
 		except Exception as er:
 			self.error.put(er)
 			
-		self.reset()
+		self.running = False
+		self.parent.message("CHILD_THREAD_END", self)		
 		
 	def worker(self):
 		"""should be overwrite"""
@@ -264,31 +339,37 @@ class Worker:
 
 		if self.running:
 			return False
-		self.running = True
-		self.threading = threading.Thread(target=self.worker)
+		self.threading = threading.Thread(target=self._worker)
 		self.threading.start()
+		return self
 		
 	def reset(self):
 		"""reset state so you can start it again"""
 
 		if self.running:
 			return
-		self.running = False
 		self.messageBucket = queue.Queue()
 		self.threading = None
 		self.error = queue.Queue()
+		self.childThreads = set()
+		self.messageCached = []
 	
 	def stop(self):
 		"""Warning! stop() won't block. 
 		
 		you should use join() to ensure the thread was killed.
 		"""
-		self.message("STOP_THREAD")
+		self.message("STOP_THREAD", None, BROADCAST)
 		
 	def join(self):
 		"""thread join method."""
 
 		self.threading.join()
+		
+	def addChildThread(self, thread):
+		"""Broadcast message to child"""
+		
+		self.childThreads.add(thread)
 
 		
 class DownloadWorker(Worker):
@@ -320,6 +401,25 @@ class DownloadWorker(Worker):
 			self.callback(self.mission)
 		finally:
 			self.mission.lock.release()
+			
+	class MyHTMLGrabber(HTMLGrabber):
+		def __init__(self, downloader, url, header={}):
+			super().__init__(url, header)
+			
+			self.downloader = downloader
+			
+		def callback(self):
+			self.downloader.message("HTML_LOADED", self.html)
+			
+	class MyImageGrabber(ImageGrabber):
+		def __init__(self, downloader, url, header={}):
+			super().__init__(url, header)
+			
+			self.downloader = downloader
+			
+		def callback(self):
+			self.downloader.message("IMAGE_LOADED", self.image)
+		
 
 	def download(self, mission, savepath):
 		"""Start mission download. This method will call cls.crawlpage()
@@ -386,6 +486,8 @@ class DownloadWorker(Worker):
 			errorcount = 0
 			while True:
 				try:
+					grabber = self.MyHTMLGrabber(self, ep.firstpageurl, downloader.header).start()
+					html = self.wait("HTML_LOADED", grabber)
 					html = grabhtml(ep.firstpageurl, hd=downloader.header)
 					imgurls = downloader.getimgurls(html, url=ep.firstpageurl)
 					if not imgurls:
@@ -399,11 +501,9 @@ class DownloadWorker(Worker):
 						raise TooManyRetryError
 					if "errorhandler" in downloader.__dict__:
 						downloader.errorhandler(er, ep)
-					time.sleep(5)
+					self.wait(5)
 				else:
-				
 					break
-				self.pausecallback()
 				
 		ep.imgurls = imgurls
 		
