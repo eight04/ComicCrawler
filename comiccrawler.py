@@ -2,8 +2,6 @@
 
 """Comic Crawler."""
 
-VERSION = "20140709"
-
 import re
 from safeprint import safeprint
 
@@ -214,25 +212,56 @@ class Worker:
 		if callable(callback):
 			self.callback = callback
 		self.running = False
-		self._stop = False
+		self.messageBucket = queue.Queue()
 		self.threading = None
+		slef.error = queue.Queue()
+		
+	def message(self, *args):
+		"""Put message into messagBucket"""
+		
+		self.messageBucket.put(args)
+		
+	def wait(self, timeout=None):
+		"""Wait message"""
+		
+		try:
+			message = self.messageBucket.get(timeout=timeout)
+		except queue.Empty:
+			pass
+		else:
+			if message[0] == "STOP_THREAD":
+				raise InterruptError
+		return message
 		
 	def callback(self, *args, **kwargs):
+		"""Sould be overwrite"""
 		pass
+		
+	def _worker(self):
+		"""Real target to pass to threading"""
+
+		try:
+			self.worker()
+		except InterruptError:
+			pass
+		except Exception as er:
+			self.error.put(er)
+			
+		try:
+			self.callback()
+		except Exception as er:
+			self.error.put(er)
+			
+		self.reset()
 		
 	def worker(self):
 		"""should be overwrite"""
-		
-		# after doing something?
-		self.callback()
-		
-		# reset it if you want to reuse the worker
-		self.reset()
+		pass
 		
 	def start(self):
 		"""call this method and self.worker will run in new thread"""
-	
 		import threading
+
 		if self.running:
 			return False
 		self.running = True
@@ -241,31 +270,24 @@ class Worker:
 		
 	def reset(self):
 		"""reset state so you can start it again"""
-		
+
+		if self.running:
+			return
 		self.running = False
-		self._stop = False
+		self.messageBucket = queue.Queue()
 		self.threading = None
+		self.error = queue.Queue()
 	
 	def stop(self):
 		"""Warning! stop() won't block. 
 		
 		you should use join() to ensure the thread was killed.
 		"""
+		self.message("STOP_THREAD")
 		
-		self._stop = True
-		
-	def pausecallback(self):
-		"""Hook to stop worker thread.
-		
-		you should call this method in worker when meeting a break point.
-		"""		
-		
-		if self._stop:
-			raise InterruptError
-			
 	def join(self):
 		"""thread join method."""
-		
+
 		self.threading.join()
 
 		
@@ -288,13 +310,13 @@ class DownloadWorker(Worker):
 			self.mission.lock.acquire()
 			self.download(self.mission, self.savepath)
 		except InterruptError:
-			self.mission.state = PAUSE
+			self.mission.state_(PAUSE)
 			self.callback(self.mission)
 		except Exception as er:
-			self.mission.state = ERROR
+			self.mission.state_(ERROR)
 			self.callback(self.mission, er)
 		else:
-			self.mission.state = FINISHED
+			self.mission.state_(FINISHED)
 			self.callback(self.mission)
 		finally:
 			self.mission.lock.release()
@@ -688,41 +710,82 @@ class ConfigManager:
 			config[key] = value
 		return
 
-class DownloadManager(DownloadWorker):
+class DownloadManager(worker):
 	"""DownloadManager class. Maintain the mission list."""
 	
-	def __init__(self, moduleManager=None, configManager=None):
+	def __init__(self):
 		"""set controller"""
-	
 		super().__init__()
-		# self.controller = controller
-		self.moduleManager = moduleManager
-		self.configManager = configManager
-		self.missionque = FreeQue()
-		self.skippagewhenfailed = False
 		
-		self.loadconfig()
-		self.load()
-	
-	def loadconfig(self):
-		"""Load config from controller. Set default"""
+		self.missions = FreeQue()
+		self.library = FreeQue()
+		self.workers = []
+		self.messageBucket = Queue()
+		self.state = "INIT"
 		
-		manager = self.configManager
-		self.setting = manager.get()["DEFAULT"]
+	def conf(self, conf):
+		"""Load config from controller. Set default"""		
+		import os.path
+		
+		self.setting = conf["DEFAULT"]
 		default = {
 			"savepath": "download",
 			"runafterdownload": ""
 		}
-		manager.apply(self.setting, default)
-		
-		import os.path
+		apply(self.setting, default)
+		# clean savepath
 		self.setting["savepath"] = os.path.normpath(self.setting["savepath"])
 		
-	def addmission(self, mission):
+	def add(self, mission):
 		"""add mission"""
+		if self.library.match(mission):
+			raise Error("Mission already in library")
+		self.missions.put(mission)
+	
+	def addLibrary(self, mission):
+		"""Add to library"""
+		self.library.add(mission)
 		
-		self.missionque.put(mission)
-		# self.removeLibDuplicate()
+	class Worker(DownloadWorker):
+		def __init__(self, downloader):
+			self.downloader = downloader
+			super().__init__()
+			
+		def worker(self):
+			while True:
+				mission = self.downloader.missions.take()
+				if not mission:
+					break
+				
+				try:
+					mission.lock.acquire()
+					self.download(self.mission, self.savepath)
+				except InterruptError:
+					mission.state_(PAUSE)
+					break
+				except Exception as er:
+					mission.state_(ERROR)
+					self.downloader.message("WORKER_ERROR", mission, er)
+				else:
+					mission.state_(FINISHED)
+				finally:
+					mission.lock.release()
+			self.downloader.message("WORKER_END", self)
+			
+	def start(self):
+		"""Start dowbloading"""
+		if self.state not in ["STOP", "INIT"]:
+			return
+		for i in range(WORKER_LIMIT):
+			mission = self.missions.take()
+			worker = self.Worker(self)
+			worker.start()
+			self.workers.append(worker)
+		self.state = "DOWNLOADING"
+		
+	def workerEnd(self, mission, error=None):
+		"""Send message worker end message"""
+		
 	
 	def worker(self):
 		"""overwrite, take mission from missionlist and download."""
@@ -812,13 +875,11 @@ class DownloadManager(DownloadWorker):
 	def replaceDuplicate(self, list):
 		"""replace duplicate with library one"""
 		
-		if "library" not in vars(self.controller):
-			return False
-			
-		for mission in self.get():
+		l = self.missionque.q
+		for i, mission in enumerate(l):
 			for new_mission in list:
 				if mission.url == new_mission.url:
-					mission = new_mission
+					l[i] = new_mission
 		
 class Library(AnalyzeWorker):
 	""" Library"""
@@ -832,12 +893,12 @@ class Library(AnalyzeWorker):
 		self.moduleManager = moduleManager
 		self.downloadManager = downloadManager
 		self.libraryList = FreeQue()
-		self.loadconfig()
 		
-		self.load()
-		self.downloadManager.removeLibDuplicate()
-		if self.setting["libraryautocheck"] == "true":
-			self.checkUpdate()
+		self.loadconfig()
+		# self.load()
+		# self.downloadManager.removeLibDuplicate()
+		# if self.setting["libraryautocheck"] == "true":
+			# self.checkUpdate()
 			
 	def get(self):
 		"""Get queue"""
@@ -951,10 +1012,10 @@ class ModuleManager:
 		
 	def loadMods(self):
 		"""Load mods to self.mods"""
-		import importlib
+		import importlib, os
 		
 		for f in os.listdir(self.mod_dir):
-			if not re.search("^cc_.+\.py$", mod):
+			if not re.search("^cc_.+\.py$", f):
 				continue
 			mod = f.replace(".py","")
 			self.mods.append(importlib.import_module(mod))
@@ -962,7 +1023,7 @@ class ModuleManager:
 	def registHolders(self):
 		"""Regist domain with mod to self.dlHolder"""
 		
-		for mod in mods:
+		for mod in self.mods:
 			for url in mod.domain:
 				self.dlHolder[url] = mod
 
@@ -1013,19 +1074,15 @@ class Controller:
 		"""Load classes"""
 		
 		self.configManager = ConfigManager("setting.ini")
-		self.moduleManager = ModuleManager(configManager=self.configManager)
-		self.downloadManager = DownloadManager(
-			configManager = self.configManager, 
-			moduleManager = self.moduleManager
-		)
-		self.library = Library(
-			configManager = self.configManager,
-			moduleManager = self.moduleManager,
-			downloadManager = self.downloadManager
-		)
+		self.moduleManager = ModuleManager(self)
+		self.downloadManager = DownloadManager(self)
+		self.library = Library(self)
 		
-		self.configManager.save()
-		self.downloadManager.replaceDuplicate(self.library.get())
+		
+		self.library.load()
+		self.downloadManager.load()
+		self.downloadManager.replaceDuplicate()
+		self.library.checkUpdate()
 		
 	def unloadClasses(self):
 		"""unload classes"""
@@ -1207,7 +1264,7 @@ if __name__ == "__main__":
 			os.chdir(self.scriptDir)
 			
 			self.configManager = ConfigManager("setting.ini")
-			self.moduleManager = ModuleManager(self)
+			self.moduleManager = ModuleManager(configManager=self.configManager)
 			
 			from sys import argv
 			if len(argv) <= 1:
