@@ -40,6 +40,10 @@ Comic Crawler 的核心就是個可以載入 module 的扒圖工具。基本命�
 
 圖形介面是以 Tkinter 寫成的，詳細可以參考 readme.zh-tw.txt。
 
+## Todos
+
+* move removeLibDup to controller
+
 ## 聮絡作者
 
 eight04@gmail.com
