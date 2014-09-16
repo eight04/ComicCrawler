@@ -102,17 +102,20 @@ def safeheader(header):
 		header[key] = re.sub("[\u0080-\uffff]+", u, header[key])
 		
 	return header
-	
-def grabhtml(url, hd={}, encode="utf-8"):
-	"""Get html source of given url. Return String."""
+
+def grabber(url, header={}, encode=False):	
+	"""Http works"""
 	
 	url = safeurl(url)
 	# bugged when header contains non latin character...
-	hd = safeheader(hd)
-	req = urllib.request.Request(url,headers=hd)
+	header = safeheader(header)
+	req = urllib.request.Request(url,headers=header)
 	rs = urllib.request.urlopen(req, timeout=20)
 	ot = rs.read()
 	
+	if not encode:
+		return ot
+		
 	# find html defined encoding
 	html = ot.decode("utf-8", "replace")
 	r = re.search(r"charset=[\"']?([^\"'>]+)", html)
@@ -120,34 +123,16 @@ def grabhtml(url, hd={}, encode="utf-8"):
 		encode = r.group(1)
 	return ot.decode(encode, "replace")
 
+def grabhtml(url, hd={}, encode="utf-8"):
+	"""Get html source of given url. Return String."""
+	
+	return grabber(url, hd, encode)
+
 def grabimg(url, hd={}):
 	"""Return byte stream."""
 	
-	url = safeurl(url)
-	req = urllib.request.Request(url, headers=hd)
-	rs = urllib.request.urlopen(req, timeout=20)
-	return rs.read()
-	
-class HTMLGrabber(Worker):
-	def __init__(self, url, header={}, encode=None):
-		super().__init__()
-		
-		self.url = url
-		self.header = header
-		self.encode = encode
-		
-	def worker(self):
-		self.html = grabhtml(self.url, self.header, self.encode)
-		
-class ImageGrabber(Worker):
-	def __init__(self, url, header={}):
-		super().__init__()
-		
-		self.url = url
-		self.header = header
-		
-	def worker(self):
-		self.image = grabimg(self.url, self.header)
+	return grabber(url, hd)
+
 
 class Mission:
 	"""Mission data class. Contains a mission's information."""
@@ -232,10 +217,15 @@ class Worker:
 	implement.
 	"""
 	
-	def __init__(self, parent):
+	def __init__(self, parent, target=None, *args, **kw):
 		"""init"""
 		
 		self.parent = parent
+		
+		if callable(target):
+			from functools import partial
+			self.worker = partial(target, *args, **kw)
+			
 		self.reset()
 		
 	def message(self, message, param=None, flag=0):
@@ -256,7 +246,7 @@ class Worker:
 			for thread in self.childThreads:
 				thread.message(message, param, BROADCAST)
 	
-	def _onMessage(self, message, param, flag)
+	def _onMessage(self, message, param, flag):
 		"""Message holder container"""
 		
 		self.transferMessage(message, param, flag)
@@ -389,19 +379,32 @@ class Worker:
 
 		self.threading.join()
 		
-	def addChildThread(self, thread):
+	def createChildThread(self, cls, *args, **kw):
 		"""Broadcast message to child"""
 		
+		thread = cls(self, *args, **kw)
 		self.childThreads.add(thread)
-
+		return thread
 		
+class ThreadedGrabber(Worker):
+	def __init__(self, parent, url, header={}, decode=False):
+		super().__init__(parent)
+		
+		self.url = url
+		self.header = header
+		self.decode = decode
+		
+	def worker(self):
+		self.data = grabber(self.url, self.header, self.decode)
+		
+
 class DownloadWorker(Worker):
 	"""The main core of Comic Crawler"""
 
-	def __init__(self, mission=None, savepath=".", callback=None):
+	def __init__(self, parent, mission=None, savepath="."):
 		"""set the mission"""
+		super().__init__(parent)
 		
-		super().__init__(callback)
 		self.mission = mission
 		self.savepath = savepath
 	
@@ -425,25 +428,6 @@ class DownloadWorker(Worker):
 		finally:
 			self.mission.lock.release()
 			
-	class MyHTMLGrabber(HTMLGrabber):
-		def __init__(self, downloader, url, header={}):
-			super().__init__(url, header)
-			
-			self.downloader = downloader
-			
-		def callback(self):
-			self.downloader.message("HTML_LOADED", self.html)
-			
-	class MyImageGrabber(ImageGrabber):
-		def __init__(self, downloader, url, header={}):
-			super().__init__(url, header)
-			
-			self.downloader = downloader
-			
-		def callback(self):
-			self.downloader.message("IMAGE_LOADED", self.image)
-		
-
 	def download(self, mission, savepath):
 		"""Start mission download. This method will call cls.crawlpage()
 		for each episode.
@@ -509,9 +493,20 @@ class DownloadWorker(Worker):
 			errorcount = 0
 			while True:
 				try:
-					grabber = self.MyHTMLGrabber(self, ep.firstpageurl, downloader.header).start()
-					html = self.wait("HTML_LOADED", grabber)
-					html = grabhtml(ep.firstpageurl, hd=downloader.header)
+					grabber = self.createChildThread(
+							ThreadedGrabber,
+							ep.firstpageurl,
+							downloader.header,
+							True
+						).start()
+					self.wait("CHILD_THREAD_END", grabber)
+					html = grabber.data
+					
+					self.createChildThread(
+							Worker,
+							html,
+							url=ep.firstpageurl
+						).start()
 					imgurls = downloader.getimgurls(html, url=ep.firstpageurl)
 					if not imgurls:
 						raise EmptyImageError
