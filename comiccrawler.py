@@ -524,7 +524,6 @@ class DownloadWorker(Worker):
 		if imgurls and len(imgurls) < ep.currentpagenumber:
 			raise LastPageError
 
-		
 		# some file already in directory
 		createdir(savepath)
 		downloadedlist = [ i.rpartition(".")[0] for i in os.listdir(savepath) ]
@@ -861,7 +860,6 @@ class DownloadManager(Worker):
 		self.library = FreeQue("library.dat")
 		self.downloadWorker = None
 		self.libraryWorker = None
-		self.state = "INIT"
 		
 		self.conf()
 		self.load()
@@ -892,20 +890,18 @@ class DownloadManager(Worker):
 	
 	def startDownload(self):
 		"""Start downloading"""
-		if self.state not in ["STOP", "INIT"]:
+		if self.downloadWorker and self.downloadWorker.running:
 			return
 			
 		mission = self.missions.take()
 		if not mission:
 			raise Error("All download completed")
 		self.downloadWorker = self.createChildThread(DownloadWorker, mission).start()
-		self.state = "DOWNLOADING"
 		
 	def stopDownload(self):
 		"""Stop downloading"""
-		if self.state in ["STOP", "INIT"]:
-			return
-		self.downloadWorker.stop()
+		if self.downloadWorker.running:
+			self.downloadWorker.stop()
 		
 	def startCheckUpdate(self):
 		"""Start check library update"""
@@ -921,7 +917,7 @@ class DownloadManager(Worker):
 			self.wait()
 		
 	def onMessage(self, message, param, thread):
-		"""Check worker state"""
+		"""Override"""
 		if message == "CHILD_THREAD_END":
 			if thread == self.downloadWorker:
 				command = self.setting["runafterdownload"]
@@ -935,7 +931,6 @@ class DownloadManager(Worker):
 					
 				mission = self.missions.take()
 				if not mission:
-					self.state = "STOP"
 					raise Error("All download completed")
 				self.downloadWorker = self.createChildThread(DownloadWorker, mission).start()
 				
@@ -944,6 +939,8 @@ class DownloadManager(Worker):
 				if not mission:
 					return
 				self.libraryWorker = self.createChildThread(AnalyzeWorker, mission).start()
+				
+		super().onMessage(message, prarm, thread)
 	
 	def save(self):
 		"""Save mission que."""
