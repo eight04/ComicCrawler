@@ -232,15 +232,16 @@ class MessageTree:
 		"""
 		self.messageBucket.put((message, param, flag, sender))
 		
-	def transferMessage(self, message, param, flag):
+	def transferMessage(self, message, param, flag, sender):
 		"""Bubble and broadcast"""
 		
-		if BUBBLE & flag and self.parent:
-			self.sendMessage(self.parent, message, param, BUBBLE)
+		if BUBBLE & flag and self.parent and self.parent != sender:
+			self.sendMessage(self.parent, message, param, flag)
 			
 		if BROADCAST & flag:
 			for child in self.children:
-				self.sendMessage(child, message, param, BROADCAST)
+				if child != sender:
+					self.sendMessage(child, message, param, flag)
 	
 	def _onMessage(self, message, param, flag, sender):
 		"""Message holder container, to ensure to transfer message"""
@@ -254,13 +255,16 @@ class MessageTree:
 		pass
 
 	def wait(self, arg, sender=None):
-		"""Wait message
+		"""Wait for specify message or wait specify duration.
 		
-		self.wait(5) -> wait 5 sec
-		self.wait("MSG") -> wait for message "MSG"
-		self.wait("MSG", sender) -> wait for message "MSG" with specify sender
+		`arg` could be int or str. If `arg` is int, this function will wait 
+		`arg` seconds. 
+		
+		If arg is str, this function will take the second param `sender`.
+		If sender is provided, this function will wait till getting specify
+		message `arg` which was sent by `sender`. If sender is None, this 
+		function just returned after getting specify message.
 		"""
-		
 		if type(arg) in [int, float]:
 			import time
 			
