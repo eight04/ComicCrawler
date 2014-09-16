@@ -210,37 +210,27 @@ class Episode:
 
 BUBBLE = 1
 BROADCAST = 2
-		
-class Worker:
-	"""Wrap Thread class
+
+class MessageTree:
+	"""Message pattern"""
 	
-	Threading library. Use queue to past message and with child/parent thread
-	implement.
-	"""
-	
-	def __init__(self, parent=None, target=None, *args, **kw):
-		"""init"""
-		
+	def __init__(self, parent):
 		self.parent = parent
-		self.error = queue.Queue()
-		
-		if callable(target):
-			from functools import partial
-			self.worker = partial(target, *args, **kw)
-			
-		self.reset()
-		
-	def sendMessage(thread, message, *args, flag=0):
+		self.children = set()
+		self.messageBucket = queue.Queue()
+		self.messageCached = []
+	
+	def sendMessage(getter, message, param=None, flag=0):
 		"""Send message to other threads"""
-		thread.message(message, args, flag, self)
 		
-	def message(self, message, param=None, flag=0, thread=None):
+		getter.message(message, param, flag, self)
+		
+	def message(self, message, param=None, flag=0, sender=None):
 		"""Put message into messagBucket
 		
 		flags: BUBBLE/BROADCAST
 		"""
-		
-		self.messageBucket.put((message, param, flag, thread))
+		self.messageBucket.put((message, param, flag, sender))
 		
 	def transferMessage(self, message, param, flag):
 		"""Bubble and broadcast"""
@@ -249,39 +239,26 @@ class Worker:
 			self.sendMessage(self.parent, message, param, BUBBLE)
 			
 		if BROADCAST & flag:
-			for child in self.childThreads:
+			for child in self.children:
 				self.sendMessage(child, message, param, BROADCAST)
 	
-	def _onMessage(self, message, param, flag, thread):
-		"""Message holder container"""
+	def _onMessage(self, message, param, flag, sender):
+		"""Message holder container, to ensure to transfer message"""
 		
-		self.transferMessage(message, param, flag, thread)
+		self.transferMessage(message, param, flag, sender)
+		ret = onMessage(message, param, sender)
+		return ret
 		
-		ret = onMessage(message, param, thread)
-		ret2 = _onMessageDefault(message, param, thread)
-		
-		return ret or ret2
-		
-	def _onMessageDefault(self, message, param, thread):
-		"""Default message handler"""
-		
-		if message == "STOP_THREAD":
-			raise InterruptError
-			
-		if message == "CHILD_THREAD_END":
-			self.childThreads.remove(param)
-			return param
-
-	def onMessage(self, message, param, thread):
-		"""Should be overwrite"""
+	def onMessage(self, message, param, sender):
+		"""Override"""
 		pass
 
-	def wait(self, arg, thread=None):
+	def wait(self, arg, sender=None):
 		"""Wait message
 		
 		self.wait(5) -> wait 5 sec
 		self.wait("MSG") -> wait for message "MSG"
-		self.wait("MSG", param) -> wait for message "MSG" and recieved_param == param
+		self.wait("MSG", sender) -> wait for message "MSG" with specify sender
 		"""
 		
 		if type(arg) in [int, float]:
@@ -301,22 +278,45 @@ class Worker:
 		elif type(arg) is str:
 			cached = None
 			for cache in self.messageCached:
-				if cache[0][0] == arg and (not thread or thread == cache[0][3]):
+				if cache[0][0] == arg and (not sender or sender == cache[0][3]):
 					cached = cache
 			if cached:
 				self.messageCached.remove(cached)
-				return cached[1]
+				return cached[1]	# cached result
 				
 			while True:
 				message = self.messageBucket.get()
 				ret = self._onMessage(*message)
-				if message[0] == arg and (not thread or thread == message[3]):
+				if message[0] == arg and (not sender or sender == message[3]):
 					return ret
 				self.messageCached.append((message, ret))
 
-	def cleanup(self, *args, **kwargs):
-		"""Should be overwrite"""
-		pass
+	def createChild(self, cls, *args, **kw):
+		"""Broadcast message to child"""
+		
+		if not issubclass(cls, MessageTree):
+			raise Exception("Created children failed: " + cls + " doesn't inherit MessageTree.")
+		child = cls(self, *args, **kw)
+		self.children.add(child)
+		return child
+		
+		
+class Worker(MessageTree):
+	"""Wrap Thread class
+	
+	Threading library. Use queue to past message and with child/parent thread
+	implement.
+	"""
+	
+	def __init__(self, parent=None, target=None, *args, **kw):
+		"""init"""
+		super().__init__(parent)
+		
+		self.error = queue.Queue()
+		if callable(target):
+			from functools import partial
+			self.worker = partial(target, *args, **kw)
+		self.threading = None
 		
 	def _worker(self):
 		"""Real target to pass to threading.Thread"""
@@ -329,7 +329,7 @@ class Worker:
 			pass
 		except Exception as er:
 			self.error.put(er)
-			
+
 		try:
 			self.cleanup()
 		except Exception as er:
@@ -343,16 +343,20 @@ class Worker:
 		if self.parent:
 			self.sendMessage(self.parent, "CHILD_THREAD_END")
 		
+	def worker(self):
+		"""Override"""
+		pass
+		
+	def cleanup(self, *args, **kwargs):
+		"""Override"""
+		pass
+		
 	def stopChildThread(self):
 		"""Stop all child threads"""
 		
-		for thread in self.childThreads:
-			thread.stop()
+		for thread in self.children:
+			self.sendMessage(thread, "STOP_THREAD", None, BROADCAST)
 
-	def worker(self):
-		"""should be overwrite"""
-		pass
-		
 	def start(self):
 		"""call this method and self.worker will run in new thread"""
 		import threading
@@ -363,16 +367,6 @@ class Worker:
 		self.threading.start()
 		return self
 		
-	def reset(self):
-		"""reset state so you can start it again"""
-
-		if self.running:
-			return
-		self.threading = None
-		self.childThreads = set()
-		self.messageBucket = queue.Queue()
-		self.messageCached = []
-	
 	def stop(self):
 		"""Warning! stop() won't block. 
 		
@@ -380,17 +374,21 @@ class Worker:
 		"""
 		self.message("STOP_THREAD", None, BROADCAST)
 		
+	def onMessage(self, message, param, sender):
+		"""Override"""
+		super().onMessage(message, param, sender)
+		
+		if message == "STOP_THREAD":
+			raise InterruptError
+			
+		if message == "CHILD_THREAD_END":
+			self.childThreads.remove(sender)
+			return sender	
+		
 	def join(self):
 		"""thread join method."""
 
 		self.threading.join()
-		
-	def createChildThread(self, cls, *args, **kw):
-		"""Broadcast message to child"""
-		
-		thread = cls(self, *args, **kw)
-		self.childThreads.add(thread)
-		return thread
 		
 	def waitChild(self, func, *args, **kw):
 		child = self.createChildThread(Worker, func, *args, **kw).start()
@@ -398,7 +396,6 @@ class Worker:
 		if child.error:
 			raise ThreadError("Error when executing child thread!", child.error)
 		return child.ret
-
 		
 class DownloadWorker(Worker):
 	"""The main core of Comic Crawler"""
@@ -859,27 +856,33 @@ class ConfigManager:
 class DownloadManager(Worker):
 	"""DownloadManager class. Maintain the mission list."""
 	
-	def __init__(self):
+	def __init__(self, configManager=None, moduleManager=None):
 		"""set controller"""
 		super().__init__()
 		
+		self.configManager = configManager
+		self.moduleManager = moduleManager
 		self.missions = FreeQue("save.dat")
 		self.library = FreeQue("library.dat")
 		self.downloadWorker = None
 		self.libraryWorker = None
 		self.state = "INIT"
 		
-	def conf(self, conf):
+		self.conf()
+		self.load()
+		
+	def conf(self):
 		"""Load config from controller. Set default"""		
 		import os.path
 		
-		self.setting = conf["DEFAULT"]
+		conf = self.configManager
+		self.setting = conf.get()["DEFAULT"]
 		default = {
 			"savepath": "download",
 			"runafterdownload": ""
 			"libraryautocheck": "true"
 		}
-		apply(self.setting, default)
+		conf.apply(self.setting, default)
 		# clean savepath
 		self.setting["savepath"] = os.path.normpath(self.setting["savepath"])
 		
@@ -916,6 +919,11 @@ class DownloadManager(Worker):
 		
 		mission = self.library.take()
 		self.libraryWorker = self.createChildThread(AnalyzeWorker, mission).start()
+		
+	def worker(self):
+		"""Event loop"""
+		while True:
+			self.wait()
 		
 	def onMessage(self, message, param, thread):
 		"""Check worker state"""
@@ -1266,9 +1274,14 @@ if __name__ == "__main__":
 			
 			from sys import argv
 			if len(argv) <= 1:
-				return
+				self.downloadManager = DownloadManager(
+					configManager=self.configManager,
+					moduleManager=self.moduleManager
+				).start()
 				
-			if argv[1] == "domains":
+				self.inputLoop()
+			
+			elif argv[1] == "domains":
 				self.listDomains()
 			elif argv[1] == "download":	
 				kw = {
@@ -1292,5 +1305,9 @@ if __name__ == "__main__":
 			
 		def listDomains(self):
 			safeprint("Valid domains:\n{}".format(", ".join(self.moduleManager.getdlHolder())))
-
+			
+		def inputLoop(self):
+			while True:
+				s = input(">>> ")
+				
 	CLI()
