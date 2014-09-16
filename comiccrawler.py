@@ -121,7 +121,8 @@ def grabber(url, header={}, encode=False):
 	r = re.search(r"charset=[\"']?([^\"'>]+)", html)
 	if r:
 		encode = r.group(1)
-	return ot.decode(encode, "replace")
+		return ot.decode(encode, "replace")
+	return html
 
 def grabhtml(url, hd={}, encode="utf-8"):
 	"""Get html source of given url. Return String."""
@@ -217,7 +218,7 @@ class Worker:
 	implement.
 	"""
 	
-	def __init__(self, parent, target=None, *args, **kw):
+	def __init__(self, parent=None, target=None, *args, **kw):
 		"""init"""
 		
 		self.parent = parent
@@ -228,35 +229,39 @@ class Worker:
 			
 		self.reset()
 		
-	def message(self, message, param=None, flag=0):
+	def sendMessage(thread, message, *args, flag=0):
+		"""Send message to other threads"""
+		thread.message(message, args, flag, self)
+		
+	def message(self, message, param=None, flag=0, thread=None):
 		"""Put message into messagBucket
 		
 		flags: BUBBLE/BROADCAST
 		"""
 		
-		self.messageBucket.put((message, param, flag))
+		self.messageBucket.put((message, param, flag, thread))
 		
 	def transferMessage(self, message, param, flag):
 		"""Bubble and broadcast"""
 		
-		if BUBBLE & flag:
-			self.parent.message((message, param, BUBBLE))
+		if BUBBLE & flag and self.parent:
+			self.sendMessage(self.parent, message, param, BUBBLE)
 			
 		if BROADCAST & flag:
-			for thread in self.childThreads:
-				thread.message(message, param, BROADCAST)
+			for child in self.childThreads:
+				self.sendMessage(child, message, param, BROADCAST)
 	
-	def _onMessage(self, message, param, flag):
+	def _onMessage(self, message, param, flag, thread):
 		"""Message holder container"""
 		
-		self.transferMessage(message, param, flag)
+		self.transferMessage(message, param, flag, thread)
 		
-		ret = onMessage(message, param)
-		ret2 = _onMessageDefault(message, param)
+		ret = onMessage(message, param, thread)
+		ret2 = _onMessageDefault(message, param, thread)
 		
 		return ret or ret2
 		
-	def _onMessageDefault(self, message, param):
+	def _onMessageDefault(self, message, param, thread):
 		"""Default message handler"""
 		
 		if message == "STOP_THREAD":
@@ -266,11 +271,11 @@ class Worker:
 			self.childThreads.remove(param)
 			return param
 
-	def onMessage(self, message, param):
+	def onMessage(self, message, param, thread):
 		"""Should be overwrite"""
 		pass
 
-	def wait(self, arg, param=None):
+	def wait(self, arg, thread=None):
 		"""Wait message
 		
 		self.wait(5) -> wait 5 sec
@@ -295,7 +300,7 @@ class Worker:
 		elif type(arg) is str:
 			cached = None
 			for cache in self.messageCached:
-				if cache[0][0] == arg and (not param or param == cache[0][1]):
+				if cache[0][0] == arg and (not thread or thread == cache[0][3]):
 					cached = cache
 			if cached:
 				self.messageCached.remove(cached)
@@ -304,7 +309,7 @@ class Worker:
 			while True:
 				message = self.messageBucket.get()
 				ret = self._onMessage(*message)
-				if message[0] == arg and (not param or param == message[1]):
+				if message[0] == arg and (not thread or thread == message[3]):
 					return ret
 				self.messageCached.append((message, ret))
 
@@ -318,7 +323,7 @@ class Worker:
 		self.running = True
 		
 		try:
-			self.worker()
+			self.ret = self.worker()
 		except InterruptError:
 			pass
 		except Exception as er:
@@ -334,7 +339,8 @@ class Worker:
 			self.wait("CHILD_THREAD_END")
 		
 		self.running = False
-		self.parent.message("CHILD_THREAD_END", self)
+		if self.parent:
+			self.sendMessage(self.parent, "CHILD_THREAD_END")
 		
 	def stopChildThread(self):
 		"""Stop all child threads"""
@@ -361,10 +367,10 @@ class Worker:
 
 		if self.running:
 			return
-		self.messageBucket = queue.Queue()
 		self.threading = None
 		self.error = queue.Queue()
 		self.childThreads = set()
+		self.messageBucket = queue.Queue()
 		self.messageCached = []
 	
 	def stop(self):
@@ -386,18 +392,14 @@ class Worker:
 		self.childThreads.add(thread)
 		return thread
 		
-class ThreadedGrabber(Worker):
-	def __init__(self, parent, url, header={}, decode=False):
-		super().__init__(parent)
-		
-		self.url = url
-		self.header = header
-		self.decode = decode
-		
-	def worker(self):
-		self.data = grabber(self.url, self.header, self.decode)
-		
+	def waitChild(self, func, *args, **kw):
+		child = self.createChildThread(Worker, func, *args, **kw).start()
+		self.wait("CHILD_THREAD_END", child)
+		if child.error:
+			raise ThreadError(child.error)
+		return child.ret
 
+		
 class DownloadWorker(Worker):
 	"""The main core of Comic Crawler"""
 
@@ -493,25 +495,15 @@ class DownloadWorker(Worker):
 			errorcount = 0
 			while True:
 				try:
-					grabber = self.createChildThread(
-							ThreadedGrabber,
-							ep.firstpageurl,
-							downloader.header,
-							True
-						).start()
-					self.wait("CHILD_THREAD_END", grabber)
-					html = grabber.data
+					html = self.waitChild(grabhtml, ep.firstpageurl, downloader.header)
+					imgurls = self.waitChild(downloader.getimgurls, html, url=ep.firstpageurl)
 					
-					self.createChildThread(
-							Worker,
-							html,
-							url=ep.firstpageurl
-						).start()
-					imgurls = downloader.getimgurls(html, url=ep.firstpageurl)
 					if not imgurls:
 						raise EmptyImageError
-				except (LastPageError, SkipEpisodeError) as er:
+						
+				except (LastPageError, SkipEpisodeError, InterruptError) as er:
 					raise er
+					
 				except Exception as er:
 					safeprint("get imgurls failed: {}".format(er))
 					errorcount += 1
@@ -541,15 +533,29 @@ class DownloadWorker(Worker):
 			try:
 				if not imgurls:
 					# getimgurl method
-					html = grabhtml(ep.currentpageurl, hd=downloader.header)
+					html = self.waitChild(
+						grabhtml, 
+						ep.currentpageurl, 
+						hd=downloader.header
+					)
 					
-					imgurl = downloader.getimgurl(html, 
-							page=ep.currentpagenumber, url=ep.currentpageurl)
-					nextpageurl = downloader.getnextpageurl(ep.currentpagenumber, 
-							html, url=ep.currentpageurl)
-					try:
+					imgurl = self.waitChild(
+						downloader.getimgurl, 
+						html, 
+						url=ep.currentpageurl
+						page=ep.currentpagenumber, 
+					)
+					
+					nextpageurl = self.waitChild(
+						downloader.getnextpageurl,
+						ep.currentpagenumber, 
+						html, 
+						url=ep.currentpageurl
+					)
+					
+					if type(imgurl) is tuple:
 						imgurl, header = imgurl
-					except Exception:
+					else:
 						header = downloader.header
 				else:
 					# getimgurls method
@@ -566,7 +572,8 @@ class DownloadWorker(Worker):
 					
 				safeprint("Downloading page {}: {}".format(
 						ep.currentpagenumber, imgurl))
-				oi = grabimg(imgurl,hd=header)
+						
+				oi = self.waitChild(grabimg, imgurl, hd=header)
 				
 				# check image type
 				ext = getext(oi)
@@ -577,25 +584,23 @@ class DownloadWorker(Worker):
 				safeprint("...page {} already exist".format(
 						ep.currentpagenumber))
 						
+			except InterruptError as er:
+				raise er
+				
 			except Exception as er:
 				safeprint("Crawl page error: {}".format(er or type(er)))
 				errorcount += 1
 				if errorcount >= 10:
-					# self.crawler.missionque.drop((mission, ))
 					raise TooManyRetryError
-				self.pausecallback()
-				
 				downloader.errorhandler(er, ep)
-				time.sleep(5)
+				
+				self.wait(5)
 				continue
 				
 			else:
 				# everything is ok, save image
 				with open(os.path.join(savepath, "{}.{}".format(fn, ext)), "wb") as f:
 					f.write(oi)
-				
-			# call pause
-			self.pausecallback()
 				
 			# something have to rewrite, check currentpage url rather than
 			# nextpage. Cuz sometime currentpage doesn't exist either.
@@ -610,10 +615,10 @@ class DownloadWorker(Worker):
 class AnalyzeWorker(Worker):
 	"""Analyze the mission.url, also the core of Comic Crawler"""
 
-	def __init__(self, mission=None, callback=None):
+	def __init__(self, parent, mission=None):
 		"""set mission"""
+		super().__init__(parent)
 		
-		super().__init__(callback)
 		self.mission = mission
 	
 	def worker(self):
@@ -659,11 +664,11 @@ class AnalyzeWorker(Worker):
 
 		downloader = mission.downloader
 		print("grabbing html")
-		html = grabhtml(mission.url, hd=downloader.header)
+		html = self.waitChild(grabhtml, mission.url, hd=downloader.header)
 		print("getting title")
 		mission.title = downloader.gettitle(html, url=mission.url)
 		print("getting episode list")
-		epList = downloader.getepisodelist(html, url=mission.url)
+		epList = self.waitChild(downloader.getepisodelist, html, url=mission.url)
 		if not mission.episodelist:
 			# new mission
 			mission.episodelist = epList
@@ -694,6 +699,8 @@ class AnalyzeWorker(Worker):
 # Error classes
 class Error(Exception): pass
 
+class ThreadError(Error): pass
+
 class InterruptError(Error): pass
 
 class ImageExistsError(Error): pass
@@ -708,8 +715,16 @@ class SkipEpisodeError(Error): pass
 
 class FreeQue:
 	"""Mission queue data class."""
-
-	q = []	# the list which save the missions
+	
+	def __init__(self, savepath=None):
+		self.q = []
+		self.savepath = savepath
+		
+	def contains(self, mission):
+		for m in self.q:
+			if q.url == mission.url:
+				return True
+		return False
 	
 	def empty(self):
 		"""return true if list is empty"""
@@ -772,21 +787,25 @@ class FreeQue:
 		"""return title list"""
 		return [m.title for m in self.q]
 		
-	def load(self, path):
+	def load(self):
 		"""unpickle list from file"""
+		if not self.savepath:
+			return
 		import pickle
 		try:
-			f = open(path, "rb")
+			f = open(self.savepath, "rb")
 		except FileNotFoundError:
 			print("no lib file")
 			return
 		self.q = pickle.load(f)
 		_evtcallback("MISSIONQUE_ARRANGE", self)
 		
-	def save(self, path):
+	def save(self):
 		"""pickle list to file"""
+		if not self.savepath:
+			return
 		import pickle
-		f = open(path, "wb")
+		f = open(self.savepath, "wb")
 		pickle.dump(self.q, f)
 
 class ConfigManager:
@@ -828,17 +847,17 @@ class ConfigManager:
 			config[key] = value
 		return
 
-class DownloadManager(worker):
+class DownloadManager(Worker):
 	"""DownloadManager class. Maintain the mission list."""
 	
 	def __init__(self):
 		"""set controller"""
 		super().__init__()
 		
-		self.missions = FreeQue()
-		self.library = FreeQue()
-		self.workers = []
-		self.messageBucket = Queue()
+		self.missions = FreeQue("save.dat")
+		self.library = FreeQue("library.dat")
+		self.downloadWorker = None
+		self.libraryWorker = None
 		self.state = "INIT"
 		
 	def conf(self, conf):
@@ -849,131 +868,79 @@ class DownloadManager(worker):
 		default = {
 			"savepath": "download",
 			"runafterdownload": ""
+			"libraryautocheck": "true"
 		}
 		apply(self.setting, default)
 		# clean savepath
 		self.setting["savepath"] = os.path.normpath(self.setting["savepath"])
 		
-	def add(self, mission):
+	def addMission(self, mission):
 		"""add mission"""
 		if self.library.match(mission):
 			raise Error("Mission already in library")
 		self.missions.put(mission)
-	
-	def addLibrary(self, mission):
-		"""Add to library"""
-		self.library.add(mission)
 		
-	class Worker(DownloadWorker):
-		def __init__(self, downloader):
-			self.downloader = downloader
-			super().__init__()
-			
-		def worker(self):
-			while True:
-				mission = self.downloader.missions.take()
-				if not mission:
-					break
-				
-				try:
-					mission.lock.acquire()
-					self.download(self.mission, self.savepath)
-				except InterruptError:
-					mission.state_(PAUSE)
-					break
-				except Exception as er:
-					mission.state_(ERROR)
-					self.downloader.message("WORKER_ERROR", mission, er)
-				else:
-					mission.state_(FINISHED)
-				finally:
-					mission.lock.release()
-			self.downloader.message("WORKER_END", self)
-			
-	def start(self):
-		"""Start dowbloading"""
+	def removeMission(self, *args):
+		pass
+	
+	def startDownload(self):
+		"""Start downloading"""
 		if self.state not in ["STOP", "INIT"]:
 			return
-		for i in range(WORKER_LIMIT):
-			mission = self.missions.take()
-			worker = self.Worker(self)
-			worker.start()
-			self.workers.append(worker)
+			
+		mission = self.missions.take()
+		if not mission:
+			raise Error("All download completed")
+		self.downloadWorker = self.createChildThread(DownloadWorker, mission).start()
 		self.state = "DOWNLOADING"
 		
-	def workerEnd(self, mission, error=None):
-		"""Send message worker end message"""
+	def stopDownload(self):
+		"""Stop downloading"""
+		if self.state in ["STOP", "INIT"]:
+			return
+		self.downloadWorker.stop()
 		
-	
-	def worker(self):
-		"""overwrite, take mission from missionlist and download."""
+	def startCheckUpdate(self):
+		"""Start check library update"""
+		if self.library and self.libraryWorker.running:
+			return
 		
-		while True:
-			mission = self.missionque.take()
-			if mission is None:
-				# all mission complete
-				self.stop()
-				safeprint("All download complete!")
-				break
-			try:
-				# get mission lock and download
-				mission.lock.acquire()
-				mission.state_(DOWNLOADING)
-				self.download(mission, self.setting["savepath"])
-			except InterruptError:
-				# interrupt
-				print("kill download worker")
-				mission.state_(PAUSE)
-			except TooManyRetryError:
-				# too many retry, drop the mission
-				safeprint("Too many retry")
-				mission.state_(PAUSE)
-				self.missionque.drop((mission,))
-			except Exception as er:
-				# other exception, get traceback message
-				import traceback
-				er_message = traceback.format_exc()
-				print("worker terminate!\n{}".format(er_message))
-				self.stop()
-				mission.state_(ERROR)
-				_evtcallback("WORKER_TERMINATED", mission, er, er_message)
-			else:
-				# download complete, run user defined command
+		mission = self.library.take()
+		self.libraryWorker = self.createChildThread(AnalyzeWorker, mission).start()
+		
+	def onMessage(self, message, param, thread):
+		"""Check worker state"""
+		if message == "CHILD_THREAD_END":
+			if thread == self.downloadWorker:
 				command = self.setting["runafterdownload"]
 				if not command:
 					continue
 				try:
 					from subprocess import call
-					call((command, "{}/{}".format(self.setting["savepath"], safefilepath(mission.title))))
+					call((command, "{}/{}".format(self.setting["savepath"], safefilepath(thread.mission.title))))
 				except Exception as er:
 					safeprint("failed to run process: {}".format(er))
-			finally:
-				# be sure to release lock
-				mission.lock.release()
+					
+				mission = self.missions.take()
+				if not mission:
+					self.state = "STOP"
+					raise Error("All download completed")
+				self.downloadWorker = self.createChildThread(DownloadWorker, mission).start()
 				
-			if self._stop:
-				# stop worker
-				break
-				
-		# reset for next use
-		self.reset()
-
-	def start(self):
-		"""overwrite, add missionque check."""
-		
-		if self.missionque.empty():
-			safeprint("Misison que is empty.")
-			return
-
-		super().start()
-		
+			if thread == self.libraryWorker:
+				mission = self.library.take()
+				if not mission:
+					return
+				self.libraryWorker = self.createChildThread(AnalyzeWorker, mission).start()
+	
 	def save(self):
 		"""Save mission que."""
 		
 		try:
-			self.missionque.save("save.dat")
+			self.missions.save()
+			self.library.save()
 		except Exception as er:
-			_evtcallback("DAT_SAVE_FAILED", er)
+			self.message("DAT_SAVE_FAILED", er)
 		else:
 			print("Session saved success.")
 		
@@ -981,14 +948,15 @@ class DownloadManager(worker):
 		"""load mission que"""
 		
 		try:
-			self.missionque.load("save.dat")
+			self.missions.load()
+			self.library.load()
 		except Exception as er:
-			_evtcallback("DAT_LOAD_FAILED", er)
+			self.message("DAT_LOAD_FAILED", er)
 		else:
-			for m in self.missionque.q:
+			for m in self.missions.q:
 				m.downloader = self.moduleManager.getDownloader(m.url)
 			print("Session loaded success.")
-		# self.removeLibDuplicate()
+		self.removeLibDuplicate()
 		
 	def replaceDuplicate(self, list):
 		"""replace duplicate with library one"""
@@ -999,115 +967,18 @@ class DownloadManager(worker):
 				if mission.url == new_mission.url:
 					l[i] = new_mission
 		
-class Library(AnalyzeWorker):
-	""" Library"""
-	
-	def __init__(self, configManager = None, moduleManager = None, downloadManager = None):
-		"""init"""
-	
-		super().__init__()
-		# self.controller = controller
-		self.configManager = configManager
-		self.moduleManager = moduleManager
-		self.downloadManager = downloadManager
-		self.libraryList = FreeQue()
-		
-		self.loadconfig()
-		# self.load()
-		# self.downloadManager.removeLibDuplicate()
-		# if self.setting["libraryautocheck"] == "true":
-			# self.checkUpdate()
-			
-	def get(self):
-		"""Get queue"""
-		
-		return self.libraryList.q
-
-	def loadconfig(self):
-		"""Load config from controller. Set default"""
-		
-		manager = self.configManager
-		self.setting = manager.get()["DEFAULT"]
-		default = {
-			"libraryautocheck": "true"
-		}
-		manager.apply(self.setting, default)
-
-	def load(self):
-		"""load libraryList"""
-		
-		self.libraryList.load("library.dat")
-		for m in self.libraryList.q:
-			m.downloader = self.moduleManager.getDownloader(m.url)
-			
-	def save(self):
-		"""save library list"""
-		
-		self.libraryList.save("library.dat")
-		
-	def add(self, mission):
+	def addLibrary(self, mission):
 		"""add mission"""
 		
-		# check duplicate
-		for m in self.libraryList.q[:]:
-			if m.url == mission.url:
-				# duplicate
-				return False
-		self.libraryList.put(mission)
+		if self.library.contains(mission):
+			raise Error("Mission already exist!")
+		self.library.put(mission)
 		
-	def remove(self, *missions):
+	def removeLibrary(self, *missions):
 		"""remove missions"""
 		
-		self.libraryList.remove(missions)
+		self.library.remove(missions)
 		
-	def worker(self):
-		"""overwrite, take mission from libraryList and analyze"""
-		
-		try:
-			update = False
-			for m in self.libraryList.q:
-				if m.state == DOWNLOADING:
-					continue
-				try:
-					m.lock.acquire()
-					self.analyze(m)
-				except Exception as er:
-					safeprint("analyze failed!\n", er)
-					m.state_(ERROR)
-				else:
-					if m.update:
-						self.libraryList.lift((m, ))
-						update = True
-				finally:
-					m.lock.release()
-				self.pausecallback()
-			if update:
-				safeprint("Found update in library!")
-			else:
-				safeprint("No update in library")
-		except Exception as er:
-			safeprint("Check update interrupt!\n", er)
-		self.reset()
-			
-	def checkUpdate(self):
-		"""start analyze worker"""
-		
-		self.start()
-
-	def sendToDownloadManager(self):
-		"""send to controller"""
-		
-		for m in self.libraryList.q:
-			if m.state == UPDATE:
-				self.downloadManager.addmission(m)
-				
-	def exists(self, mission):
-		"""check duplicate mission url"""
-		
-		for m in self.libraryList.q:
-			if m.url == mission.url:
-				return m
-		return False
 		
 class ModuleManager:
 	"""Import all the downloader module.
