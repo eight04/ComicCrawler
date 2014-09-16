@@ -211,6 +211,8 @@ class Episode:
 BUBBLE = 1
 BROADCAST = 2
 
+class MessageError: pass
+
 class MessageTree:
 	"""Message pattern"""
 	
@@ -299,18 +301,14 @@ class MessageTree:
 		"""Broadcast message to child"""
 		
 		if not issubclass(cls, MessageTree):
-			raise Exception("Created children failed: " + cls + " doesn't inherit MessageTree.")
+			raise MessageError("Created children failed: " + cls + " doesn't inherit MessageTree.")
 		child = cls(self, *args, **kw)
 		self.children.add(child)
 		return child
 		
 		
 class Worker(MessageTree):
-	"""Wrap Thread class
-	
-	Threading library. Use queue to past message and with child/parent thread
-	implement.
-	"""
+	"""Wrap Thread class. Inherit MessageTree for thread communication."""
 	
 	def __init__(self, parent=None, target=None, *args, **kw):
 		"""init"""
@@ -395,7 +393,7 @@ class Worker(MessageTree):
 		self.threading.join()
 		
 	def waitChild(self, func, *args, **kw):
-		child = self.createChildThread(Worker, func, *args, **kw).start()
+		child = self.createChild(Worker, func, *args, **kw).start()
 		self.wait("CHILD_THREAD_END", child)
 		if child.error:
 			raise ThreadError("Error when executing child thread!", child.error)
