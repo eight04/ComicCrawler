@@ -26,6 +26,7 @@ class Worker:
 		if callable(target):
 			self.worker = functools.partial(target, *args, **kw)
 		self.threading = None
+		self.running = False
 		self.messageBucket = queue.Queue()
 		self.messageCached = []
 		self.parent = parent
@@ -41,7 +42,7 @@ class Worker:
 		if self.running:
 			self.messageBucket.put((message, param, flag, sender))
 		else:
-			self._onmessage(message, param, flag, sender)
+			self._onMessage(message, param, flag, sender)
 			
 	def transferMessage(self, message, param, flag, sender):
 		"""Bubble and broadcast"""
@@ -58,7 +59,7 @@ class Worker:
 		"""Message holder container, to ensure to transfer message"""
 		
 		self.transferMessage(message, param, flag, sender)
-		ret = onMessage(message, param, sender)
+		ret = self.onMessage(message, param, sender)
 		return ret
 	
 	def onMessage(self, message, param, sender):
@@ -134,7 +135,7 @@ class Worker:
 			self.error.put(er)
 		
 		self.stopAllChild()
-		while len(self.childThreads):
+		while len(self.children):
 			self.wait("CHILD_THREAD_END")
 		
 		self.running = False
@@ -155,12 +156,15 @@ class Worker:
 		for child in self.children:
 			self.stop(child)
 
-	def start(self):
+	def start(self, *args, **kwargs):
 		"""call this method and self.worker will run in new thread"""
 
 		if self.running:
 			return False
+			
 		self.running = True
+		self.args = args
+		self.kwargs = kwargs
 		self.threading = threading.Thread(target=self._worker)
 		self.threading.start()
 		return self
@@ -168,6 +172,9 @@ class Worker:
 	def stop(self, child=None):
 		"""Stop self or child thread"""
 		
+		if not self.running:
+			return
+			
 		if not child:
 			self.message("STOP_THREAD", None, F.BROADCAST)
 		elif child not in self.children:
@@ -189,11 +196,11 @@ class Worker:
 		"""Resume self or child thread"""
 		
 		if not child:
-			self.message("RUSUME_THREAD", None, F.BROADCAST)
+			self.message("RESUME_THREAD", None, F.BROADCAST)
 		elif child not in self.children:
 			raise KeyError(child)
 		else:
-			self.sendMessage(child, "RUSUME_THREAD", None, F.BROADCAST)
+			self.sendMessage(child, "RESUME_THREAD", None, F.BROADCAST)
 		
 	def join(self):
 		"""thread join method."""
