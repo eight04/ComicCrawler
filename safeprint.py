@@ -12,9 +12,9 @@ def safeprint(*ss):
 
 	for c in s:
 		try:
-			print(c,end="")
-		except Exception:
-			print("?",end="")
+			print(c, end="")
+		except UnicodeEncodeError:
+			print("?", end="")
 				
 	print("")
 	
@@ -33,3 +33,5 @@ def removecallback(callback):
 	if callback in _callbacklist:
 		_callbacklist.remove(callback)
 	
+if __name__ == "__main__":
+	safeprint("Hello World!", "你好世界！", "ハローワールド", "हैलो वर्ल्ड")
