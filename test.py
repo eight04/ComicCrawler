@@ -1,14 +1,12 @@
 #! python3
 
 from worker import Worker
+from threading import Lock
 
-def raiseMe(s):
-	raise Exception(s)
+class Test:
+	lock = Lock()
+	
+test1 = Test()
+test2 = Test()
 
-class Main(Worker):
-	def __init__(self):
-		super().__init__()
-		
-		self.waitChild(raiseMe, "Hello error!")
-
-Main()
+print(test1.lock == test2.lock)

@@ -44,7 +44,11 @@ class Worker:
 	def message(self, message, param=None, flag=0, sender=None):
 		"""Override"""
 		
-		self.messageBucket.put((message, param, flag, sender))
+		if self.running:
+			self.messageBucket.put((message, param, flag, sender))
+		else:
+			self.transferMessage(message, param, flag, sender)
+
 		return self
 			
 	def transferMessage(self, message, param, flag, sender):
@@ -72,7 +76,7 @@ class Worker:
 		
 		if message == "STOP_THREAD":
 			raise StopWorker
-			
+
 		if message == "CHILD_THREAD_END":
 			return self.removeChild(sender)
 			
@@ -136,7 +140,10 @@ class Worker:
 		except StopWorker:
 			pass
 		except Exception as er:
-			self.error.put(er)
+			if self.threading:
+				self.error.put(er)
+			else:
+				raise er
 			if self.parent:
 				self.sendMessage(self.parent, "CHILD_THREAD_ERROR", er)
 
@@ -160,6 +167,14 @@ class Worker:
 	def cleanup(self, *args, **kwargs):
 		"""Override"""
 		pass
+		
+	def run(self, *args, **kwargs):
+		"""Run as main thread"""
+		self.args = args
+		self.kwargs = kwargs
+		self.running = True
+		self._worker()
+		return self.ret
 		
 	def stopAllChild(self):
 		"""Stop all child threads"""
