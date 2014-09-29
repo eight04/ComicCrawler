@@ -9,23 +9,26 @@ import urllib.request
 import urllib.parse
 import urllib.error
 
-# state code definition
-INIT = 0
-ANALYZED = 1
-DOWNLOADING = 2
-PAUSE = 3
-FINISHED = 4
-ERROR = 5
-INTERRUPT = 6
-UPDATE = 7
-ANALYZING = 8
+import threading
 
-from queue import Queue
-messageBucket = Queue()
-def _evtcallback(msg, *args):
-	"""Message collector"""
+# state code 
+class S:
+	INIT = 0
+	ANALYZED = 1
+	DOWNLOADING = 2
+	PAUSE = 3
+	FINISHED = 4
+	ERROR = 5
+	INTERRUPT = 6
+	UPDATE = 7
+	ANALYZING = 8
+
+# from queue import Queue
+# messageBucket = Queue()
+# def _evtcallback(msg, *args):
+	# """Message collector"""
 	
-	messageBucket.put((msg, args))
+	# messageBucket.put((msg, args))
 	
 def getext(byte):
 	"""Test the file type according byte stream with imghdr
@@ -135,29 +138,21 @@ def grabimg(url, hd={}):
 	return grabber(url, hd)
 
 
-class Mission:
+class Mission(Worker):
 	"""Mission data class. Contains a mission's information."""
+	title = ""
+	url = ""
+	episodelist = []
+	state = INIT
+	downloader = None
+	lock = None
+	update = False
+	inLibrary = False
 	
 	def __init__(self):
-		"""Use title, url, episodelist, state, downloader, lock"""
-		from threading import Lock
+		"""Create lock"""
+		self.lock = threading.Lock()
 		
-		self.title = ""
-		self.url = ""
-		self.episodelist = []
-		self.state = INIT
-		self.downloader = None
-		self.lock = Lock()
-		self.update = False
-		
-	def state_(self, state=None):
-		"""Call this method to make a MISSION_STATE_CHANGE message"""
-		
-		if not state:
-			return self.state
-		self.state = state
-		_evtcallback("MISSION_STATE_CHANGE", self)
-			
 	def __getstate__(self):
 		"""pickle"""
 	
