@@ -346,7 +346,7 @@ class DownloadWorker(Worker):
 					imgurl = self.waitChild(
 						downloader.getimgurl, 
 						html, 
-						url=ep.currentpageurl
+						url=ep.currentpageurl,
 						page=ep.currentpagenumber, 
 					)
 					
@@ -673,7 +673,7 @@ class DownloadManager(Worker):
 		self.setting = conf.get()["DEFAULT"]
 		default = {
 			"savepath": "download",
-			"runafterdownload": ""
+			"runafterdownload": "",
 			"libraryautocheck": "true"
 		}
 		conf.apply(self.setting, default)
@@ -722,13 +722,12 @@ class DownloadManager(Worker):
 		if message == "CHILD_THREAD_END":
 			if thread == self.downloadWorker:
 				command = self.setting["runafterdownload"]
-				if not command:
-					continue
-				try:
-					from subprocess import call
-					call((command, "{}/{}".format(self.setting["savepath"], safefilepath(thread.mission.title))))
-				except Exception as er:
-					safeprint("failed to run process: {}".format(er))
+				if command:
+					try:
+						from subprocess import call
+						call((command, "{}/{}".format(self.setting["savepath"], safefilepath(thread.mission.title))))
+					except Exception as er:
+						safeprint("failed to run process: {}".format(er))
 					
 				mission = self.missions.take()
 				if not mission:
