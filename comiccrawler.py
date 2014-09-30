@@ -38,7 +38,7 @@ def extend(dict, *args):
 	copy dict2 into dict1 with no overwrite
 	"""
 	for dict2 in args:
-		for key, value in dict2:
+		for key, value in dict2.items():
 			if key not in dict:
 				dict[key] = value
 	
@@ -609,7 +609,7 @@ class MissionList(Worker):
 		try:
 			f = open(self.savepath, "rb")
 		except FileNotFoundError:
-			print("no lib file")
+			print(self.savepath + " not exists.")
 			return
 		self.q = pickle.load(f)
 		self.bubble("MISSIONQUE_ARRANGE", self)
@@ -671,8 +671,8 @@ class DownloadManager(Worker):
 		self.configManager = configManager
 		self.moduleManager = moduleManager
 		# self.missionPool = MissionPool("missions.dat")
-		self.missions = FreeQue("save.dat")
-		self.library = FreeQue("library.dat")
+		self.missions = MissionList("save.dat")
+		self.library = MissionList("library.dat")
 		
 		self.downloadWorker = None
 		self.libraryWorker = None
@@ -719,10 +719,14 @@ class DownloadManager(Worker):
 	def addMission(self, mission):
 		"""add mission"""
 		
+		if self.missions.contains(mission):
+			raise MissionDuplicateError
 		self.missions.put(mission)
 		
 	def removeMission(self, *args):
-		pass
+		"""delete mission"""
+	
+		self.missions.remove(args)
 	
 	def startDownload(self):
 		"""Start downloading"""
@@ -778,7 +782,7 @@ class DownloadManager(Worker):
 				if thread.mission.state == "ERROR":
 					self.bubble("ANALYZING_FAILED", thread.mission)
 				else:
-					self.addMission(thread.mission)
+					self.bubble("ANALYZING_FINISHED", thread.mission)
 				self.analyzeWorkers.remove(thread)
 
 		super().onMessage(message, prarm, thread)
@@ -789,8 +793,8 @@ class DownloadManager(Worker):
 		try:
 			self.missions.save()
 			self.library.save()
-		except Exception as er:
-			self.message("DAT_SAVE_FAILED", er)
+		except OSError as er:
+			self.bubble("SESSION_SAVE_FAILED", er)
 		else:
 			print("Session saved success.")
 		
@@ -800,28 +804,29 @@ class DownloadManager(Worker):
 		try:
 			self.missions.load()
 			self.library.load()
-		except Exception as er:
-			self.message("DAT_LOAD_FAILED", er)
+		except OSError as er:
+			self.bubble("SESSION_LOAD_FAILED", er)
 		else:
 			for m in self.missions.q:
 				m.downloader = self.moduleManager.getDownloader(m.url)
 			print("Session loaded success.")
-		self.removeLibDuplicate()
+			
+		self.replaceDuplicate()
 		
-	def replaceDuplicate(self, list):
+	def replaceDuplicate(self):
 		"""replace duplicate with library one"""
 		
-		l = self.missionque.q
+		l = self.missions.q
 		for i, mission in enumerate(l):
-			for new_mission in list:
+			for new_mission in self.library.q:
 				if mission.url == new_mission.url:
 					l[i] = new_mission
-		
+
 	def addLibrary(self, mission):
 		"""add mission"""
 		
 		if self.library.contains(mission):
-			raise Error("Mission already exist!")
+			raise MissionDuplicateError
 		self.library.put(mission)
 		
 	def removeLibrary(self, *missions):
