@@ -11,17 +11,19 @@ import urllib.error
 
 import threading
 
-# state code 
-class S:
-	INIT = 0
-	ANALYZED = 1
-	DOWNLOADING = 2
-	PAUSE = 3
-	FINISHED = 4
-	ERROR = 5
-	INTERRUPT = 6
-	UPDATE = 7
-	ANALYZING = 8
+from worker import F, Worker
+
+# mission state code?
+# class S:
+	# INIT = 0
+	# ANALYZED = 1
+	# DOWNLOADING = 2
+	# PAUSE = 3
+	# FINISHED = 4
+	# ERROR = 5
+	# INTERRUPT = 6
+	# UPDATE = 7
+	# ANALYZING = 8
 
 # from queue import Queue
 # messageBucket = Queue()
@@ -29,6 +31,16 @@ class S:
 	# """Message collector"""
 	
 	# messageBucket.put((msg, args))
+	
+def extend(dict, *args):
+	"""extend(dict1, dict2)
+	
+	copy dict2 into dict1 with no overwrite
+	"""
+	for dict2 in args:
+		for key, value in dict2:
+			if key not in dict:
+				dict[key] = value
 	
 def getext(byte):
 	"""Test the file type according byte stream with imghdr
@@ -109,9 +121,14 @@ def safeheader(header):
 def grabber(url, header={}, encode=False):	
 	"""Http works"""
 	
+	defaultHeader = {
+		"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:32.0) Gecko/20100101 Firefox/32.0"
+	}
 	url = safeurl(url)
 	# bugged when header contains non latin character...
+	extend(header, defaultHeader)
 	header = safeheader(header)
+	
 	req = urllib.request.Request(url,headers=header)
 	rs = urllib.request.urlopen(req, timeout=20)
 	ot = rs.read()
@@ -143,7 +160,8 @@ class Mission(Worker):
 	title = ""
 	url = ""
 	episodelist = []
-	state = INIT
+	state = "INIT"
+	error = None
 	downloader = None
 	lock = None
 	update = False
@@ -171,34 +189,38 @@ class Mission(Worker):
 		if not hasattr(self, "update"):
 			self.update = False
 		
-	def setTitle(self, title):
-		"""set new title"""
-		
-		self.title = title
-		_evtcallback("MISSION_TITLE_CHANGE", self)
-		
-	def set(self, **kwargs):
+	def set(self, *args, **kwargs):
 		"""Set new attribute, may replace setTitle later."""
 		
+		key = None
+		for arg in args:
+			if not key:
+				key = arg
+			else:
+				kwargs[key] = arg
+				key = None
+		
+		dirty = False
 		for key, value in kwargs.items():
-			if key in self:
+			if hasattr(self, key):
 				setattr(self, key, value)
+				dirty = True
+				
+		if dirty:
+			self.sendMessage(self.parent, "MISSION_PROPERTY_CHANGE", self, F.BUBBLE)
 
 class Episode:
 	"""Episode data class. Contains a book's information."""
 	
-	def __init__(self):
-		"""init"""
-		
-		self.title = ""
-		self.firstpageurl = ""
-		self.currentpageurl = ""
-		self.currentpagenumber = 0
-		self.skip = False
-		self.complete = False
-		self.error = False
-		self.errorpages = 0
-		self.totalpages = 0
+	title = ""
+	firstpageurl = ""
+	currentpageurl = ""
+	currentpagenumber = 0
+	skip = False
+	complete = False
+	error = False
+	errorpages = 0
+	totalpages = 0
 		
 class DownloadWorker(Worker):
 	"""The main core of Comic Crawler"""
@@ -217,15 +239,16 @@ class DownloadWorker(Worker):
 		# never do mission.lock.acquire in callback...
 		try:
 			self.mission.lock.acquire()
+			self.mission.set("state", "DOWNLOADING")
 			self.download(self.mission, self.savepath)
 		except InterruptError:
-			self.mission.state_(PAUSE)
+			self.mission.set("state", "PAUSE")
 			self.callback(self.mission)
 		except Exception as er:
-			self.mission.state_(ERROR)
+			self.mission.set("state", "ERROR")
 			self.callback(self.mission, er)
 		else:
-			self.mission.state_(FINISHED)
+			self.mission.set("state", "FINISHED")
 			self.callback(self.mission)
 		finally:
 			self.mission.lock.release()
@@ -260,14 +283,15 @@ class DownloadWorker(Worker):
 				safeprint("Episode download complete!")
 				print("")
 				ep.complete = True
-				_evtcallback("DOWNLOAD_EP_COMPLETE", mission, ep)
+				self.bubble("EP_FINISHED", (mission, ep))
+				# _evtcallback("DOWNLOAD_EP_COMPLETE", mission, ep)
 			except SkipEpisodeError:
 				safeprint("Something bad happened, skip the episode.")
 				ep.skip = True
 				continue
 		else:
 			safeprint("Mission complete!")
-			mission.state_(FINISHED)
+			# mission.state_(FINISHED)
 			mission.update = False
 
 	def crawlpage(self, ep, savepath, mission, fexp):
@@ -377,7 +401,7 @@ class DownloadWorker(Worker):
 				# check image type
 				ext = getext(oi)
 				if not ext:
-					raise Exception("Invalid image type.")
+					raise TypeError("Invalid image type.")
 					
 			except ImageExistsError:
 				safeprint("...page {} already exist".format(
@@ -424,16 +448,20 @@ class AnalyzeWorker(Worker):
 		"""analyze worker"""
 		
 		try:
+			self.mission.set("state", "ANALYZING")
 			self.mission.lock.acquire()
 			self.analyze(self.mission)
 		except Exception as er:
-			self.mission.state = ERROR
+			self.mission.set("state", "ERROR")
 			import traceback
 			er_message = traceback.format_exc()
+			self.mission.error = er_message
 			safeprint(er_message)
-			self.callback(self.mission, er, er_message)
 		else:
-			self.mission.state = ANALYZED
+			if self.mission.update:
+				self.mission.set("state", "UPDATE")
+			else:
+				self.mission.set("state", "ANALYZED")
 			self.callback(self.mission)
 		finally:
 			self.mission.lock.release()
@@ -441,25 +469,16 @@ class AnalyzeWorker(Worker):
 	def removeDuplicateEP(self, mission):
 		"""remove duplicate episode"""
 		
-		list = []
+		dict = {}
 		for ep in mission.episodelist:
-			for e in list:
-				if ep.firstpageurl == e.firstpageurl:
-					print("duplicate")
-					break
-			else:
-				list.append(ep)
-		mission.episodelist = list
-	
+			dict[ep.firstpageurl] = ep
+			
+		mission.episodelist = [ep for key, ep in dict]
 			
 	def analyze(self, mission):
 		"""Analyze mission url."""
 		
-		# debug
-		self.removeDuplicateEP(mission)
-		
 		safeprint("start analyzing {}".format(mission.url))
-		mission.state_(ANALYZING)
 
 		downloader = mission.downloader
 		print("grabbing html")
@@ -471,7 +490,6 @@ class AnalyzeWorker(Worker):
 		if not mission.episodelist:
 			# new mission
 			mission.episodelist = epList
-			mission.state_(ANALYZED)
 		else:
 			# re-analyze, put new ep into eplist
 			for ep in epList:
@@ -484,14 +502,14 @@ class AnalyzeWorker(Worker):
 			# check if there are incomplete ep
 			for ep in mission.episodelist:
 				if not ep.complete and not ep.skip:
-					mission.state_(UPDATE)
 					mission.update = True
 					break
-			else:
-				mission.state_(FINISHED)
 		
 		if not mission.episodelist:
 			raise Exception("get episode list failed!")
+		
+		# remove duplicate
+		self.removeDuplicateEP(mission)
 		
 		safeprint("analyzed succeed!")
 
@@ -509,7 +527,7 @@ class SkipEpisodeError(CrawlerError): pass
 
 class ModuleError(CrawlerError): pass
 
-class FreeQue:
+class MissionList(Worker):
 	"""Mission queue data class."""
 	
 	def __init__(self, savepath=None):
@@ -522,14 +540,14 @@ class FreeQue:
 				return True
 		return False
 	
-	def empty(self):
+	def isEmpty(self):
 		"""return true if list is empty"""
 		return not self.q
 	
 	def put(self, item):
 		"""append item"""
 		self.q.append(item)
-		_evtcallback("MISSIONQUE_ARRANGE", self)
+		self.bubble("MISSIONQUE_ARRANGE", self)
 		
 	def lift(self, items, reverse=False):
 		"""Move items to the top."""
@@ -539,7 +557,7 @@ class FreeQue:
 			self.q = a + b
 		else:
 			self.q = b + a
-		_evtcallback("MISSIONQUE_ARRANGE", self)
+		self.bubble("MISSIONQUE_ARRANGE", self)
 	
 	def drop(self, items):
 		"""Move items to the bottom."""
@@ -548,8 +566,8 @@ class FreeQue:
 	def remove(self, items):
 		"""Delete specify items."""
 		self.q = [ i for i in self.q if i not in items]
-		_evtcallback("MISSIONQUE_ARRANGE", self)
-		_evtcallback("MESSAGE", "Deleted {} mission(s)".format(len(items)))
+		self.bubble("MISSIONQUE_ARRANGE", self)
+		self.bubble("MESSAGE", "Deleted {} mission(s)".format(len(items)))
 
 	def take(self, n=1):
 		"""Return a list containing n valid missions. If n <= 1 return a valid 
@@ -557,13 +575,13 @@ class FreeQue:
 		"""
 		if n <= 1:
 			for i in self.q:
-				if i.state != FINISHED:
+				if i.state != "FINISHED" and not i.inLibrary:
 					return i
 			return None
 		else:
 			s = []
 			for i in self.q:
-				if i.state != FINISHED:
+				if i.state != "FINISHED" and not i.inLibrary:
 					s.append(i)
 				if len(s) == n:
 					return s
@@ -571,8 +589,8 @@ class FreeQue:
 			
 	def cleanfinished(self):
 		"""delete fished missions"""
-		self.q = [ i for i in self.q if i.state is not FINISHED ]
-		_evtcallback("MISSIONQUE_ARRANGE", self)
+		self.q = [ i for i in self.q if i.state is not "FINISHED" or i.inLibrary]
+		self.bubble("MISSIONQUE_ARRANGE", self)
 		
 	def printList(self):
 		"""print mission list"""
@@ -594,7 +612,7 @@ class FreeQue:
 			print("no lib file")
 			return
 		self.q = pickle.load(f)
-		_evtcallback("MISSIONQUE_ARRANGE", self)
+		self.bubble("MISSIONQUE_ARRANGE", self)
 		
 	def save(self):
 		"""pickle list to file"""
@@ -614,7 +632,7 @@ class ConfigManager:
 		self.config = cp.ConfigParser(interpolation=None)
 		
 		self.load()
-		
+
 	def get(self):
 		"""return config"""
 		return self.config
@@ -652,10 +670,13 @@ class DownloadManager(Worker):
 		
 		self.configManager = configManager
 		self.moduleManager = moduleManager
+		# self.missionPool = MissionPool("missions.dat")
 		self.missions = FreeQue("save.dat")
 		self.library = FreeQue("library.dat")
+		
 		self.downloadWorker = None
 		self.libraryWorker = None
+		self.analyzeWorkers = []
 		
 		self.conf()
 		self.load()
@@ -671,14 +692,33 @@ class DownloadManager(Worker):
 			"runafterdownload": "",
 			"libraryautocheck": "true"
 		}
-		conf.apply(self.setting, default)
+		# conf.apply(self.setting, default)
+		extend(self.setting, default)
+		
 		# clean savepath
 		self.setting["savepath"] = os.path.normpath(self.setting["savepath"])
 		
+	def addURL(self, url):
+		"""add url"""
+		
+		if self.missions.contains(mission):
+			raise MissionDuplicateError("Mission already exists")
+			
+		mission = self.library.getByURL(url)
+		if not mission:
+			mission = Mission()
+			mission.url = url
+		self.analyze(mission)
+		
+	def analyze(self, mission):
+		"""Analyze mission"""
+		
+		worker = self.createChildThread(AnalyzeWorker, mission).start()
+		self.analyzeWorkers.extend(worker)
+		
 	def addMission(self, mission):
 		"""add mission"""
-		if self.library.match(mission):
-			raise Error("Mission already in library")
+		
 		self.missions.put(mission)
 		
 	def removeMission(self, *args):
@@ -731,10 +771,16 @@ class DownloadManager(Worker):
 				
 			if thread == self.libraryWorker:
 				mission = self.library.take()
-				if not mission:
-					return
-				self.libraryWorker = self.createChildThread(AnalyzeWorker, mission).start()
+				if mission:
+					self.libraryWorker = self.createChildThread(AnalyzeWorker, mission).start()
 				
+			if thread in self.analyzeWorkers:
+				if thread.mission.state == "ERROR":
+					self.bubble("ANALYZING_FAILED", thread.mission)
+				else:
+					self.addMission(thread.mission)
+				self.analyzeWorkers.remove(thread)
+
 		super().onMessage(message, prarm, thread)
 	
 	def save(self):
