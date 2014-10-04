@@ -4,7 +4,7 @@
 
 A threaded worker, implemented with message queue and parent/child pattern."""
 
-import queue, threading
+import queue, threading, traceback
 
 class F:
 	"""A data class. Define the message flags"""
@@ -166,6 +166,7 @@ class Worker:
 		except StopWorker:
 			pass
 		except Exception as er:
+			traceback.print_exc()
 			if self.threading:
 				self.error.put(er)
 			else:
@@ -214,7 +215,7 @@ class Worker:
 		"""call this method and self.worker will run in new thread"""
 
 		if self.running:
-			return False
+			raise RuntimeError("Thread is running")
 			
 		self.running = True
 		self.args = args

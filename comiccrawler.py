@@ -10,6 +10,20 @@ import urllib.parse
 import urllib.error
 import threading
 from worker import Worker
+
+import traceback
+
+oldStateCode = {
+	0: "INIT",
+	1: "ANALYZED",
+	2: "DOWNLOADING",
+	3: "PAUSE",
+	4: "FINISHED",
+	5: "ERROR",
+	6: "INTERRUPT",
+	7: "UPDATE",
+	8: "ANALYZING"
+}
 	
 def extend(dict, *args):
 	"""extend(dict1, dict2)
@@ -163,16 +177,22 @@ class Mission(Worker):
 		
 		self.__dict__.update(state)
 		self.lock = Lock()
+		
 		# backward compatibility
 		if not hasattr(self, "update"):
 			self.update = False
+			
+		if self.state in oldStateCode:
+			self.state = oldStateCode[self.state]
 		
 	def set(self, *args, **kwargs):
 		"""Set new attribute, may replace setTitle later."""
 		
+		# safeprint(args, kwargs)
 		key = None
 		for arg in args:
-			if not key:
+			# safeprint(arg)
+			if key is None:
 				key = arg
 			else:
 				kwargs[key] = arg
@@ -180,14 +200,13 @@ class Mission(Worker):
 		
 		dirty = False
 		for key, value in kwargs.items():
+			# safeprint(key, value)
 			if hasattr(self, key):
 				setattr(self, key, value)
 				dirty = True
 				
 		if dirty:
 			self.bubble("MISSION_PROPERTY_CHANGED", self)
-
-		
 
 class Episode:
 	"""Episode data class. Contains a book's information."""
@@ -205,9 +224,9 @@ class Episode:
 class DownloadWorker(Worker):
 	"""The main core of Comic Crawler"""
 
-	def __init__(self, parent, mission=None, savepath="."):
+	def __init__(self, mission=None, savepath="."):
 		"""set the mission"""
-		super().__init__(parent)
+		super().__init__()
 		
 		self.mission = mission
 		self.savepath = savepath
@@ -217,14 +236,18 @@ class DownloadWorker(Worker):
 		
 		# warning there is a deadlock, 
 		# never do mission.lock.acquire in callback...
+		safeprint("DownloadWorker start downloading " + self.mission.title)
 		try:
 			self.mission.lock.acquire()
 			self.mission.set("state", "DOWNLOADING")
+			print("set")
 			self.download(self.mission, self.savepath)
 		except InterruptError:
+			traceback.print_exc()
 			self.mission.set("state", "PAUSE")
 			self.callback(self.mission)
 		except Exception as er:
+			traceback.print_exc()
 			self.mission.set("state", "ERROR")
 			self.callback(self.mission, er)
 		else:
@@ -561,23 +584,18 @@ class MissionList(Worker):
 		"""Return a list containing n valid missions. If n <= 1 return a valid 
 		mission.
 		"""
-		if n <= 1:
-			for i in self.q:
-				if i.state != "FINISHED" and not i.inLibrary:
-					return i
-			return None
-		else:
-			s = []
-			for i in self.q:
-				if i.state != "FINISHED" and not i.inLibrary:
-					s.append(i)
-				if len(s) == n:
-					return s
-			return s or None
+		
+		s = []
+		for i in self.q:
+			if i.state != "FINISHED":
+				s.append(i)
+			if len(s) == n:
+				return s if n > 1 else s[0]
+		return None
 			
 	def cleanfinished(self):
 		"""delete fished missions"""
-		self.q = [ i for i in self.q if i.state is not "FINISHED" or i.inLibrary]
+		self.q = [ i for i in self.q if i.state is not "FINISHED"]
 		self.bubble("MISSIONQUE_ARRANGE", self)
 		
 	def printList(self):
@@ -600,6 +618,7 @@ class MissionList(Worker):
 			print(self.savepath + " not exists.")
 			return
 		self.q = pickle.load(f)
+		
 		self.bubble("MISSIONQUE_ARRANGE", self)
 		
 	def save(self):
@@ -609,6 +628,14 @@ class MissionList(Worker):
 		import pickle
 		f = open(self.savepath, "wb")
 		pickle.dump(self.q, f)
+		
+	def getByURL(self, url):
+		"""Take mission with specify url"""
+		
+		for mission in self.q:
+			if mission.url == url:
+				return mission
+		return None
 
 class ConfigManager:
 	"""Load config for other classes"""
@@ -689,9 +716,6 @@ class DownloadManager(Worker):
 	def addURL(self, url):
 		"""add url"""
 		
-		if self.missions.contains(mission):
-			raise MissionDuplicateError("Mission already exists")
-			
 		mission = self.library.getByURL(url)
 		if not mission:
 			mission = Mission()
@@ -701,8 +725,8 @@ class DownloadManager(Worker):
 	def analyze(self, mission):
 		"""Analyze mission"""
 		
-		worker = self.createChildThread(AnalyzeWorker, mission).start()
-		self.analyzeWorkers.extend(worker)
+		worker = self.createChild(AnalyzeWorker, mission).start()
+		self.analyzeWorkers.append(worker)
 		
 	def addMission(self, mission):
 		"""add mission"""
@@ -724,11 +748,12 @@ class DownloadManager(Worker):
 		mission = self.missions.take()
 		if not mission:
 			raise Error("All download completed")
-		self.downloadWorker = self.createChildThread(DownloadWorker, mission).start()
+		safeprint("Start download " + mission.title)
+		self.downloadWorker = self.createChild(DownloadWorker, mission, self.setting["savepath"]).start()
 		
 	def stopDownload(self):
 		"""Stop downloading"""
-		if self.downloadWorker.running:
+		if self.downloadWorker and self.downloadWorker.running:
 			self.downloadWorker.stop()
 		
 	def startCheckUpdate(self):
@@ -737,7 +762,7 @@ class DownloadManager(Worker):
 			return
 		
 		mission = self.library.take()
-		self.libraryWorker = self.createChildThread(AnalyzeWorker, mission).start()
+		self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
 		
 	def worker(self):
 		"""Event loop"""
@@ -759,12 +784,12 @@ class DownloadManager(Worker):
 				mission = self.missions.take()
 				if not mission:
 					raise Error("All download completed")
-				self.downloadWorker = self.createChildThread(DownloadWorker, mission).start()
+				self.downloadWorker = self.createChild(DownloadWorker, mission).start()
 				
 			if thread == self.libraryWorker:
 				mission = self.library.take()
 				if mission:
-					self.libraryWorker = self.createChildThread(AnalyzeWorker, mission).start()
+					self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
 				
 			if thread in self.analyzeWorkers:
 				if thread.mission.state == "ERROR":
@@ -773,7 +798,7 @@ class DownloadManager(Worker):
 					self.bubble("ANALYZE_FINISHED", thread.mission)
 				self.analyzeWorkers.remove(thread)
 
-		super().onMessage(message, prarm, thread)
+		super().onMessage(message, param, thread)
 	
 	def save(self):
 		"""Save mission que."""
@@ -796,6 +821,8 @@ class DownloadManager(Worker):
 			self.bubble("SESSION_LOAD_FAILED", er)
 		else:
 			for m in self.missions.q:
+				m.downloader = self.moduleManager.getDownloader(m.url)
+			for m in self.library.q:
 				m.downloader = self.moduleManager.getDownloader(m.url)
 			print("Session loaded success.")
 			
@@ -913,10 +940,11 @@ class Main(Worker):
 		
 		self.configManager = ConfigManager("setting.ini")
 		self.moduleManager = ModuleManager(configManager=self.configManager)
-		self.downloadManager = DownloadManager(
+		self.downloadManager = self.createChild(
+			DownloadManager,
 			configManager = self.configManager,
 			moduleManager = self.moduleManager
-		)
+		).start()
 		
 		self.downloadManager.load()
 		
