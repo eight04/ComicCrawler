@@ -146,6 +146,7 @@ class Mission(Worker):
 	
 	def __init__(self):
 		"""Create lock"""
+		super().__init__()
 		self.lock = threading.Lock()
 		
 	def __getstate__(self):
@@ -184,9 +185,9 @@ class Mission(Worker):
 				dirty = True
 				
 		if dirty:
-			self.sendMessage(self.parent, "MISSION_PROPERTY_CHANGE", self, F.BUBBLE)
+			self.bubble("MISSION_PROPERTY_CHANGED", self)
 
-		self.bubble("MISSION_PROPERTY_CHANGED", self)
+		
 
 class Episode:
 	"""Episode data class. Contains a book's information."""
@@ -427,7 +428,6 @@ class AnalyzeWorker(Worker):
 		"""analyze worker"""
 		
 		try:
-			self.mission.set("state", "ANALYZING")
 			self.mission.lock.acquire()
 			self.mission.set("state", "ANALYZING")
 			self.analyze(self.mission)
@@ -437,12 +437,14 @@ class AnalyzeWorker(Worker):
 			er_message = traceback.format_exc()
 			self.mission.error = er_message
 			safeprint(er_message)
+			self.bubble("ANALYZE_FAILED", self.mission)
 		else:
 			if self.mission.update:
 				self.mission.set("state", "UPDATE")
 			else:
 				self.mission.set("state", "ANALYZED")
-			self.callback(self.mission)
+			# self.callback(self.mission)
+			self.bubble("ANALYZE_FINISHED", self.mission)
 		finally:
 			self.mission.lock.release()
 
@@ -511,6 +513,7 @@ class MissionList(Worker):
 	"""Mission queue data class."""
 	
 	def __init__(self, savepath=None):
+		super().__init__()
 		self.q = []
 		self.savepath = savepath
 		
@@ -545,7 +548,12 @@ class MissionList(Worker):
 		
 	def remove(self, items):
 		"""Delete specify items."""
-		self.q = [ i for i in self.q if i not in items]
+		for item in items:
+			if not item.lock.acquire(blocking=False):
+				raise RuntimeError("Mission already in use")
+			else:
+				self.q.remove(item)
+				item.lock.release()
 		self.bubble("MISSIONQUE_ARRANGE", self)
 		self.bubble("MESSAGE", "Deleted {} mission(s)".format(len(items)))
 
@@ -801,7 +809,7 @@ class DownloadManager(Worker):
 		for i, mission in enumerate(list):
 			for new_mission in list2:
 				if mission.url == new_mission.url:
-					l[i] = new_mission
+					list[i] = new_mission
 
 	def addLibrary(self, mission):
 		"""add mission"""
@@ -814,6 +822,11 @@ class DownloadManager(Worker):
 		"""remove missions"""
 		
 		self.library.remove(missions)
+		
+	def addMissionUpdate(self):
+		"""Add updated mission to download list"""
+		for mission in self.library.q:
+			self.addMission(mission)
 		
 		
 class ModuleManager:
@@ -899,24 +912,16 @@ class Main(Worker):
 		"""Load classes."""
 		
 		self.configManager = ConfigManager("setting.ini")
-		self.moduleManager = ModuleManager(self)
-		self.downloadManager = DownloadManager(self)
-		self.library = Library(self)
+		self.moduleManager = ModuleManager(configManager=self.configManager)
+		self.downloadManager = DownloadManager(
+			configManager = self.configManager,
+			moduleManager = self.moduleManager
+		)
 		
-		
-		self.library.load()
 		self.downloadManager.load()
-		self.downloadManager.replaceDuplicate()
-		self.library.checkUpdate()
 		
 	def unloadClasses(self):
 		"""Unload classes."""
-		
-		# wait library stop
-		if self.library.running:
-			self.library.stop()
-			self.library.join()
-		self.library.save()
 		
 		# wait download manager stop
 		if self.downloadManager.running:

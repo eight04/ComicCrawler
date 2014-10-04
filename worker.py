@@ -35,8 +35,8 @@ class Worker:
 		
 	def bubble(self, message, param=None):
 		"""Shorthand to bubble message"""
-		
-		self.sendMessage(self.parent, message, param, F.BUBBLE)
+		if self.parent:
+			self.sendMessage(self.parent, message, param, F.BUBBLE)
 		
 	def broadcast(self, message, param=None):
 		"""Shorthand to broadcast message"""
@@ -83,7 +83,10 @@ class Worker:
 		return ret
 	
 	def onMessage(self, message, param, sender):
-		"""Override"""
+		"""Override
+		
+		Maybe we should create a list to add message listener?
+		"""
 		
 		if message == "STOP_THREAD":
 			raise StopWorker
@@ -98,8 +101,20 @@ class Worker:
 			return self.wait("RESUME_THREAD")
 			
 		return param
+
+	def processMessage(self):
+		"""Process message que untill empty"""
 		
-	def wait(self, arg, sender=None):
+		while True:
+			try:
+				message = self.messageBucket.get_nowait()
+			except queue.Empty:
+				return
+			else:
+				self._onMessage(*message)
+		
+		
+	def wait(self, arg=None, sender=None):
 		"""Wait for specify message or wait specify duration.
 		
 		`arg` could be int or str. If `arg` is int, this function will wait 
@@ -110,7 +125,14 @@ class Worker:
 		message `arg` which was sent by `sender`. If sender is None, this 
 		function just returned after getting specify message.
 		"""
+		if arg is None:
+			# Wait a single message
+			message = self.messageBucket.get()
+			self._onMessage(*message)
+			return message[1]
+		
 		if type(arg) in [int, float]:
+			# Wait time
 			import time
 			
 			while True:
@@ -127,15 +149,8 @@ class Worker:
 					if arg <= 0:
 						return
 				
-		elif type(arg) is str:
-			# cached = None
-			# for cache in self.messageCached:
-				# if cache[0][0] == arg and (not sender or sender == cache[0][3]):
-					# cached = cache
-			# if cached:
-				# self.messageCached.remove(cached)
-				# return cached[1]	# cached result
-				
+		if type(arg) is str:
+			# Wait for specify message
 			while True:
 				message = self.messageBucket.get()
 				ret = self._onMessage(*message)

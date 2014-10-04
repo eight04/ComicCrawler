@@ -4,9 +4,13 @@ from worker import Worker
 from threading import Lock
 
 class Test:
-	lock = Lock()
-	
-test1 = Test()
-test2 = Test()
+	name = "test1"
 
-print(test1.lock == test2.lock)
+
+class Test2(Test):
+	name = "test2"
+	def showName(self):
+		print(super())
+	
+test = Test2()
+test.showName()

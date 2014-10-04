@@ -8,9 +8,9 @@ from tkinter import *
 from tkinter.ttk import *
 import tkinter.messagebox
 
-import comiccrawler as cc
-from safeprint import safeprint, addcallback
-import queue
+from comiccrawler import Main
+from safeprint import safeprint
+# import queue
 
 STATE = {
 	"INIT": "準備",
@@ -93,7 +93,7 @@ class Dialog(Toplevel):
 		self.wait_window(self)
 		return self.result
 	
-class MainWindow(cc.Controller):
+class MainWindow(Main):
 	"""Main GUI window class."""
 	
 	def view(self):
@@ -224,28 +224,15 @@ class MainWindow(cc.Controller):
 		# ========GUI END========
 		
 		self.bindevent()
-		self.messageq = queue.Queue()
-		addcallback(self.sendToBucket)
 		self.tvrefresh()
 		self.libTvRefresh()
 		self.gRoot.after(100, self.tkloop)
 		self.gRoot.mainloop()
 		
-	def sendToBucket(self, text):
-		"""hook with safeprint"""
-		
-		cc._evtcallback("MESSAGE", text)
-		
 	def tkloop(self):
 		"""get message from comiccrawler.messageBucket"""
 		
-		try:
-			while True:
-				message, args = cc.messageBucket.get_nowait()
-				self.message(message, args)
-		except queue.Empty:
-			pass
-			
+		self.processMessage()
 		self.gRoot.after(100, self.tkloop)
 
 	def bindevent(self):
@@ -273,41 +260,43 @@ class MainWindow(cc.Controller):
 		
 		# interface for download manager
 		def addurl():
-			self.iAddUrl(self.gEntry_url.get())
+			self.downloadManager.addURL(self.gEntry_url.get())
 			self.gEntry_url.delete(0, "end")
 		self.gBtnaddurl["command"] = addurl
 		
 		def startdownload():
-			self.iStart()
+			self.downloadManager.startDownload()
 		self.gBtnstart["command"] = startdownload
 		
 		def stopdownload():
-			self.iStop()
+			self.downloadManager.stopDownload()
 		self.gBtnstop["command"] = stopdownload
 		
 		def cleanfinished():
-			self.iClean()
+			self.downloadManager.missions.cleanfinished()
 		self.gBtnclean["command"] = cleanfinished
 		
 		def reloadconfig():
-			self.iReloadConfig()
+			self.configManager.load()
+			self.moduleManager.loadconfig()
+			self.downloadManager.conf()
 		self.gBtnconfig["command"] = reloadconfig
 		
 		# interface for mission list
 		def tvdelete():
 			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
 				s = self.gTv.selection()
-				self.iRemoveMission(*[self.iidholder[k] for k in s])
+				self.downloadManager.missions.remove([self.iidholder[k] for k in s])
 		self.gTvmenu.entryconfig(0, command=tvdelete)
 		
 		def tvlift():
 			s = self.gTv.selection()
-			self.iLift(*[self.iidholder[k] for k in s])
+			self.downloadManager.missions.lift([self.iidholder[k] for k in s])
 		self.gTvmenu.entryconfig(1, command=tvlift)
 			
 		def tvdrop():
 			s = self.gTv.selection()
-			self.iDrop(*[self.iidholder[k] for k in s])
+			self.downloadManager.missions.drop([self.iidholder[k] for k in s])
 		self.gTvmenu.entryconfig(2, command=tvdrop)
 		
 		def tvchangetitle():
@@ -322,7 +311,7 @@ class MainWindow(cc.Controller):
 			missions = [ self.iidholder[i] for i in s ]
 			titles = [ m.title for m in missions ]
 			for mission in missions:
-				self.iAddToLib(mission)
+				self.downloadManager.addLibrary(mission)
 			safeprint("已加入圖書館︰{}".format(", ".join(titles)))
 		self.gTvmenu.entryconfig(4, command=tvAddToLib)
 		
@@ -341,20 +330,20 @@ class MainWindow(cc.Controller):
 		
 		# interface for library
 		def libCheckUpdate():
-			self.iLibCheckUpdate()
+			self.downloadManager.startCheckUpdate()
 		self.gBtnUpdate["command"] = libCheckUpdate
 		
 		def libDownloadUpdate():
-			self.iLibDownloadUpdate()
+			self.downloadManager.addMissionUpdate()
 			self.gNotebook.select(0)
-			self.iStart()
+			self.downloadManager.startDownload()
 		self.gBtnDownloadUpdate["command"] = libDownloadUpdate
 		
 		# interface for library list
 		def libMenuDelete():
 			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
 				s = self.gLibTV.selection()
-				self.iLibRemove(*[self.libIdIndex[k] for k in s])
+				self.downloadManager.library.remove([self.libIdIndex[k] for k in s])
 		self.gLibMenu.entryconfig(0, command=libMenuDelete)
 		
 		def libMenuReselectEP():
@@ -374,7 +363,7 @@ class MainWindow(cc.Controller):
 					not tkinter.messagebox.askokcancel("Comic Crawler",
 						"任務下載中，確定結束？")):
 				return
-			self.downloadManager.stop()
+			self.downloadManager.stopDownload()
 			self.gRoot.destroy()
 		self.gRoot.protocol("WM_DELETE_WINDOW", beforequit)
 		
@@ -391,7 +380,7 @@ class MainWindow(cc.Controller):
 	def load(self):
 		"""load mission from mission que"""
 		
-		missionlist = self.downloadManager.missionque.q
+		missionlist = self.downloadManager.missions.q
 		for m in missionlist:
 			self.addtotree(m)
 	
@@ -411,27 +400,21 @@ class MainWindow(cc.Controller):
 		tv.delete(*ids)
 		self.libIdIndex = {}
 		
-		list = self.library.libraryList.q
+		list = self.downloadManager.library.q
 		for m in list:
 			cid = tv.insert("","end",
 				values=(m.title, m.downloader.name, STATE[m.state]))
 			self.libIdIndex[cid] = m
 		
-	def iAnalyzeFinished(self, mission, error=None, er_msg=None):
-		"""overwrite, send to message bucket"""
-		
-		cc._evtcallback("ANALYZED_FINISHED", mission, error, er_msg)
-	
-	def message(self, msg, args=None):
+	def onMessage(self, message, param, sender):
 		"""GUI Message control"""
 		
-		if msg is "MESSAGE":
-			text, = args
-			text = text.splitlines()[-1]
+		if message == "MESSAGE":
+			text = param.splitlines()[-1]
 			self.gStatusbar["text"] = text
 	
-		elif msg is "MISSION_STATE_CHANGE":
-			mission, = args
+		if message == "MISSION_PROPERTY_CHANGE":
+			mission = param
 			if "iidholder" in vars(self):
 				for cid, m in self.iidholder.items():
 					if m is mission:
@@ -442,46 +425,33 @@ class MainWindow(cc.Controller):
 					if m is mission:
 						self.gLibTV.set(cid, "state", STATE[m.state])
 
-		elif msg is "MISSION_TITLE_CHANGE":
-			mission, = args
-			if "iidholder" in vars(self):
-				for cid, m in self.iidholder.items():
-					if m is mission:
-						self.gTv.set(cid, "name", m.title)
-			
-			if "libIdIndex" in vars(self):
-				for cid, m in self.libIdIndex.items():
-					if m is mission:
-						self.gLibTV.set(cid, "name", m.title)
 
-		elif msg is "MISSIONQUE_ARRANGE":
-			q, = args
-			if q == self.downloadManager.missionque:
+		if message is "MISSIONQUE_ARRANGE":
+			if param == self.downloadManager.missions:
 				self.tvrefresh()
-			if q == self.library.libraryList:
+			if param == self.downloadManager.library:
 				self.libTvRefresh()
 			
-		elif msg is "WORKER_TERMINATED":
-			mission, er, er_msg = args
+		# if message is "WORKER_TERMINATED":
+			# mission, er, er_msg = param
 			
+			# tkinter.messagebox.showerror(
+				# "Comic Crawler", "下載中斷！\n{}".format(er_msg))
+				
+		if message is "ANALYZE_FINISHED":
+			mission = param
+			if len(mission.episodelist):
+				if len(mission.episodelist) > 1:
+					selectEp(mission)
+				self.downloadManager.addMission(mission)
+			
+		if message == "ANALYZED_FAILED":
+			mission, er_msg = param
 			tkinter.messagebox.showerror(
-				"Comic Crawler", "下載中斷！\n{}".format(er_msg))
+				"Comic Crawler", "解析錯誤！\n{}".format(er_msg))
 				
-		elif msg is "ANALYZED_FINISHED":
-			mission, error, er_msg = args
-			
-			if error:
-				tkinter.messagebox.showerror(
-					"Comic Crawler", "解析錯誤！\n{}".format(er_msg))
-				return
+		super().onMessage(message, param, sender)
 				
-			if len(mission.episodelist) > 1 and not selectEp(self.gRoot, mission):
-				return
-				
-			self.iAddMission(mission)
-				
-		else:
-			pass
 
 def selectTitle(parent, mission):
 	"""change mission title dialog"""
@@ -593,4 +563,4 @@ def selectEp(parent, mission):
 	return w.wait()
 
 if __name__ == "__main__":
-	MainWindow()
+	MainWindow().run()
