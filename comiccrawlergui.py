@@ -13,15 +13,15 @@ from safeprint import safeprint, addcallback
 import queue
 
 STATE = {
-	cc.INIT: "準備",
-	cc.ANALYZED: "解析完成",
-	cc.DOWNLOADING: "下載中",
-	cc.PAUSE: "停止",
-	cc.FINISHED: "完成",
-	cc.ERROR: "錯誤",
-	cc.INTERRUPT: "已刪除",
-	cc.UPDATE: "有更新",
-	cc.ANALYZING: "分析中"
+	"INIT": "準備",
+	"ANALYZED": "解析完成",
+	"DOWNLOADING": "下載中",
+	"PAUSE": "停止",
+	"FINISHED": "完成",
+	"ERROR": "錯誤",
+	"INTERRUPT": "已刪除",
+	"UPDATE": "有更新",
+	"ANALYZING": "分析中"
 }
 
 class Dialog(Toplevel):
