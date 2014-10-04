@@ -4,7 +4,7 @@
 
 A threaded worker, implemented with message queue and parent/child pattern."""
 
-import queue, threading, functools
+import queue, threading
 
 class F:
 	"""A data class. Define the message flags"""
@@ -32,6 +32,17 @@ class Worker:
 		self.args = []
 		self.kwargs = {}
 		self.ret = None
+		
+	def bubble(self, message, param=None):
+		"""Shorthand to bubble message"""
+		
+		self.sendMessage(self.parent, message, param, F.BUBBLE)
+		
+	def broadcast(self, message, param=None):
+		"""Shorthand to broadcast message"""
+		
+		for child in self.children:
+			self.sendMessage(child, message, param, F.BROADCAST)
 	
 	def sendMessage(self, getter, message, param=None, flag=0):
 		"""Send message to other threads"""
