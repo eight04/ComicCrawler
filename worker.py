@@ -169,7 +169,7 @@ class Worker:
 		except StopWorker:
 			pass
 		except Exception as er:
-			# traceback.print_exc()
+			traceback.print_exc()
 			if self.threading:
 				self.error.put(er)
 			else:
@@ -184,12 +184,22 @@ class Worker:
 		
 		print(self.children)
 		self.stopAllChild()
-		while len(self.children):
+		while self.countChild():
 			self.wait("CHILD_THREAD_END")
 		
 		self.running = False
 		if self.parent:
 			self.sendMessage(self.parent, "CHILD_THREAD_END", self.ret)
+			
+	def countChild(self, running=True):
+		if not running:
+			return len(self.children)
+			
+		running = 0
+		for child in self.children:
+			if child.running:
+				running += 1
+		return running
 		
 	def worker(self, *args, **kwargs):
 		"""Override"""

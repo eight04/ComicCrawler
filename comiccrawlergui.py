@@ -7,6 +7,7 @@
 from tkinter import *
 from tkinter.ttk import *
 import tkinter.messagebox
+import sys
 
 from comiccrawler import Main
 from safeprint import safeprint
@@ -444,10 +445,10 @@ class MainWindow(Main):
 					selectEp(param.mission)
 				self.downloadManager.addMission(param)
 			
-		if message == "ANALYZED_FAILED":
-			mission, er_msg = param
+		if message == "ANALYZE_FAILED":
+			# mission, er_msg = param
 			tkinter.messagebox.showerror(
-				"Comic Crawler", "解析錯誤！\n{}".format(er_msg))
+				"Comic Crawler", "解析錯誤！\n{}".format(param.error))
 				
 		super().onMessage(message, param, sender)
 				

@@ -238,7 +238,6 @@ class DownloadWorker(Worker):
 		try:
 			self.mission.lock.acquire()
 			self.mission.set("state", "DOWNLOADING")
-			print("set")
 			self.download(self.mission.mission, self.savepath, self.mission.downloader)
 		except StopWorker as er:
 			self.mission.set("state", "PAUSE")
@@ -440,9 +439,9 @@ class DownloadWorker(Worker):
 class AnalyzeWorker(Worker):
 	"""Analyze the mission.url, also the core of Comic Crawler"""
 
-	def __init__(self, parent, mission=None):
+	def __init__(self, mission=None):
 		"""set mission"""
-		super().__init__(parent)
+		super().__init__()
 		
 		self.mission = mission
 	
@@ -455,10 +454,11 @@ class AnalyzeWorker(Worker):
 			self.analyze(self.mission.mission, self.mission.downloader)
 		except Exception as er:
 			self.mission.set("state", "ERROR")
-			import traceback
-			er_message = traceback.format_exc()
-			self.mission.error = er_message
-			safeprint(er_message)
+			self.mission.error = er
+			# import traceback
+			# er_message = traceback.format_exc()
+			# self.mission.error = er_message
+			# safeprint(er_message)
 			self.bubble("ANALYZE_FAILED", self.mission)
 		else:
 			if self.mission.update:
@@ -556,6 +556,9 @@ class MissionList(Worker):
 		
 	def remove(self, *items):
 		"""Delete specify items."""
+		if not items:
+			return
+			
 		for item in items:
 			if not item.lock.acquire(blocking=False):
 				raise RuntimeError("Mission already in use")
@@ -737,6 +740,8 @@ class DownloadManager(Worker):
 	def addURL(self, url):
 		"""add url"""
 		
+		if not url:
+			return
 		mission = self.library.getByURL(url)
 		if not mission:
 			mission = Mission()
@@ -749,8 +754,10 @@ class DownloadManager(Worker):
 		missionContainer = MissionContainer()
 		missionContainer.mission = mission
 		missionContainer.downloader = self.moduleManager.getDownloader(mission.url)
-		worker = self.createChild(AnalyzeWorker, missionContainer).start()
+		worker = AnalyzeWorker(missionContainer)
+		self.addChild(worker)
 		self.analyzeWorkers.append(worker)
+		worker.start()
 		
 	def addMission(self, mission):
 		"""add mission"""
@@ -823,20 +830,16 @@ class DownloadManager(Worker):
 			
 		if message == "DOWNLOAD_PAUSE":
 			pass
-		
+
+		if message == "ANALYZE_FAILED" or message == "ANALYZE_FINISHED":
+			self.analyzeWorkers.remove(thread)
+			
 		if message == "CHILD_THREAD_END":
 			if thread == self.libraryWorker:
 				mission = self.library.take()
 				if mission:
 					self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
 				
-			if thread in self.analyzeWorkers:
-				if param.mission.state == "ERROR":
-					self.bubble("ANALYZE_FAILED", param)
-				else:
-					self.bubble("ANALYZE_FINISHED", param)
-				self.analyzeWorkers.remove(thread)
-
 		super().onMessage(message, param, thread)
 	
 	def save(self):
