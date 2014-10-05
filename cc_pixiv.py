@@ -8,11 +8,10 @@ Ex:
 """
 
 import re
-from comiccrawler import Episode, ConfigManager, grabhtml, LastPageError, SkipEpisodeError
+from comiccrawler import Episode, extend, grabhtml, LastPageError, SkipEpisodeError
 from safeprint import safeprint
 
 header = {
-	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0",
 	"Referer": "http://www.pixiv.net/member_illust.php"
 }
 domain = ["www.pixiv.net"]
@@ -22,7 +21,7 @@ noepfolder = True
 def loadconfig(config):
 	if name not in config:
 		config[name] = {}
-	ConfigManager.apply(config[name], {
+	extend(config[name], {
 		"SESSID": "請輸入Cookie中的PHPSESSID"
 	})
 	header["Cookie"] = "PHPSESSID=" + config[name]["SESSID"]
@@ -31,7 +30,7 @@ def gettitle(html, **kw):
 	if "pixiv.user.loggedIn = true" not in html:
 		raise Exception("you didn't login!")
 	user = re.search("class=\"user\">(.+?)</h1>", html).group(1)
-	id = re.search("pixiv.context.userId = '(\d+)'", html).group(1)
+	id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
 	return "{} - {}".format(id, user)
 	
 def getepisodelist(html, url=""):
@@ -39,7 +38,7 @@ def getepisodelist(html, url=""):
 	base = re.search("(https?://.+)\?", url).group(1)
 	while True:
 		# ms = re.findall("<a href=\"([^\"]+)\" class=\"work ?\"><div class=\"_layout-thumbnail(?: ugoku-illust)?\"><img[^>]+></div><h1 class=\"title\" title=\"([^\"]+)\">", html)
-		ms = re.findall(r'<a href="([^"]+)" class="work ?"><div[^>]+><img[^>]+></div><h1 class="title" title="([^"]+)">', html)
+		ms = re.findall(r'<a href="([^"]+)"><h1 class="title" title="([^"]+)">', html)
 		# safeprint(ms)
 		for m in ms:
 			url, title = m
@@ -63,15 +62,18 @@ def getimgurls(html, url=""):
 		raise Exception("you didn't login!")
 	
 	# image
-	rs = re.search("\"works_display\"><[^>]+><img src=\"([^\"]+)\"", html)
+	rs = re.search(r'"works_display"><a[^>]+><div[^>]+><img src="([^"]+)"', html)
 	if rs:
 		img = rs.group(1)
-		pages = re.search("(\d+)P</li>", html)
-		if pages is None:
-			return [img.replace("_m", "")]
-		pages = int(pages.group(1))
-		s = [img.replace("_m", "_big_p{}".format(i)) for i in range(pages)]
-		return s
+		return [img.replace("_m", "")]
+		
+	# multiple image
+	rs = re.search(r'works_display"><a[^>]+><div[^>]+><div class="multiple"><i[^>]+></i></div><img src="([^"]+)"', html)
+	if rs:
+		img = rs.group(1)
+		pages = re.search("(\d+)P</li>", html).group(1)
+		pages = int(pages)
+		return [img.replace("_m", "_big_p{}".format(i)) for i in range(pages)]
 		
 	# ugoku
 	rs = re.search(r"pixiv\.context\.ugokuIllustFullscreenData\s+= ([^;]+)", html)

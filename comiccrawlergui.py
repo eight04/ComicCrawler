@@ -10,7 +10,7 @@ import tkinter.messagebox
 import sys
 
 from comiccrawler import Main
-from safeprint import safeprint
+from safeprint import safeprint, addcallback
 # import queue
 
 STATE = {
@@ -281,13 +281,14 @@ class MainWindow(Main):
 			self.configManager.load()
 			self.moduleManager.loadconfig()
 			self.downloadManager.conf()
+			safeprint("設定檔重載成功！")
 		self.gBtnconfig["command"] = reloadconfig
 		
 		# interface for mission list
 		def tvdelete():
 			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
 				s = self.gTv.selection()
-				self.downloadManager.missions.remove([self.iidholder[k] for k in s])
+				self.downloadManager.missions.remove(*[self.iidholder[k] for k in s])
 		self.gTvmenu.entryconfig(0, command=tvdelete)
 		
 		def tvlift():
@@ -367,6 +368,10 @@ class MainWindow(Main):
 			self.gRoot.destroy()
 		self.gRoot.protocol("WM_DELETE_WINDOW", beforequit)
 		
+		def safeprintCallback(text):
+			self.message("MESSAGE", text)
+		addcallback(safeprintCallback)
+		
 		
 	def addtotree(self, mission):
 		"""Add item into treeview."""
@@ -408,7 +413,7 @@ class MainWindow(Main):
 		
 	def onMessage(self, message, param, sender):
 		"""GUI Message control"""
-		print("GUI onMessage", message)
+		# print("GUI onMessage", message)
 		
 		if message == "MESSAGE":
 			text = param.splitlines()[-1]
@@ -442,7 +447,7 @@ class MainWindow(Main):
 		if message == "ANALYZE_FINISHED":
 			if len(param.mission.episodelist):
 				if len(param.mission.episodelist) > 1:
-					selectEp(param.mission)
+					selectEp(self.gRoot, param.mission)
 				self.downloadManager.addMission(param)
 			
 		if message == "ANALYZE_FAILED":
@@ -451,7 +456,7 @@ class MainWindow(Main):
 				"Comic Crawler", "解析錯誤！\n{}".format(param.error))
 				
 		super().onMessage(message, param, sender)
-				
+		
 
 def selectTitle(parent, mission):
 	"""change mission title dialog"""

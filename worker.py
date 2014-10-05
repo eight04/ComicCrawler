@@ -182,10 +182,13 @@ class Worker:
 		except Exception as er:
 			self.error.put(er)
 		
-		print(self.children)
+		# print(self.children)
 		self.stopAllChild()
 		while self.countChild():
-			self.wait("CHILD_THREAD_END")
+			try:
+				self.wait("CHILD_THREAD_END")
+			except StopWorker:
+				pass
 		
 		self.running = False
 		if self.parent:

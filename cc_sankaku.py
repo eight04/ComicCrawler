@@ -2,13 +2,23 @@
 
 import re
 from html import unescape
-from comiccrawler import Episode, grabhtml
+from comiccrawler import Episode, grabhtml, extend
 from safeprint import safeprint
 
 header = {}
 domain = ["chan.sankakucomplex.com"]
 name = "Sankaku"
 noepfolder = True
+
+def loadconfig(config):
+	if name not in config:
+		config[name] = {}
+	if "cf_clearance" not in config[name]:
+		config[name] = "請輸入Cookie中的cf_clearance"
+	extend(config[name], {
+		"cf_clearance": "請輸入Cookie中的cf_clearance"
+	})
+	header["Cookie"] = "cf_clearance=" + config[name]["cf_clearance"]
 
 def gettitle(html, **kw):
 	title = re.search(r"<title>/?(.+?) \|", html).group(1)

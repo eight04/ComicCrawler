@@ -127,16 +127,17 @@ def safeheader(header):
 		
 	return header
 
-def grabber(url, header={}, encode=False):
+def grabber(url, header=None, encode=False):
 	"""Http works"""
 	
 	defaultHeader = {
 		"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:32.0) Gecko/20100101 Firefox/32.0"
 	}
 	url = safeurl(url)
-	safeprint(url)
+	print("Grabbing:", url)
 	# bugged when header contains non latin character...
 	extend(header, defaultHeader)
+	# safeprint(header)
 	header = safeheader(header)
 	
 	req = urllib.request.Request(url, headers=header)
@@ -151,7 +152,12 @@ def grabber(url, header={}, encode=False):
 	r = re.search(r"charset=[\"']?([^\"'>]+)", html)
 	if r:
 		encode = r.group(1)
+		# with open("grabber.html", "w", encoding=encode) as f:
+			# f.write(html)
 		return ot.decode(encode, "replace")
+		
+	# with open("grabber.html", "w", encoding=encode) as f:
+		# f.write(html)
 	return html
 
 def grabhtml(url, hd={}, encode="utf-8"):
@@ -182,6 +188,7 @@ class MissionContainer(Worker):
 		self.mission = None
 		self.downloader = None
 		self.lock = threading.Lock()
+		self.error = None
 		
 	def set(self, *args, **kwargs):
 		"""Set new attribute, may replace setTitle later."""
@@ -283,7 +290,7 @@ class DownloadWorker(Worker):
 				self.crawlpage(ep, efd, mission, fexp, downloader)
 			except LastPageError:
 				safeprint("Episode download complete!")
-				print("")
+				# print("")
 				ep.complete = True
 				self.bubble("DOWNLOAD_EP_COMPLETE", (mission, ep))
 				# _evtcallback("DOWNLOAD_EP_COMPLETE", mission, ep)
@@ -323,13 +330,13 @@ class DownloadWorker(Worker):
 					imgurls = self.waitChild(downloader.getimgurls, html, url=ep.firstpageurl)
 					
 					if not imgurls:
-						raise EmptyImageError
+						raise RuntimeError("Image url is null")
 						
 				except (LastPageError, SkipEpisodeError, StopWorker) as er:
 					raise er
 					
-				except HTTPError as er:
-					safeprint("get imgurls failed: {}".format(er))
+				except Exception as er:
+					safeprint("Get imgurls failed:", er)
 					# traceback.print_exc()
 					errorcount += 1
 					if errorcount >= 10:
@@ -434,7 +441,7 @@ class DownloadWorker(Worker):
 			ep.currentpageurl = nextpageurl
 			ep.currentpagenumber += 1
 			errorcount = 0
-			print("")
+			# print("")
 	
 class AnalyzeWorker(Worker):
 	"""Analyze the mission.url, also the core of Comic Crawler"""
@@ -455,13 +462,10 @@ class AnalyzeWorker(Worker):
 		except Exception as er:
 			self.mission.set("state", "ERROR")
 			self.mission.error = er
-			# import traceback
-			# er_message = traceback.format_exc()
-			# self.mission.error = er_message
-			# safeprint(er_message)
+			traceback.print_exc()
 			self.bubble("ANALYZE_FAILED", self.mission)
 		else:
-			if self.mission.update:
+			if self.mission.mission.update:
 				self.mission.set("state", "UPDATE")
 			else:
 				self.mission.set("state", "ANALYZED")
@@ -477,18 +481,15 @@ class AnalyzeWorker(Worker):
 		for ep in mission.episodelist:
 			dict[ep.firstpageurl] = ep
 			
-		mission.episodelist = [ep for key, ep in dict]
+		mission.episodelist = [dict[key] for key in dict]
 			
 	def analyze(self, mission, downloader):
 		"""Analyze mission url."""
 		
-		safeprint("start analyzing {}".format(mission.url))
+		safeprint("Start analyzing {}".format(mission.url))
 
-		print("grabbing html")
 		html = self.waitChild(grabhtml, mission.url, hd=downloader.header)
-		print("getting title")
 		mission.title = downloader.gettitle(html, url=mission.url)
-		print("getting episode list")
 		epList = self.waitChild(downloader.getepisodelist, html, url=mission.url)
 		if not mission.episodelist:
 			# new mission
@@ -514,7 +515,7 @@ class AnalyzeWorker(Worker):
 		# remove duplicate
 		self.removeDuplicateEP(mission)
 		
-		safeprint("analyzed succeed!")
+		safeprint("Analyzing success!")
 
 class MissionList(Worker):
 	"""Mission queue data class."""
@@ -525,8 +526,8 @@ class MissionList(Worker):
 		self.savepath = savepath
 		
 	def contains(self, mission):
-		for m in self.q:
-			if q.url == mission.url:
+		for mission_ in self.q:
+			if mission_.mission.url == mission.mission.url:
 				return True
 		return False
 	
@@ -585,7 +586,7 @@ class MissionList(Worker):
 	def cleanfinished(self):
 		"""delete fished missions"""
 		self.q = [ i for i in self.q if i.mission.state != "FINISHED"]
-		safeprint(self.q)
+		# safeprint(self.q)
 		self.bubble("MISSIONQUE_ARRANGE", self)
 		
 	def printList(self):
@@ -804,7 +805,7 @@ class DownloadManager(Worker):
 		
 	def onMessage(self, message, param, thread):
 		"""Override"""
-		safeprint("DownloadManager onMessage", message)
+		# safeprint("DownloadManager onMessage", message)
 		
 		if message == "DOWNLOAD_FINISHED":
 			command = self.setting["runafterdownload"]
@@ -813,7 +814,7 @@ class DownloadManager(Worker):
 					from subprocess import call
 					call((command, "{}/{}".format(self.setting["savepath"], safefilepath(thread.mission.title))))
 				except Exception as er:
-					safeprint("failed to run process: {}".format(er))
+					safeprint("Failed to run process: {}".format(er))
 					
 			mission = self.missions.take()
 			if not mission:
@@ -895,7 +896,6 @@ class DownloadManager(Worker):
 		for mission in self.library.q:
 			self.addMission(mission)
 		
-		
 class ModuleManager:
 	"""Import all the downloader module.
 	
@@ -911,9 +911,9 @@ class ModuleManager:
 		self.mods = []
 		self.mod_dir = os.path.dirname(os.path.realpath(__file__))
 		
-		self.loadconfig()
 		self.loadMods()
 		self.registHolders()
+		self.loadconfig()
 		
 	def loadMods(self):
 		"""Load mods to self.mods"""
@@ -987,6 +987,7 @@ class Main(Worker):
 		).start()
 		
 		self.downloadManager.load()
+		self.configManager.save()
 		
 	def unloadClasses(self):
 		"""Unload classes."""
