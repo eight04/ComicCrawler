@@ -318,10 +318,9 @@ class MainWindow(Main):
 		def tvReselectEP():
 			s = self.gTv.selection()
 			# mission = self.iidholder[s[0]]
-			missions = [ self.iidholder[i] for i in s ]
-			titles = [ m.title for m in missions ]
-			for mission in missions:
-				selectEp(self.gRoot, mission)
+			missionContainers = [ self.iidholder[i] for i in s ]
+			for missionContainer in missionContainers:
+				selectEp(self.gRoot, missionContainer.mission)
 		self.gTvmenu.entryconfig(5, command=tvReselectEP)
 		
 		def tvmenucall(event):
@@ -359,7 +358,7 @@ class MainWindow(Main):
 		
 		# close window event
 		def beforequit():
-			if (self.downloadManager.running and 
+			if (self.downloadManager.downloadWorker and self.downloadManager.downloadWorker.running and 
 					not tkinter.messagebox.askokcancel("Comic Crawler",
 						"任務下載中，確定結束？")):
 				return
@@ -372,10 +371,10 @@ class MainWindow(Main):
 		"""Add item into treeview."""
 
 		downloader = mission.downloader
-		m = mission
+		m = mission.mission
 		cid = self.gTv.insert("","end",
 				values=(m.title, downloader.name, STATE[m.state]))
-		self.iidholder[cid] = m
+		self.iidholder[cid] = mission
 			
 	def load(self):
 		"""load mission from mission que"""
@@ -403,30 +402,31 @@ class MainWindow(Main):
 		list = self.downloadManager.library.q
 		for m in list:
 			cid = tv.insert("","end",
-				values=(m.title, m.downloader.name, STATE[m.state]))
+				values=(m.mission.title, m.downloader.name, STATE[m.mission.state]))
 			self.libIdIndex[cid] = m
 		
 	def onMessage(self, message, param, sender):
 		"""GUI Message control"""
+		print("GUI onMessage", message)
 		
 		if message == "MESSAGE":
 			text = param.splitlines()[-1]
 			self.gStatusbar["text"] = text
 	
-		if message == "MISSION_PROPERTY_CHANGE":
+		if message == "MISSION_PROPERTY_CHANGED":
 			mission = param
 			if "iidholder" in vars(self):
 				for cid, m in self.iidholder.items():
 					if m is mission:
-						self.gTv.set(cid, "state", STATE[m.state])
+						self.gTv.set(cid, "state", STATE[m.mission.state])
 			
 			if "libIdIndex" in vars(self):
 				for cid, m in self.libIdIndex.items():
 					if m is mission:
-						self.gLibTV.set(cid, "state", STATE[m.state])
+						self.gLibTV.set(cid, "state", STATE[m.mission.state])
 
 
-		if message is "MISSIONQUE_ARRANGE":
+		if message == "MISSIONQUE_ARRANGE":
 			if param == self.downloadManager.missions:
 				self.tvrefresh()
 			if param == self.downloadManager.library:
@@ -438,12 +438,11 @@ class MainWindow(Main):
 			# tkinter.messagebox.showerror(
 				# "Comic Crawler", "下載中斷！\n{}".format(er_msg))
 				
-		if message is "ANALYZE_FINISHED":
-			mission = param
-			if len(mission.episodelist):
-				if len(mission.episodelist) > 1:
-					selectEp(mission)
-				self.downloadManager.addMission(mission)
+		if message == "ANALYZE_FINISHED":
+			if len(param.mission.episodelist):
+				if len(param.mission.episodelist) > 1:
+					selectEp(param.mission)
+				self.downloadManager.addMission(param)
 			
 		if message == "ANALYZED_FAILED":
 			mission, er_msg = param
@@ -467,7 +466,7 @@ def selectTitle(parent, mission):
 	
 	def apply():
 		title = entry.get()
-		mission.setTitle(title)
+		mission.set("title", title)
 		
 	w.apply = apply
 	

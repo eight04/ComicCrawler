@@ -5,9 +5,7 @@ from html import unescape
 from comiccrawler import Episode, grabhtml
 from safeprint import safeprint
 
-header = {
-	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0"
-}
+header = {}
 domain = ["chan.sankakucomplex.com"]
 name = "Sankaku"
 noepfolder = True

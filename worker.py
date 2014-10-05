@@ -128,6 +128,7 @@ class Worker:
 		if arg is None:
 			# Wait a single message
 			message = self.messageBucket.get()
+			# print(message)
 			self._onMessage(*message)
 			return message[1]
 		
@@ -139,6 +140,7 @@ class Worker:
 				timeIn = time.time()
 				try:
 					message = self.messageBucket.get(timeout=arg)
+					# print(message)
 				except queue.Empty:
 					return
 				else:
@@ -153,6 +155,7 @@ class Worker:
 			# Wait for specify message
 			while True:
 				message = self.messageBucket.get()
+				# print(message)
 				ret = self._onMessage(*message)
 				if message[0] == arg and (not sender or sender == message[3]):
 					return ret
@@ -166,7 +169,7 @@ class Worker:
 		except StopWorker:
 			pass
 		except Exception as er:
-			traceback.print_exc()
+			# traceback.print_exc()
 			if self.threading:
 				self.error.put(er)
 			else:
@@ -179,6 +182,7 @@ class Worker:
 		except Exception as er:
 			self.error.put(er)
 		
+		print(self.children)
 		self.stopAllChild()
 		while len(self.children):
 			self.wait("CHILD_THREAD_END")
