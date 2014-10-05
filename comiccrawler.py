@@ -148,42 +148,23 @@ def grabimg(url, hd={}):
 	return grabber(url, hd)
 
 
-class Mission(Worker):
+class Mission:
 	"""Mission data class. Contains a mission's information."""
 	title = ""
 	url = ""
 	episodelist = []
 	state = "INIT"
-	downloader = None
-	lock = None
 	update = False
-	
+
+class MissionContainer(Worker):
+	"""Mission container. Load mission from JSON"""
 	def __init__(self):
 		"""Create lock"""
 		super().__init__()
+		
+		self.mission = None
+		self.downloader = None
 		self.lock = threading.Lock()
-		
-	def __getstate__(self):
-		"""pickle"""
-	
-		state = self.__dict__.copy()
-		del state["downloader"]
-		del state["lock"]
-		return state
-		
-	def __setstate__(self, state):
-		"""unpickle"""
-		from threading import Lock
-		
-		self.__dict__.update(state)
-		self.lock = Lock()
-		
-		# backward compatibility
-		if not hasattr(self, "update"):
-			self.update = False
-			
-		if self.state in oldStateCode:
-			self.state = oldStateCode[self.state]
 		
 	def set(self, *args, **kwargs):
 		"""Set new attribute, may replace setTitle later."""
@@ -201,8 +182,8 @@ class Mission(Worker):
 		dirty = False
 		for key, value in kwargs.items():
 			# safeprint(key, value)
-			if hasattr(self, key):
-				setattr(self, key, value)
+			if hasattr(self.mission, key):
+				setattr(self.mission, key, value)
 				dirty = True
 				
 		if dirty:
@@ -617,7 +598,11 @@ class MissionList(Worker):
 		except FileNotFoundError:
 			print(self.savepath + " not exists.")
 			return
-		self.q = pickle.load(f)
+		missions = pickle.load(f)
+		for mission in missions:
+			missionContainer = MissionContainer()
+			missionContainer.mission = mission
+			self.q.append(missionContainer)
 		
 		self.bubble("MISSIONQUE_ARRANGE", self)
 		
@@ -627,7 +612,10 @@ class MissionList(Worker):
 			return
 		import pickle
 		f = open(self.savepath, "wb")
-		pickle.dump(self.q, f)
+		missions = []
+		for missionContainer in self.q:
+			missions.append(missionContainer.mission)
+		pickle.dump(missions, f)
 		
 	def getByURL(self, url):
 		"""Take mission with specify url"""
