@@ -525,6 +525,12 @@ class MissionList(Worker):
 		self.q = []
 		self.savepath = savepath
 		
+	def reset(self):
+		for m in self.q:
+			if m.lock.acquire(blocking=False):
+				m.set("state", "ANALYZE_INIT")
+				m.lock.release()
+		
 	def contains(self, mission):
 		for mission_ in self.q:
 			if mission_.mission.url == mission.mission.url:
@@ -569,6 +575,12 @@ class MissionList(Worker):
 				item.lock.release()
 		self.bubble("MISSIONQUE_ARRANGE", self)
 		self.bubble("MESSAGE", "Deleted {} mission(s)".format(len(items)))
+		
+	def takeAnalyze(self):
+		"""Return a pending mission"""
+		for m in self.q:
+			if m.mission.state == "ANALYZE_INIT":
+				return m
 
 	def take(self, n=1):
 		"""Return a list containing n valid missions. If n <= 1 return a valid 
@@ -793,8 +805,9 @@ class DownloadManager(Worker):
 		"""Start check library update"""
 		if self.libraryWorker and self.libraryWorker.running:
 			return
-		
-		mission = self.library.take()
+			
+		self.library.reset()
+		mission = self.library.takeAnalyze()
 		self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
 		
 	def worker(self):
@@ -832,7 +845,8 @@ class DownloadManager(Worker):
 		if message == "DOWNLOAD_PAUSE":
 			pass
 
-		if message == "ANALYZE_FAILED" or message == "ANALYZE_FINISHED":
+		if (message == "ANALYZE_FAILED" or message == "ANALYZE_FINISHED" 
+				and thread in self.analyzeWorkers):
 			self.analyzeWorkers.remove(thread)
 			
 		if message == "CHILD_THREAD_END":

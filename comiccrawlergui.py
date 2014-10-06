@@ -22,7 +22,8 @@ STATE = {
 	"ERROR": "錯誤",
 	"INTERRUPT": "已刪除",
 	"UPDATE": "有更新",
-	"ANALYZING": "分析中"
+	"ANALYZING": "分析中",
+	"ANALYZE_INIT": "準備分析"
 }
 
 class Dialog(Toplevel):
@@ -445,7 +446,7 @@ class MainWindow(Main):
 				# "Comic Crawler", "下載中斷！\n{}".format(er_msg))
 				
 		if message == "ANALYZE_FINISHED":
-			if len(param.mission.episodelist):
+			if sender in self.analyzeWorkers:
 				if len(param.mission.episodelist) > 1:
 					selectEp(self.gRoot, param.mission)
 				self.downloadManager.addMission(param)
@@ -453,7 +454,7 @@ class MainWindow(Main):
 		if message == "ANALYZE_FAILED":
 			# mission, er_msg = param
 			tkinter.messagebox.showerror(
-				"Comic Crawler", "解析錯誤！\n{}".format(param.error))
+				param.downloader.name, "解析錯誤！\n{}".format(param.error))
 				
 		super().onMessage(message, param, sender)
 		
