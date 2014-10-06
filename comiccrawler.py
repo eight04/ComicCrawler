@@ -611,7 +611,10 @@ class MissionList(Worker):
 		return [m.title for m in self.q]
 		
 	def load(self):
-		"""unpickle list from file"""
+		"""unpickle list from file
+		
+		DEPRECATE!
+		"""
 		if not self.savepath:
 			return
 		import pickle
