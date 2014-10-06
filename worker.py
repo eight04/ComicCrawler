@@ -61,6 +61,10 @@ class Worker:
 			self.transferMessage(message, param, flag, sender)
 
 		return self
+		
+	def registerHandler(self):
+		"""Override"""
+		pass
 			
 	def transferMessage(self, message, param, flag, sender):
 		"""Bubble and broadcast"""
