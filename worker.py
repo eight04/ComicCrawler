@@ -129,6 +129,7 @@ class Worker:
 		message `arg` which was sent by `sender`. If sender is None, this 
 		function just returned after getting specify message.
 		"""
+		# try...
 		if arg is None:
 			# Wait a single message
 			message = self.messageBucket.get()
