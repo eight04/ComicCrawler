@@ -2,20 +2,35 @@
 
 """Worker
 
-A threaded worker, implemented with message queue and parent/child pattern."""
+A threaded worker, implemented with message queue and parent/child pattern.
 
-import queue, threading, traceback
+The main thread should start by Worker.run(). Other threads should create and
+start by Worker.start(). Every child thread needs parent or it will fail to 
+start.
+"""
 
-class F:
-	"""A data class. Define the message flags"""
-	
-	BUBBLE = 1
-	BROADCAST = 2
+import queue, threading, traceback, time
 
-class StopWorker(Exception): pass
+# class s:
+	# """A data class. Define the message flags"""
+	# BUBBLE = 1
+	# BROADCAST = 2
+
+class Error(Exception): pass
+
+class WorkerError(Error): pass
+
+class UncaughtError(WorkerError): pass
+
+class WorkerSignal(Error): pass
+
+class StopWorker(WorkerSignal): pass
 
 class Worker:
-	"""Wrap Thread class. Inherit MessageTree for thread communication."""
+	"""Wrap Thread class. 
+	
+	Use queued message to communication between threads.
+	"""
 	
 	def __init__(self, target=None):
 		"""init"""
@@ -23,92 +38,87 @@ class Worker:
 		self.error = queue.Queue()
 		if callable(target):
 			self.worker = target
-		self.threading = None
+		self._thread = None
 		self.running = False
-		self.messageBucket = queue.Queue()
-		# self.messageCached = []
-		self.children = set()
-		self.parent = None
-		self.args = []
-		self.kwargs = {}
-		self.ret = None
+		self._messageBucket = queue.Queue()
+		self._children = set()
+		self._parent = None
+		self._args = []
+		self._kwargs = {}
+		self._ret = None
+		self._waiting = False
+		self._cache = queue.Queue()
+		
+	def tell(self, thread, message, param=None, flag=None):
+		"""Add message to other thread."""
+		if not isinstance(thread, Worker):
+			raise WorkerError("Thread is not inherit from Worker")
+		thread.message(message, param, flag, self)
+		
+	def tellParent(self, message, param=None):
+		"""Shorthand to put message to parent"""
+		if self._parent:
+			self.tell(self._parent, message, param)
 		
 	def bubble(self, message, param=None):
 		"""Shorthand to bubble message"""
-		if self.parent:
-			self.sendMessage(self.parent, message, param, F.BUBBLE)
+		if self._parent:
+			self.tell(self._parent, message, param, "BUBBLE")
 		
 	def broadcast(self, message, param=None):
 		"""Shorthand to broadcast message"""
-		
-		for child in self.children:
-			self.sendMessage(child, message, param, F.BROADCAST)
+		for child in self._children:
+			self.tell(child, message, param, "BROADCAST")
 	
-	def sendMessage(self, getter, message, param=None, flag=0):
-		"""Send message to other threads"""
-		
-		if not issubclass(type(getter), Worker):
-			raise TypeError("Not inherit Worker.")
-		getter.message(message, param, flag, self)
-		return self
-		
-	def message(self, message, param=None, flag=0, sender=None):
-		"""Override"""
-		
+	def message(self, message, param=None, flag=None, sender=None):
+		"""Get message"""
 		if self.running:
-			self.messageBucket.put((message, param, flag, sender))
+			self._messageBucket.put((message, param, flag, sender))
 		else:
-			self.transferMessage(message, param, flag, sender)
-
-		return self
-		
-	def registerHandler(self):
-		"""Override"""
-		pass
+			self._transferMessage(message, param, flag, sender)
 			
-	def transferMessage(self, message, param, flag, sender):
+	def _transferMessage(self, message, param, flag, sender):
 		"""Bubble and broadcast"""
-		
-		if F.BUBBLE & flag and self.parent and self.parent != sender:
-			self.sendMessage(self.parent, message, param, flag)
+		if flag is "BUBBLE" and self._parent and self._parent != sender:
+			self.tellParent(message, param, flag)
 			
-		if F.BROADCAST & flag:
-			for child in self.children:
+		if flag is "BROADCAST":
+			for child in self._children:
 				if child != sender:
-					self.sendMessage(child, message, param, flag)
-					
-		return self
+					self.tell(child, message, param, flag)
 					
 	def _onMessage(self, message, param, flag, sender):
 		"""Message holder container, to ensure to transfer message"""
-		
+		try:
+			self.onMessage(message, param, sender)
+		except WorkerSignal as er:
+			raise er
+		except Exception as er:
+			traceback.print_exc()
+			er = UncaughtError("Something went wrong in Worker.onMessage.", er)
+			self.error.put(er)
+			self.tellParent("CHILD_THREAD_ERROR", er)
 		self.transferMessage(message, param, flag, sender)
-		ret = self.onMessage(message, param, sender)
-		return ret
+		return param
 	
 	def onMessage(self, message, param, sender):
-		"""Override
-		
-		Maybe we should create a list to add message listener?
-		"""
-		
+		"""Override"""
 		if message == "STOP_THREAD":
 			raise StopWorker
 
 		if message == "CHILD_THREAD_END":
-			return self.removeChild(sender)
+			self.removeChild(sender)
 			
 		if message == "CHILD_THREAD_ERROR":
 			pass
 			
-		if message == "PAUSE_THREAD":
-			return self.wait("RESUME_THREAD")
-			
-		return param
+		if message == "PAUSE_THREAD" and not self._waiting:
+			self._waiting = True
+			self.wait("RESUME_THREAD", sync=True)
+			self._waiting = False
 
 	def processMessage(self):
 		"""Process message que untill empty"""
-		
 		while True:
 			try:
 				message = self.messageBucket.get_nowait()
@@ -116,9 +126,8 @@ class Worker:
 				return
 			else:
 				self._onMessage(*message)
-		
-		
-	def wait(self, arg=None, sender=None):
+
+	def wait(self, arg=None, sender=None, sync=False):
 		"""Wait for specify message or wait specify duration.
 		
 		`arg` could be int or str. If `arg` is int, this function will wait 
@@ -129,194 +138,173 @@ class Worker:
 		message `arg` which was sent by `sender`. If sender is None, this 
 		function just returned after getting specify message.
 		"""
-		# try...
+
+		# Wait any message
 		if arg is None:
-			# Wait a single message
-			message = self.messageBucket.get()
-			# print(message)
-			self._onMessage(*message)
+			try:
+				message = self._cache.get_nowait()
+			except queue.Empty:
+				message = self._messageBucket.get()
+				self._onMessage(*message)
 			return message[1]
 		
+		# Wait some time
 		if type(arg) in [int, float]:
-			# Wait time
-			import time
-			
 			while True:
 				timeIn = time.time()
 				try:
-					message = self.messageBucket.get(timeout=arg)
-					# print(message)
+					message = self._cache.get_nowait()
 				except queue.Empty:
-					return
-				else:
-					# ret = self._onMessage(*message)
-					# self.messageCached.append((message, ret))
-					self._onMessage(*message)
-					arg -= time.time() - timeIn
-					if arg <= 0:
+					try:
+						message = self._messageBucket.get(timeout=arg)
+					except queue.Empty:
 						return
-				
+					else:
+						self._onMessage(*message)
+				arg -= time.time() - timeIn
+				if arg <= 0:
+					return
+
+		# Wait for message, with optional sender
 		if type(arg) is str:
-			# Wait for specify message
 			while True:
-				message = self.messageBucket.get()
-				# print(message)
-				ret = self._onMessage(*message)
+				try:
+					message = self._cache.get_nowait()
+				except queue.Empty:
+					break
 				if message[0] == arg and (not sender or sender == message[3]):
-					return ret
-				# self.messageCached.append((message, ret))
+					return message[1]
+				
+			while True:
+				try:
+					message = self._cache.get_nowait()
+				except queue.Empty:
+					message = self._messageBucket.get()
+					self._onMessage(*message)
+				if message[0] == arg and (not sender or sender == message[3]):
+					return message[1]
+				elif sync:
+					self._cache.put(message)
 		
 	def _worker(self):
 		"""Real target to pass to threading.Thread"""
 
 		try:
-			self.ret = self.worker(*self.args, **self.kwargs)
+			self._ret = self.worker(*self._args, **self._kwargs)
 		except StopWorker:
 			pass
 		except Exception as er:
 			traceback.print_exc()
-			if self.threading:
+			if self.running:
+				er = UncaughtError("Something went wrong in Worker.worker", er)
 				self.error.put(er)
+				self.tellParent("CHILD_THREAD_ERROR", er)
 			else:
 				raise er
-			if self.parent:
-				self.sendMessage(self.parent, "CHILD_THREAD_ERROR", er)
 
-		try:
-			self.cleanup()
-		except Exception as er:
-			self.error.put(er)
-		
-		# print(self.children)
 		self.stopAllChild()
 		while self.countChild():
 			try:
 				self.wait("CHILD_THREAD_END")
-			except StopWorker:
+			except WorkerSignal:
 				pass
-		
+
 		self.running = False
-		if self.parent:
-			self.sendMessage(self.parent, "CHILD_THREAD_END", self.ret)
+		self.tellParent("CHILD_THREAD_END", self.ret)
 			
 	def countChild(self, running=True):
 		if not running:
-			return len(self.children)
+			return len(self._children)
 			
 		running = 0
-		for child in self.children:
+		for child in self._children:
 			if child.running:
 				running += 1
 		return running
 		
 	def worker(self, *args, **kwargs):
 		"""Override"""
-		pass
-		
-	def cleanup(self, *args, **kwargs):
-		"""Override"""
-		pass
+		self.wait("STOP_THREAD")
 		
 	def run(self, *args, **kwargs):
 		"""Run as main thread"""
-		self.args = args
-		self.kwargs = kwargs
+		self._args = args
+		self._kwargs = kwargs
+		self._ret = None
+		
 		self.running = True
+		self._waiting = False
+		
 		self._worker()
-		return self.ret
+		
+		return self._ret
 		
 	def stopAllChild(self):
 		"""Stop all child threads"""
-		
-		child = None
-		for child in self.children:
-			self.stop(child)
-		return child
+		for child in self._children:
+			if child.running:
+				child.stop()
 
 	def start(self, *args, **kwargs):
 		"""call this method and self.worker will run in new thread"""
-
 		if self.running:
-			raise RuntimeError("Thread is running")
+			raise WorkerError("Thread is running")
+			
+		if not self._parent:
+			raise WorkerError("Child thread don't have parent")
 			
 		self.running = True
-		self.args = args
-		self.kwargs = kwargs
-		self.threading = threading.Thread(target=self._worker)
-		self.threading.start()
+		self._args = args
+		self._kwargs = kwargs
+		self._thread = threading.Thread(target=self._worker)
+		self._thread.start()
 		return self
 		
-	def stop(self, child=None):
-		"""Stop self or child thread"""
-		
-		if not self.running:
-			return False
-			
-		if not child:
-			self.message("STOP_THREAD", None, F.BROADCAST)
-		elif child not in self.children:
-			raise KeyError(child)
-		else:
-			self.sendMessage(child, "STOP_THREAD", None, F.BROADCAST)
-		return self
-		
-	def pause(self, child=None):
+	def stop(self):
+		"""Stop self"""
+		if self.running:
+			self.message("STOP_THREAD")
+
+	def pause(self):
 		"""Pause self or child thread"""
-		
-		if not child:
-			self.message("PAUSE_THREAD", None, F.BROADCAST)
-		elif child not in self.children:
-			raise KeyError(child)
-		else:
-			self.sendMessage(child, "PAUSE_THREAD", None, F.BROADCAST)
-		return self
-		
+		if self.running and not self._waiting:
+			self.message("PAUSE_THREAD")
+
 	def resume(self, child=None):
 		"""Resume self or child thread"""
-		
-		if not child:
-			self.message("RESUME_THREAD", None, F.BROADCAST)
-		elif child not in self.children:
-			raise KeyError(child)
-		else:
-			self.sendMessage(child, "RESUME_THREAD", None, F.BROADCAST)
-		return self
+		self.message("RESUME_THREAD")
 		
 	def join(self):
 		"""thread join method."""
-
-		self.threading.join()
+		self._thread.join()
 		return self
 		
 	def createChild(self, cls, *args, **kw):
-		"""Broadcast message to child"""
-		
+		"""Create worker and add to children"""
 		if not issubclass(cls, Worker):
-			raise TypeError("Not inherit Worker")
+			raise WorkerError("Not inherit Worker")
 			
 		child = cls(*args, **kw)
 		return self.addChild(child)
 		
 	def addChild(self, *args):
 		"""Add Children"""
-		
 		o = None
 		for o in args:
 			if not issubclass(type(o), Worker):
-				raise TypeError("Not inherit Worker")
+				raise WorkerError("Not inherit Worker")
 			if o.parent:
-				raise AttributeError("Already has parent")
+				raise WorkerError("Already has parent")
 			o.parent = self
 			self.children.add(o)
 		return o
 			
 	def removeChild(self, *args):
 		"""Remove children"""
-		
 		o = None
 		for o in args:
 			if o not in self.children:
-				raise KeyError(o)
+				raise WorkerError("Not child thread")
 			self.children.remove(o)
 			o.parent = None
 		return o
@@ -326,4 +314,8 @@ class Worker:
 		self.wait("CHILD_THREAD_END", child)
 		if not child.error.empty():
 			raise child.error.get_nowait()
-		return child.ret
+		return child.getRet()
+		
+	def getRet(self):
+		"""Get return value"""
+		return self._ret
