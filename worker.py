@@ -319,3 +319,11 @@ class Worker:
 	def getRet(self):
 		"""Get return value"""
 		return self._ret
+
+	def addParent(self, thread):
+		"""Add parent"""
+		if self._parent:
+			raise WorkerError("Already has parent")
+		if not issubclass(type(thread), Worker):
+			raise WorkerError("Not inherit Worker")
+		return self
