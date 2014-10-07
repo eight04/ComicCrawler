@@ -229,7 +229,7 @@ class Episode:
 class DownloadWorker(Worker):
 	"""The main core of Comic Crawler"""
 
-	def __init__(self, mission=None, savepath="."):
+	def __init__(self, mission, savepath):
 		"""set the mission"""
 		super().__init__()
 		
@@ -836,7 +836,9 @@ class DownloadManager(Worker):
 			if not mission:
 				safeprint("All download completed")
 			else:
-				self.downloadWorker = self.createChild(DownloadWorker, mission).start()
+				worker = DownloadWorker(mission, self.setting["savepath"])
+				worker.addParent(self).start()
+				self.downloadWorker = worker
 					
 		if message == "DOWNLOAD_ERROR":
 			mission = self.missions.take()
