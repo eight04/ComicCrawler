@@ -16,6 +16,7 @@ from urllib.error import HTTPError, URLError
 import threading
 import collections
 from worker import Worker, WorkerSignal
+from html import unescape
 
 
 oldStateCode = {
@@ -139,6 +140,7 @@ def grabber(url, header=None, encode=False):
 		"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:32.0) Gecko/20100101 Firefox/32.0"
 	}
 	url = safeurl(url)
+	url = unescape(url)
 	print("Grabbing:", url)
 	# bugged when header contains non latin character...
 	extend(header, defaultHeader)
