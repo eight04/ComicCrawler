@@ -3,7 +3,11 @@
 """Comic Crawler."""
 
 import re
+import pickle
+import traceback
+
 from safeprint import safeprint
+from collections import OrderedDict
 
 import urllib.request
 import urllib.parse
@@ -11,9 +15,8 @@ import urllib.error
 from urllib.error import HTTPError, URLError
 import threading
 import collections
-from worker import Worker, StopWorker
+from worker import Worker, WorkerSignal
 
-import traceback
 
 oldStateCode = {
 	0: "INIT",
@@ -518,159 +521,88 @@ class AnalyzeWorker(Worker):
 		safeprint("Analyzing success!")
 
 class MissionList(Worker):
-	"""Mission queue data class."""
+	"""Wrap OrderedDict. Add commonly using method."""
 	
-	def __init__(self, savepath=None):
+	def __init__(self):
 		super().__init__()
-		self.q = []
-		self.savepath = savepath
+		
+		self.data = OrderedDict()
 		
 	def reset(self):
-		for m in self.q:
-			if m.lock.acquire(blocking=False):
-				m.set("state", "ANALYZE_INIT")
-				m.lock.release()
+		for key, item in self.data.items():
+			if item.lock.acquire(blocking=False):
+				item.set("state", "ANALYZE_INIT")
+				item.lock.release()
 		
-	def contains(self, mission):
-		for mission_ in self.q:
-			if mission_.mission.url == mission.mission.url:
-				return True
-		return False
+	def contains(self, item):
+		return item.mission.url in self.data
 	
 	def isEmpty(self):
 		"""return true if list is empty"""
-		return not self.q
+		return not self.data
 	
-	def put(self, item):
+	def append(self, *items):
 		"""append item"""
-		self.q.append(item)
-		self.addChild(item)
+		for item in items:
+			if self.contains(item):
+				raise KeyError("Duplicate item")
+			self.data[item.mission.url] = item
 		self.bubble("MISSIONQUE_ARRANGE", self)
 		
-	def lift(self, items, reverse=False):
+	def lift(self, *items):
 		"""Move items to the top."""
-		a = [ i for i in self.q if i in items ]
-		b = [ i for i in self.q if i not in items ]
-		if not reverse:
-			self.q = a + b
-		else:
-			self.q = b + a
+		for item in reversed(items):
+			self.data.move_to_end(item.mission.url, last=False)
 		self.bubble("MISSIONQUE_ARRANGE", self)
 	
-	def drop(self, items):
+	def drop(self, *items):
 		"""Move items to the bottom."""
-		self.lift(items, reverse=True)
+		for item in items:
+			self.data.move_to_end(item.mission.url)
+		self.bubble("MISSIONQUE_ARRANGE", self)
 		
 	def remove(self, *items):
 		"""Delete specify items."""
 		if not items:
 			return
 			
-		for item in items:
+		for item in items.:
 			if not item.lock.acquire(blocking=False):
 				raise RuntimeError("Mission already in use")
 			else:
-				self.q.remove(item)
-				self.removeChild(item)
+				del self.data[item.mission.url]
 				item.lock.release()
 		self.bubble("MISSIONQUE_ARRANGE", self)
-		self.bubble("MESSAGE", "Deleted {} mission(s)".format(len(items)))
+		safeprint("Deleted {} mission(s)".format(len(items)))
 		
 	def takeAnalyze(self):
 		"""Return a pending mission"""
-		for m in self.q:
+		for key, m in self.data.items():
 			if m.mission.state == "ANALYZE_INIT":
 				return m
 
-	def take(self, n=1):
+	def take(self):
 		"""Return a list containing n valid missions. If n <= 1 return a valid 
 		mission.
-		"""
-		
-		s = []
-		for missionContainer in self.q:
-			if missionContainer.mission.state != "FINISHED":
-				s.append(missionContainer)
-			if len(s) == n:
-				return s if n > 1 else s[0]
-		return None
+		"""		
+		for key, item in self.data.items():
+			if item.mission.state != "FINISHED":
+				return item
+				
+	def clear(self):
+		self.data.clear()
 			
 	def cleanfinished(self):
 		"""delete fished missions"""
-		self.q = [ i for i in self.q if i.mission.state != "FINISHED"]
-		# safeprint(self.q)
-		self.bubble("MISSIONQUE_ARRANGE", self)
-		
-	def printList(self):
-		"""print mission list"""
-		for m in self.q:
-			print(m.title)
-			
-	def getList(self):
-		"""return title list"""
-		return [m.title for m in self.q]
-		
-	def load(self):
-		"""unpickle list from file
-		
-		DEPRECATE!
-		"""
-		if not self.savepath:
-			return
-		import pickle
-		try:
-			f = open(self.savepath, "rb")
-		except FileNotFoundError:
-			print(self.savepath + " not exists.")
-			return
-			
-		self.q = []
-		missions = pickle.load(f)
-		for mission in missions:
-			# backward compact
-			if not hasattr(mission, "update"):
-				setattr(mission, "update", False)
-				
-			if mission.state in oldStateCode:
-				mission.state = oldStateCode[mission.state]
-			
-			missionContainer = MissionContainer()
-			missionContainer.mission = mission
-			
-			self.put(missionContainer)
-		
-		# debug
-		self.removeDuplicate()
-		self.bubble("MISSIONQUE_ARRANGE", self)
-		
-	def removeDuplicate(self):
-		dict = {}
 		removed = []
-		for missionContainer in self.q:
-			if missionContainer.mission.url in dict:
-				removed.append(missionContainer)
-			else:
-				dict[missionContainer.mission.url] = True
+		for key, item in self.data.items():
+			if item.mission.state == "FINISHED":
+				removed.append(item)
 		self.remove(*removed)
-		
-	def save(self):
-		"""pickle list to file"""
-		if not self.savepath:
-			return
-		import pickle
-		f = open(self.savepath, "wb")
-		missions = []
-		for missionContainer in self.q:
-			missions.append(missionContainer.mission)
-		pickle.dump(missions, f)
-		
-	def getByURL(self, url):
+
+	def get(self, url):
 		"""Take mission with specify url"""
-		
-		for mission in self.q:
-			if mission.mission.url == url:
-				return mission
-		return None
+		return self.data[url]
 
 class ConfigManager:
 	"""Load config for other classes"""
@@ -721,13 +653,13 @@ class DownloadManager(Worker):
 		self.configManager = configManager
 		self.moduleManager = moduleManager
 		# self.missionPool = MissionPool("missions.dat")
-		missions = MissionList("save.dat")
-		self.addChild(missions)
-		self.missions = missions
+		# missions = MissionList("save.dat")
+		# self.addChild(missions)
+		self.missions = MissionList().setParent(self)
 		
-		library = MissionList("library.dat")
-		self.addChild(library)
-		self.library = library
+		# library = MissionList("library.dat")
+		# self.addChild(library)
+		self.library = MissionList().setParent(self)
 		
 		self.downloadWorker = None
 		self.libraryWorker = None
@@ -813,12 +745,6 @@ class DownloadManager(Worker):
 		mission = self.library.takeAnalyze()
 		self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
 		
-	def worker(self):
-		"""Event loop"""
-		while True:
-			self.wait()
-			# print("loop")
-		
 	def onMessage(self, message, param, thread):
 		"""Override"""
 		# safeprint("DownloadManager onMessage", message)
@@ -861,54 +787,83 @@ class DownloadManager(Worker):
 					self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
 				
 		super().onMessage(message, param, thread)
-	
+		
+	def saveFile(self, savepath, items):
+		"""Save mission list"""
+		list = []
+		
+		for item in items:
+			list.append(item.mission)
+			
+		file = open(savepath, "wb")
+		pickle.dump(list, file)
+		
 	def save(self):
 		"""Save mission que."""
-		
 		try:
-			self.missions.save()
-			self.library.save()
+			self.saveFile("save.dat", self.missions)
+			self.saveFile("library.dat", self.library)
 		except OSError as er:
-			self.bubble("SESSION_SAVE_FAILED", er)
-		else:
-			print("Session saved success.")
+			safeprint("Couldn't save session")
+		safeprint("Saved")
+			
+	def loadFile(self, savepath):
+		"""Load .dat from savepath"""
+		file = open(savepath, "rb")
+		missions = pickle.load(file)
+		file.close()
+		list = []
+		
+		for mission in missions:
+			# backward compatibility
+			if not hasattr(mission, "update"):
+				setattr(mission, "update", False)
+				
+			if mission.state in oldStateCode:
+				mission.state = oldStateCode[mission.state]
+			
+			item = MissionContainer().setParent(self)
+			item.mission = mission
+			item.downloader = self.moduleManager.getDownloader(mission.url)
+			list.append(item)
+			
+		return list
 		
 	def load(self):
-		"""load mission que"""
+		"""Load mission que"""
+		try:
+			items = self.loadFile("save.dat")
+		except OSError as er:
+			safeprint("Couldn't load save.dat")
+		else:
+			self.missions.clear()
+			self.missions.append(*items)
 		
 		try:
-			self.missions.load()
-			self.library.load()
+			items = self.loadFile("library.dat")
 		except OSError as er:
-			self.bubble("SESSION_LOAD_FAILED", er)
+			safeprint("Couldn't load library.dat")
 		else:
-			for m in self.missions.q:
-				m.downloader = self.moduleManager.getDownloader(m.mission.url)
-			for m in self.library.q:
-				m.downloader = self.moduleManager.getDownloader(m.mission.url)
-			print("Session loaded success.")
-			
+			self.library.clear()
+			self.library.append(*items)
+
 		self.replaceDuplicate()
 		
 	def replaceDuplicate(self):
 		"""replace duplicate with library one"""
-		
-		for missionContainer in self.missions.q:
-			for libraryContainer in self.library.q:
-				if missionContainer.mission.url == libraryContainer.mission.url:
-					missionContainer.mission = libraryContainer.mission
+		for key, item in self.missions.data:
+			if self.library.contains(item):
+				self.missions.data[key] = self.library.data[key]
 
 	def addLibrary(self, mission):
 		"""add mission"""
-		
 		if self.library.contains(mission):
 			raise MissionDuplicateError
-		self.library.put(mission)
+		self.library.append(mission)
 		
 	def removeLibrary(self, *missions):
 		"""remove missions"""
-		
-		self.library.remove(missions)
+		self.library.remove(*missions)
 		
 	def addMissionUpdate(self):
 		"""Add updated mission to download list"""
