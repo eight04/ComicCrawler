@@ -294,12 +294,12 @@ class MainWindow(Main):
 		
 		def tvlift():
 			s = self.gTv.selection()
-			self.downloadManager.missions.lift([self.iidholder[k] for k in s])
+			self.downloadManager.missions.lift(*[self.iidholder[k] for k in s])
 		self.gTvmenu.entryconfig(1, command=tvlift)
 			
 		def tvdrop():
 			s = self.gTv.selection()
-			self.downloadManager.missions.drop([self.iidholder[k] for k in s])
+			self.downloadManager.missions.drop(*[self.iidholder[k] for k in s])
 		self.gTvmenu.entryconfig(2, command=tvdrop)
 		
 		def tvchangetitle():
@@ -312,7 +312,7 @@ class MainWindow(Main):
 			s = self.gTv.selection()
 			# mission = self.iidholder[s[0]]
 			missions = [ self.iidholder[i] for i in s ]
-			titles = [ m.title for m in missions ]
+			titles = [ m.mission.title for m in missions ]
 			for mission in missions:
 				self.downloadManager.addLibrary(mission)
 			safeprint("已加入圖書館︰{}".format(", ".join(titles)))
@@ -386,8 +386,8 @@ class MainWindow(Main):
 	def load(self):
 		"""load mission from mission que"""
 		
-		missionlist = self.downloadManager.missions.q
-		for m in missionlist:
+		missionlist = self.downloadManager.missions.data
+		for key, m in missionlist.items():
 			self.addtotree(m)
 	
 	def tvrefresh(self):
@@ -406,15 +406,15 @@ class MainWindow(Main):
 		tv.delete(*ids)
 		self.libIdIndex = {}
 		
-		list = self.downloadManager.library.q
-		for m in list:
+		list = self.downloadManager.library.data
+		for key, m in list.items():
 			cid = tv.insert("","end",
 				values=(m.mission.title, m.downloader.name, STATE[m.mission.state]))
 			self.libIdIndex[cid] = m
 		
 	def onMessage(self, message, param, sender):
 		"""GUI Message control"""
-		# print("GUI onMessage", message)
+		super().onMessage(message, param, sender)
 		
 		if message == "MESSAGE":
 			text = param.splitlines()[-1]
@@ -426,11 +426,13 @@ class MainWindow(Main):
 				for cid, m in self.iidholder.items():
 					if m is mission:
 						self.gTv.set(cid, "state", STATE[m.mission.state])
+						self.gTv.set(cid, "name", m.mission.title)
 			
 			if "libIdIndex" in vars(self):
 				for cid, m in self.libIdIndex.items():
 					if m is mission:
 						self.gLibTV.set(cid, "state", STATE[m.mission.state])
+						self.gLibTV.set(cid, "name", m.mission.title)
 
 
 		if message == "MISSIONQUE_ARRANGE":
@@ -446,7 +448,7 @@ class MainWindow(Main):
 				# "Comic Crawler", "下載中斷！\n{}".format(er_msg))
 				
 		if message == "ANALYZE_FINISHED":
-			if sender in self.analyzeWorkers:
+			if sender in self.downloadManager.analyzeWorkers:
 				if len(param.mission.episodelist) > 1:
 					selectEp(self.gRoot, param.mission)
 				self.downloadManager.addMission(param)
@@ -455,17 +457,14 @@ class MainWindow(Main):
 			# mission, er_msg = param
 			tkinter.messagebox.showerror(
 				param.downloader.name, "解析錯誤！\n{}".format(param.error))
-				
-		super().onMessage(message, param, sender)
-		
 
-def selectTitle(parent, mission):
+def selectTitle(parent, item):
 	"""change mission title dialog"""
 	
 	w = Dialog(parent)
 	
 	entry = Entry(w.body)
-	entry.insert(0, mission.title)
+	entry.insert(0, item.mission.title)
 	entry.selection_range(0, "end")
 	entry.pack()
 	
@@ -473,7 +472,7 @@ def selectTitle(parent, mission):
 	
 	def apply():
 		title = entry.get()
-		mission.set("title", title)
+		item.set("title", title)
 		
 	w.apply = apply
 	

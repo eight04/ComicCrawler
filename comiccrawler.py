@@ -32,6 +32,8 @@ oldStateCode = {
 	
 class CrawlerError(Exception): pass
 
+class MissionDuplicateError(CrawlerError): pass
+
 class ImageExistsError(CrawlerError): pass
 
 class LastPageError(CrawlerError): pass
@@ -249,13 +251,15 @@ class DownloadWorker(Worker):
 			self.mission.lock.acquire()
 			self.mission.set("state", "DOWNLOADING")
 			self.download(self.mission.mission, self.savepath, self.mission.downloader)
-		except StopWorker as er:
+		except WorkerSignal as er:
 			self.mission.set("state", "PAUSE")
 			self.bubble("DOWNLOAD_PAUSE", self.mission)
 			raise er
 		except Exception as er:
 			traceback.print_exc()
 			self.mission.set("state", "ERROR")
+			if type(er) is TooManyRetryError:
+				self.bubble("DOWNLOAD_TOO_MANY_RETRY", self.mission)
 			self.bubble("DOWNLOAD_ERROR", self.mission)
 			# self.callback(self.mission, er)
 		else:
@@ -335,7 +339,7 @@ class DownloadWorker(Worker):
 					if not imgurls:
 						raise RuntimeError("Image url is null")
 						
-				except (LastPageError, SkipEpisodeError, StopWorker) as er:
+				except (LastPageError, SkipEpisodeError, WorkerSignal) as er:
 					raise er
 					
 				except Exception as er:
@@ -418,7 +422,7 @@ class DownloadWorker(Worker):
 				safeprint("...page {} already exist".format(
 						ep.currentpagenumber))
 						
-			except StopWorker as er:
+			except WorkerSignal as er:
 				raise er
 				
 			except Exception as er:
@@ -460,19 +464,13 @@ class AnalyzeWorker(Worker):
 		
 		try:
 			self.mission.lock.acquire()
-			self.mission.set("state", "ANALYZING")
-			self.analyze(self.mission.mission, self.mission.downloader)
+			self.analyze(self.mission)
 		except Exception as er:
 			self.mission.set("state", "ERROR")
 			self.mission.error = er
 			traceback.print_exc()
 			self.bubble("ANALYZE_FAILED", self.mission)
 		else:
-			if self.mission.mission.update:
-				self.mission.set("state", "UPDATE")
-			else:
-				self.mission.set("state", "ANALYZED")
-			# self.callback(self.mission)
 			self.bubble("ANALYZE_FINISHED", self.mission)
 		finally:
 			self.mission.lock.release()
@@ -486,17 +484,24 @@ class AnalyzeWorker(Worker):
 			
 		mission.episodelist = [dict[key] for key in dict]
 			
-	def analyze(self, mission, downloader):
-		"""Analyze mission url."""
-		
-		safeprint("Start analyzing {}".format(mission.url))
+	def analyze(self, missionContainer):
+		"""Analyze mission url."""		
+		mission = missionContainer.mission
+		downloader = missionContainer.downloader
 
+		safeprint("Start analyzing {}".format(mission.url))
+		missionContainer.set("state", "ANALYZING")
+		
 		html = self.waitChild(grabhtml, mission.url, hd=downloader.header)
-		mission.title = downloader.gettitle(html, url=mission.url)
+		
+		if not mission.title:
+			mission.title = downloader.gettitle(html, url=mission.url)
+			
 		epList = self.waitChild(downloader.getepisodelist, html, url=mission.url)
 		if not mission.episodelist:
 			# new mission
 			mission.episodelist = epList
+			missionContainer.set("state", "ANALYZED")
 		else:
 			# re-analyze, put new ep into eplist
 			for ep in epList:
@@ -510,7 +515,10 @@ class AnalyzeWorker(Worker):
 			for ep in mission.episodelist:
 				if not ep.complete and not ep.skip:
 					mission.update = True
+					missionContainer.set("state", "UPDATE")
 					break
+			else:
+				missionContainer.set("state", "FINISHED")
 		
 		if not mission.episodelist:
 			raise Exception("get episode list failed!")
@@ -566,7 +574,7 @@ class MissionList(Worker):
 		if not items:
 			return
 			
-		for item in items.:
+		for item in items:
 			if not item.lock.acquire(blocking=False):
 				raise RuntimeError("Mission already in use")
 			else:
@@ -702,8 +710,7 @@ class DownloadManager(Worker):
 		missionContainer = MissionContainer()
 		missionContainer.mission = mission
 		missionContainer.downloader = self.moduleManager.getDownloader(mission.url)
-		worker = AnalyzeWorker(missionContainer)
-		self.addChild(worker)
+		worker = AnalyzeWorker(missionContainer).setParent(self)
 		self.analyzeWorkers.append(worker)
 		worker.start()
 		
@@ -712,7 +719,7 @@ class DownloadManager(Worker):
 		
 		if self.missions.contains(mission):
 			raise MissionDuplicateError
-		self.missions.put(mission)
+		self.missions.append(mission)
 		
 	def removeMission(self, *args):
 		"""delete mission"""
@@ -733,7 +740,7 @@ class DownloadManager(Worker):
 	def stopDownload(self):
 		"""Stop downloading"""
 		if self.downloadWorker and self.downloadWorker.running:
-			self.stop(self.downloadWorker)
+			self.downloadWorker.stop()
 			safeprint("Stop download " + self.downloadWorker.mission.mission.title)
 		
 	def startCheckUpdate(self):
@@ -747,7 +754,7 @@ class DownloadManager(Worker):
 		
 	def onMessage(self, message, param, thread):
 		"""Override"""
-		# safeprint("DownloadManager onMessage", message)
+		super().onMessage(message, param, thread)
 		
 		if message == "DOWNLOAD_FINISHED":
 			command = self.setting["runafterdownload"]
@@ -763,36 +770,44 @@ class DownloadManager(Worker):
 				safeprint("All download completed")
 			else:
 				worker = DownloadWorker(mission, self.setting["savepath"])
-				worker.addParent(self).start()
+				worker.setParent(self).start()
 				self.downloadWorker = worker
+					
+		if message == "DOWNLOAD_TOO_MANY_RETRY":
+			self.missions.drop(param)
 					
 		if message == "DOWNLOAD_ERROR":
 			mission = self.missions.take()
 			if not mission:
 				safeprint("All download completed")
 			else:
-				self.downloadWorker = self.createChild(DownloadWorker, mission).start()
+				worker = DownloadWorker(mission, self.setting["savepath"])
+				worker.setParent(self).start()
+				self.downloadWorker = worker
 			
 		if message == "DOWNLOAD_PAUSE":
 			pass
 
-		if (message == "ANALYZE_FAILED" or message == "ANALYZE_FINISHED" 
-				and thread in self.analyzeWorkers):
-			self.analyzeWorkers.remove(thread)
-			
-		if message == "CHILD_THREAD_END":
-			if thread == self.libraryWorker:
-				mission = self.library.take()
+		if message == "ANALYZE_FAILED" or message == "ANALYZE_FINISHED":
+			if thread in self.analyzeWorkers:
+				self.analyzeWorkers.remove(thread)
+				
+			if thread is self.libraryWorker:
+				mission = self.library.takeAnalyze()
 				if mission:
 					self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
-				
-		super().onMessage(message, param, thread)
+				else:
+					updated = []
+					for key, item in self.library.data.items():
+						if item.mission.update:
+							updated.append(item)
+					self.library.lift(*updated)
 		
-	def saveFile(self, savepath, items):
+	def saveFile(self, savepath, missionList):
 		"""Save mission list"""
 		list = []
 		
-		for item in items:
+		for key, item in missionList.data.items():
 			list.append(item.mission)
 			
 		file = open(savepath, "wb")
@@ -851,7 +866,7 @@ class DownloadManager(Worker):
 		
 	def replaceDuplicate(self):
 		"""replace duplicate with library one"""
-		for key, item in self.missions.data:
+		for key, item in self.missions.data.items():
 			if self.library.contains(item):
 				self.missions.data[key] = self.library.data[key]
 
@@ -867,8 +882,12 @@ class DownloadManager(Worker):
 		
 	def addMissionUpdate(self):
 		"""Add updated mission to download list"""
-		for mission in self.library.q:
-			self.addMission(mission)
+		for key, item in self.library.data.items():
+			if item.mission.update:
+				try:
+					self.addMission(item)
+				except MissionDuplicateError:
+					pass
 		
 class ModuleManager:
 	"""Import all the downloader module.
