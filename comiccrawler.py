@@ -410,8 +410,8 @@ class DownloadWorker(Worker):
 				if fn in downloadedlist:
 					raise ImageExistsError
 					
-				safeprint("Downloading page {}: {}".format(
-						ep.currentpagenumber, imgurl))
+				safeprint("Downloading {} page {}: {}".format(
+						ep.title, ep.currentpagenumber, imgurl))
 						
 				oi = self.waitChild(grabimg, imgurl, hd=header)
 				
@@ -673,7 +673,7 @@ class DownloadManager(Worker):
 		
 		self.downloadWorker = None
 		self.libraryWorker = None
-		self.analyzeWorkers = []
+		# self.analyzeWorkers = []
 		
 		self.conf()
 		self.load()
@@ -697,28 +697,20 @@ class DownloadManager(Worker):
 		
 	def addURL(self, url):
 		"""add url"""
-		
 		if not url:
 			return
-		mission = self.library.getByURL(url)
-		if not mission:
+		try:
+			item = self.library.get(url)
+		except KeyError:
 			mission = Mission()
 			mission.url = url
-		self.analyze(mission)
-		
-	def analyze(self, mission):
-		"""Analyze mission"""
-		
-		missionContainer = MissionContainer()
-		missionContainer.mission = mission
-		missionContainer.downloader = self.moduleManager.getDownloader(mission.url)
-		worker = AnalyzeWorker(missionContainer).setParent(self)
-		self.analyzeWorkers.append(worker)
-		worker.start()
+			item = MissionContainer().setParent(self)
+			item.mission = mission
+			item.downloader = self.moduleManager.getDownloader(url)
+		AnalyzeWorker(item).setParent(self).start()
 		
 	def addMission(self, mission):
 		"""add mission"""
-		
 		if self.missions.contains(mission):
 			raise MissionDuplicateError
 		self.missions.append(mission)
@@ -791,8 +783,8 @@ class DownloadManager(Worker):
 			pass
 
 		if message == "ANALYZE_FAILED" or message == "ANALYZE_FINISHED":
-			if thread in self.analyzeWorkers:
-				self.analyzeWorkers.remove(thread)
+			# if thread in self.analyzeWorkers:
+				# self.analyzeWorkers.remove(thread)
 				
 			if thread is self.libraryWorker:
 				mission = self.library.takeAnalyze()

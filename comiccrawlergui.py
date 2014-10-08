@@ -441,14 +441,8 @@ class MainWindow(Main):
 			if param == self.downloadManager.library:
 				self.libTvRefresh()
 			
-		# if message is "WORKER_TERMINATED":
-			# mission, er, er_msg = param
-			
-			# tkinter.messagebox.showerror(
-				# "Comic Crawler", "下載中斷！\n{}".format(er_msg))
-				
 		if message == "ANALYZE_FINISHED":
-			if sender in self.downloadManager.analyzeWorkers:
+			if sender is not self.downloadManager.libraryWorker:
 				if len(param.mission.episodelist) > 1:
 					selectEp(self.gRoot, param.mission)
 				self.downloadManager.addMission(param)
