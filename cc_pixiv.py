@@ -10,6 +10,7 @@ Ex:
 import re
 from comiccrawler import Episode, extend, grabhtml, LastPageError, SkipEpisodeError
 from safeprint import safeprint
+from html import unescape
 
 header = {
 	"Referer": "http://www.pixiv.net/member_illust.php"
@@ -60,26 +61,9 @@ def getepisodelist(html, url=""):
 def getimgurls(html, url=""):
 	if "pixiv.user.loggedIn = true" not in html:
 		raise Exception("you didn't login!")
+		
+	base = re.search(r"https?://[^/]+", url).group()
 	
-	# image
-	rs = re.search(r'"works_display"><a[^>]+><div[^>]+><img src="([^"]+)"', html)
-	if rs:
-		img = rs.group(1)
-		if "img-master" in img:
-			img = re.sub(r"/\w/\d+x\d+/img-master", "/img-original", img)
-			img = re.sub(r"_master\d+", "", img)
-		else:
-			img = img.replace("_m", "")
-		return [img]
-		
-	# multiple image
-	rs = re.search(r'works_display"><a[^>]+><div[^>]+><div class="multiple"><i[^>]+></i></div><img src="([^"]+)"', html)
-	if rs:
-		img = rs.group(1)
-		pages = re.search("(\d+)P</li>", html).group(1)
-		pages = int(pages)
-		return [img.replace(r"_m", "_big_p{}".format(i)) for i in range(pages)]
-		
 	# ugoku
 	rs = re.search(r"pixiv\.context\.ugokuIllustFullscreenData\s+= ([^;]+)", html)
 	if rs:
@@ -87,6 +71,27 @@ def getimgurls(html, url=""):
 		json = rs.group(1)
 		o = eval(json)
 		return [o["src"]]
+		
+	header["Referer"] = url
+	url = re.search(r'"works_display"><a class="[^"]*" href="([^"]+)"', html).group(1)
+	html = grabhtml(base + "/" + url, header)
+	
+	if "mode=big" in url:
+		# single image
+		img = re.search(r'src="([^"]+)"', html).group(1)
+		return [img]
+	
+	if "mode=manga" in url:
+		# multiple image
+		imgs = []
+		
+		for match in re.finditer(r'a href="(/member_illust\.php\?mode=manga_big[^"]+)"', html):
+			url = base + match.group(1)
+			html = grabhtml(url, header)
+			img = re.search(r'img src="([^"]+)"', html).group(1)
+			imgs.append(img)
+			
+		return imgs
 		
 	# restricted
 	rs = re.search('<section class="restricted-content">', html)
