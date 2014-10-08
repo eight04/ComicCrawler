@@ -20,8 +20,6 @@ class Error(Exception): pass
 
 class WorkerError(Error): pass
 
-class UncaughtError(WorkerError): pass
-
 class WorkerSignal(Error): pass
 
 class StopWorker(WorkerSignal): pass
@@ -36,10 +34,12 @@ class Worker:
 		"""init"""
 		
 		self.error = queue.Queue()
+		self.running = False
+		self.printError = True
 		if callable(target):
 			self.worker = target
+			
 		self._thread = None
-		self.running = False
 		self._messageBucket = queue.Queue()
 		self._children = set()
 		self._parent = None
@@ -55,10 +55,10 @@ class Worker:
 			raise WorkerError("Thread is not inherit from Worker")
 		thread.message(message, param, flag, self)
 		
-	def tellParent(self, message, param=None):
+	def tellParent(self, message, param=None, flag=None):
 		"""Shorthand to put message to parent"""
 		if self._parent:
-			self.tell(self._parent, message, param)
+			self.tell(self._parent, message, param, flag)
 		
 	def bubble(self, message, param=None):
 		"""Shorthand to bubble message"""
@@ -94,11 +94,12 @@ class Worker:
 		except WorkerSignal as er:
 			raise er
 		except Exception as er:
-			traceback.print_exc()
-			er = UncaughtError("Something went wrong in Worker.onMessage.", er)
+			if self.printError:
+				print("In onMessage,", self)
+				traceback.print_exc()
 			self.error.put(er)
 			self.tellParent("CHILD_THREAD_ERROR", er)
-		self.transferMessage(message, param, flag, sender)
+		self._transferMessage(message, param, flag, sender)
 		return param
 	
 	def onMessage(self, message, param, sender):
@@ -107,10 +108,11 @@ class Worker:
 			raise StopWorker
 			
 		if message == "CHILD_THREAD_START":
-			self.addChild(sender)
+			self._children.add(sender)
 
 		if message == "CHILD_THREAD_END":
-			self.removeChild(sender)
+			self._children.remove(sender)
+			sender._parent = None
 			
 		if message == "CHILD_THREAD_ERROR":
 			pass
@@ -124,7 +126,13 @@ class Worker:
 		"""Process message que untill empty"""
 		while True:
 			try:
-				message = self.messageBucket.get_nowait()
+				self._cache.get_nowait()
+			except queue.Empty:
+				break
+				
+		while True:
+			try:
+				message = self._messageBucket.get_nowait()
 			except queue.Empty:
 				return
 			else:
@@ -198,14 +206,24 @@ class Worker:
 		except StopWorker:
 			pass
 		except Exception as er:
-			traceback.print_exc()
+			if self.printError:
+				print("Something went wrong in Worker.worker")
+				traceback.print_exc()
 			if self.running:
-				er = UncaughtError("Something went wrong in Worker.worker", er)
 				self.error.put(er)
 				self.tellParent("CHILD_THREAD_ERROR", er)
 			else:
 				raise er
-
+				
+		# clean up
+		while True:
+			try:
+				self.processMessage()
+			except WorkerSignal:
+				continue
+			else:
+				break
+		
 		self.stopAllChild()
 		while self.countChild():
 			try:
@@ -214,7 +232,7 @@ class Worker:
 				pass
 
 		self.running = False
-		self.tellParent("CHILD_THREAD_END", self.ret)
+		self.tellParent("CHILD_THREAD_END", self._ret)
 			
 	def countChild(self, running=True):
 		if not running:
@@ -292,30 +310,10 @@ class Worker:
 		child.setParent(self)
 		return child
 		
-	def addChild(self, *args):
-		"""Add Children"""
-		o = None
-		for o in args:
-			if not issubclass(type(o), Worker):
-				raise WorkerError("Not inherit Worker")
-			if o._parent:
-				raise WorkerError("Already has parent")
-			# o.parent = self
-			self._children.add(o)
-		return o
-			
-	def removeChild(self, *args):
-		"""Remove children"""
-		o = None
-		for o in args:
-			if o not in self._children:
-				raise WorkerError("Not child thread")
-			self._children.remove(o)
-			o._parent = None
-		return o
-		
 	def waitChild(self, func, *args, **kw):
-		child = self.createChild(Worker, func).start(*args, **kw)
+		child = self.createChild(Worker, func)
+		child.printError = False
+		child.start(*args, **kw)
 		self.wait("CHILD_THREAD_END", child)
 		if not child.error.empty():
 			raise child.error.get_nowait()
@@ -331,4 +329,6 @@ class Worker:
 			raise WorkerError("Already has parent")
 		if not issubclass(type(thread), Worker):
 			raise WorkerError("Not inherit Worker")
+			
+		self._parent = thread
 		return self
