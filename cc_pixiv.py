@@ -66,7 +66,7 @@ def getimgurls(html, url=""):
 	if rs:
 		img = rs.group(1)
 		if "img-master" in img:
-			img = re.sub(r"/\w/\d+x\d/img-master", "/img-originald", img)
+			img = re.sub(r"/\w/\d+x\d+/img-master", "/img-original", img)
 			img = re.sub(r"_master\d+", "", img)
 		else:
 			img = img.replace("_m", "")
