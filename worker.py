@@ -105,6 +105,9 @@ class Worker:
 		"""Override"""
 		if message == "STOP_THREAD":
 			raise StopWorker
+			
+		if message == "CHILD_THREAD_START":
+			self.addChild(sender)
 
 		if message == "CHILD_THREAD_END":
 			self.removeChild(sender)
@@ -188,7 +191,8 @@ class Worker:
 		
 	def _worker(self):
 		"""Real target to pass to threading.Thread"""
-
+		self.tellParent("CHILD_THREAD_START", self)
+		
 		try:
 			self._ret = self.worker(*self._args, **self._kwargs)
 		except StopWorker:
@@ -285,7 +289,8 @@ class Worker:
 			raise WorkerError("Not inherit Worker")
 			
 		child = cls(*args, **kw)
-		return self.addChild(child)
+		child.setParent(self)
+		return child
 		
 	def addChild(self, *args):
 		"""Add Children"""
@@ -293,20 +298,20 @@ class Worker:
 		for o in args:
 			if not issubclass(type(o), Worker):
 				raise WorkerError("Not inherit Worker")
-			if o.parent:
+			if o._parent:
 				raise WorkerError("Already has parent")
-			o.parent = self
-			self.children.add(o)
+			# o.parent = self
+			self._children.add(o)
 		return o
 			
 	def removeChild(self, *args):
 		"""Remove children"""
 		o = None
 		for o in args:
-			if o not in self.children:
+			if o not in self._children:
 				raise WorkerError("Not child thread")
-			self.children.remove(o)
-			o.parent = None
+			self._children.remove(o)
+			o._parent = None
 		return o
 		
 	def waitChild(self, func, *args, **kw):
@@ -320,7 +325,7 @@ class Worker:
 		"""Get return value"""
 		return self._ret
 
-	def addParent(self, thread):
+	def setParent(self, thread):
 		"""Add parent"""
 		if self._parent:
 			raise WorkerError("Already has parent")
