@@ -65,7 +65,12 @@ def getimgurls(html, url=""):
 	rs = re.search(r'"works_display"><a[^>]+><div[^>]+><img src="([^"]+)"', html)
 	if rs:
 		img = rs.group(1)
-		return [img.replace("_m", "")]
+		if "img-master" in img:
+			img = re.sub(r"/\w/\d+x\d/img-master", "/img-originald", img)
+			img = re.sub(r"_master\d+", "", img)
+		else:
+			img = img.replace("_m", "")
+		return [img]
 		
 	# multiple image
 	rs = re.search(r'works_display"><a[^>]+><div[^>]+><div class="multiple"><i[^>]+></i></div><img src="([^"]+)"', html)
@@ -73,7 +78,7 @@ def getimgurls(html, url=""):
 		img = rs.group(1)
 		pages = re.search("(\d+)P</li>", html).group(1)
 		pages = int(pages)
-		return [img.replace("_m", "_big_p{}".format(i)) for i in range(pages)]
+		return [img.replace(r"_m", "_big_p{}".format(i)) for i in range(pages)]
 		
 	# ugoku
 	rs = re.search(r"pixiv\.context\.ugokuIllustFullscreenData\s+= ([^;]+)", html)
