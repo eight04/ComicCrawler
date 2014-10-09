@@ -678,6 +678,9 @@ class DownloadManager(Worker):
 		self.conf()
 		self.load()
 		
+		if self.setting["libraryautocheck"]:
+			self.startCheckUpdate()
+		
 	def conf(self):
 		"""Load config from controller. Set default"""		
 		import os.path
