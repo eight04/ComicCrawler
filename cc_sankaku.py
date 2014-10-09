@@ -5,12 +5,17 @@ from html import unescape
 from comiccrawler import Episode, grabhtml
 from safeprint import safeprint
 
-header = {
-	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0"
-}
+header = {}
 domain = ["chan.sankakucomplex.com"]
 name = "Sankaku"
 noepfolder = True
+
+def loadconfig(config):
+	if name not in config:
+		config[name] = {}
+	if "cf_clearance" not in config[name]:
+		config[name] = "請輸入Cookie中的cf_clearance"
+	header["Cookie"] = "cf_clearance=" + config[name]["cf_clearance"]
 
 def gettitle(html, **kw):
 	title = re.search(r"<title>/?(.+?) \|", html).group(1)

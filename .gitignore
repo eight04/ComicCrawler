@@ -1,6 +1,5 @@
 *.dat
 *.ini
 __pycache__/*
-test*
 download/*
 build/*

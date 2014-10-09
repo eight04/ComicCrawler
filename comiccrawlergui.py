@@ -7,21 +7,23 @@
 from tkinter import *
 from tkinter.ttk import *
 import tkinter.messagebox
+import sys
 
-import comiccrawler as cc
+from comiccrawler import Main
 from safeprint import safeprint, addcallback
-import queue
+# import queue
 
 STATE = {
-	cc.INIT: "準備",
-	cc.ANALYZED: "解析完成",
-	cc.DOWNLOADING: "下載中",
-	cc.PAUSE: "停止",
-	cc.FINISHED: "完成",
-	cc.ERROR: "錯誤",
-	cc.INTERRUPT: "已刪除",
-	cc.UPDATE: "有更新",
-	cc.ANALYZING: "分析中"
+	"INIT": "準備",
+	"ANALYZED": "解析完成",
+	"DOWNLOADING": "下載中",
+	"PAUSE": "停止",
+	"FINISHED": "完成",
+	"ERROR": "錯誤",
+	"INTERRUPT": "已刪除",
+	"UPDATE": "有更新",
+	"ANALYZING": "分析中",
+	"ANALYZE_INIT": "準備分析"
 }
 
 class Dialog(Toplevel):
@@ -93,7 +95,7 @@ class Dialog(Toplevel):
 		self.wait_window(self)
 		return self.result
 	
-class MainWindow(cc.Controller):
+class MainWindow(Main):
 	"""Main GUI window class."""
 	
 	def view(self):
@@ -224,28 +226,15 @@ class MainWindow(cc.Controller):
 		# ========GUI END========
 		
 		self.bindevent()
-		self.messageq = queue.Queue()
-		addcallback(self.sendToBucket)
 		self.tvrefresh()
 		self.libTvRefresh()
 		self.gRoot.after(100, self.tkloop)
 		self.gRoot.mainloop()
 		
-	def sendToBucket(self, text):
-		"""hook with safeprint"""
-		
-		cc._evtcallback("MESSAGE", text)
-		
 	def tkloop(self):
 		"""get message from comiccrawler.messageBucket"""
 		
-		try:
-			while True:
-				message, args = cc.messageBucket.get_nowait()
-				self.message(message, args)
-		except queue.Empty:
-			pass
-			
+		self.processMessage()
 		self.gRoot.after(100, self.tkloop)
 
 	def bindevent(self):
@@ -273,41 +262,44 @@ class MainWindow(cc.Controller):
 		
 		# interface for download manager
 		def addurl():
-			self.iAddUrl(self.gEntry_url.get())
+			self.downloadManager.addURL(self.gEntry_url.get())
 			self.gEntry_url.delete(0, "end")
 		self.gBtnaddurl["command"] = addurl
 		
 		def startdownload():
-			self.iStart()
+			self.downloadManager.startDownload()
 		self.gBtnstart["command"] = startdownload
 		
 		def stopdownload():
-			self.iStop()
+			self.downloadManager.stopDownload()
 		self.gBtnstop["command"] = stopdownload
 		
 		def cleanfinished():
-			self.iClean()
+			self.downloadManager.missions.cleanfinished()
 		self.gBtnclean["command"] = cleanfinished
 		
 		def reloadconfig():
-			self.iReloadConfig()
+			self.configManager.load()
+			self.moduleManager.loadconfig()
+			self.downloadManager.conf()
+			safeprint("設定檔重載成功！")
 		self.gBtnconfig["command"] = reloadconfig
 		
 		# interface for mission list
 		def tvdelete():
 			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
 				s = self.gTv.selection()
-				self.iRemoveMission(*[self.iidholder[k] for k in s])
+				self.downloadManager.missions.remove(*[self.iidholder[k] for k in s])
 		self.gTvmenu.entryconfig(0, command=tvdelete)
 		
 		def tvlift():
 			s = self.gTv.selection()
-			self.iLift(*[self.iidholder[k] for k in s])
+			self.downloadManager.missions.lift(*[self.iidholder[k] for k in s])
 		self.gTvmenu.entryconfig(1, command=tvlift)
 			
 		def tvdrop():
 			s = self.gTv.selection()
-			self.iDrop(*[self.iidholder[k] for k in s])
+			self.downloadManager.missions.drop(*[self.iidholder[k] for k in s])
 		self.gTvmenu.entryconfig(2, command=tvdrop)
 		
 		def tvchangetitle():
@@ -320,19 +312,18 @@ class MainWindow(cc.Controller):
 			s = self.gTv.selection()
 			# mission = self.iidholder[s[0]]
 			missions = [ self.iidholder[i] for i in s ]
-			titles = [ m.title for m in missions ]
+			titles = [ m.mission.title for m in missions ]
 			for mission in missions:
-				self.iAddToLib(mission)
+				self.downloadManager.addLibrary(mission)
 			safeprint("已加入圖書館︰{}".format(", ".join(titles)))
 		self.gTvmenu.entryconfig(4, command=tvAddToLib)
 		
 		def tvReselectEP():
 			s = self.gTv.selection()
 			# mission = self.iidholder[s[0]]
-			missions = [ self.iidholder[i] for i in s ]
-			titles = [ m.title for m in missions ]
-			for mission in missions:
-				selectEp(self.gRoot, mission)
+			missionContainers = [ self.iidholder[i] for i in s ]
+			for missionContainer in missionContainers:
+				selectEp(self.gRoot, missionContainer.mission)
 		self.gTvmenu.entryconfig(5, command=tvReselectEP)
 		
 		def tvmenucall(event):
@@ -341,20 +332,20 @@ class MainWindow(cc.Controller):
 		
 		# interface for library
 		def libCheckUpdate():
-			self.iLibCheckUpdate()
+			self.downloadManager.startCheckUpdate()
 		self.gBtnUpdate["command"] = libCheckUpdate
 		
 		def libDownloadUpdate():
-			self.iLibDownloadUpdate()
+			self.downloadManager.addMissionUpdate()
 			self.gNotebook.select(0)
-			self.iStart()
+			self.downloadManager.startDownload()
 		self.gBtnDownloadUpdate["command"] = libDownloadUpdate
 		
 		# interface for library list
 		def libMenuDelete():
 			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
 				s = self.gLibTV.selection()
-				self.iLibRemove(*[self.libIdIndex[k] for k in s])
+				self.downloadManager.library.remove([self.libIdIndex[k] for k in s])
 		self.gLibMenu.entryconfig(0, command=libMenuDelete)
 		
 		def libMenuReselectEP():
@@ -370,29 +361,33 @@ class MainWindow(cc.Controller):
 		
 		# close window event
 		def beforequit():
-			if (self.downloadManager.running and 
+			if (self.downloadManager.downloadWorker and self.downloadManager.downloadWorker.running and 
 					not tkinter.messagebox.askokcancel("Comic Crawler",
 						"任務下載中，確定結束？")):
 				return
-			self.downloadManager.stop()
+			self.downloadManager.stopDownload()
 			self.gRoot.destroy()
 		self.gRoot.protocol("WM_DELETE_WINDOW", beforequit)
+		
+		def safeprintCallback(text):
+			self.message("MESSAGE", text)
+		addcallback(safeprintCallback)
 		
 		
 	def addtotree(self, mission):
 		"""Add item into treeview."""
 
 		downloader = mission.downloader
-		m = mission
+		m = mission.mission
 		cid = self.gTv.insert("","end",
 				values=(m.title, downloader.name, STATE[m.state]))
-		self.iidholder[cid] = m
+		self.iidholder[cid] = mission
 			
 	def load(self):
 		"""load mission from mission que"""
 		
-		missionlist = self.downloadManager.missionque.q
-		for m in missionlist:
+		missionlist = self.downloadManager.missions.data
+		for key, m in missionlist.items():
 			self.addtotree(m)
 	
 	def tvrefresh(self):
@@ -411,85 +406,59 @@ class MainWindow(cc.Controller):
 		tv.delete(*ids)
 		self.libIdIndex = {}
 		
-		list = self.library.libraryList.q
-		for m in list:
+		list = self.downloadManager.library.data
+		for key, m in list.items():
 			cid = tv.insert("","end",
-				values=(m.title, m.downloader.name, STATE[m.state]))
+				values=(m.mission.title, m.downloader.name, STATE[m.mission.state]))
 			self.libIdIndex[cid] = m
 		
-	def iAnalyzeFinished(self, mission, error=None, er_msg=None):
-		"""overwrite, send to message bucket"""
-		
-		cc._evtcallback("ANALYZED_FINISHED", mission, error, er_msg)
-	
-	def message(self, msg, args=None):
+	def onMessage(self, message, param, sender):
 		"""GUI Message control"""
+		super().onMessage(message, param, sender)
 		
-		if msg is "MESSAGE":
-			text, = args
-			text = text.splitlines()[-1]
+		if message == "MESSAGE":
+			text = param.splitlines()[-1]
 			self.gStatusbar["text"] = text
 	
-		elif msg is "MISSION_STATE_CHANGE":
-			mission, = args
+		if message == "MISSION_PROPERTY_CHANGED":
+			mission = param
 			if "iidholder" in vars(self):
 				for cid, m in self.iidholder.items():
 					if m is mission:
-						self.gTv.set(cid, "state", STATE[m.state])
+						self.gTv.set(cid, "state", STATE[m.mission.state])
+						self.gTv.set(cid, "name", m.mission.title)
 			
 			if "libIdIndex" in vars(self):
 				for cid, m in self.libIdIndex.items():
 					if m is mission:
-						self.gLibTV.set(cid, "state", STATE[m.state])
+						self.gLibTV.set(cid, "state", STATE[m.mission.state])
+						self.gLibTV.set(cid, "name", m.mission.title)
 
-		elif msg is "MISSION_TITLE_CHANGE":
-			mission, = args
-			if "iidholder" in vars(self):
-				for cid, m in self.iidholder.items():
-					if m is mission:
-						self.gTv.set(cid, "name", m.title)
-			
-			if "libIdIndex" in vars(self):
-				for cid, m in self.libIdIndex.items():
-					if m is mission:
-						self.gLibTV.set(cid, "name", m.title)
 
-		elif msg is "MISSIONQUE_ARRANGE":
-			q, = args
-			if q == self.downloadManager.missionque:
+		if message == "MISSIONQUE_ARRANGE":
+			if param == self.downloadManager.missions:
 				self.tvrefresh()
-			if q == self.library.libraryList:
+			if param == self.downloadManager.library:
 				self.libTvRefresh()
 			
-		elif msg is "WORKER_TERMINATED":
-			mission, er, er_msg = args
+		if message == "ANALYZE_FINISHED":
+			if sender is not self.downloadManager.libraryWorker:
+				if len(param.mission.episodelist) > 1:
+					selectEp(self.gRoot, param.mission)
+				self.downloadManager.addMission(param)
 			
+		if message == "ANALYZE_FAILED":
+			# mission, er_msg = param
 			tkinter.messagebox.showerror(
-				"Comic Crawler", "下載中斷！\n{}".format(er_msg))
-				
-		elif msg is "ANALYZED_FINISHED":
-			mission, error, er_msg = args
-			
-			if error:
-				tkinter.messagebox.showerror(
-					"Comic Crawler", "解析錯誤！\n{}".format(er_msg))
-				return
-				
-			if len(mission.episodelist) > 1 and not selectEp(self.gRoot, mission):
-				return
-				
-			self.iAddMission(mission)
-				
-		else:
-			pass
+				param.downloader.name, "解析錯誤！\n{}".format(param.error))
 
-def selectTitle(parent, mission):
+def selectTitle(parent, item):
 	"""change mission title dialog"""
 	
 	w = Dialog(parent)
 	
 	entry = Entry(w.body)
-	entry.insert(0, mission.title)
+	entry.insert(0, item.mission.title)
 	entry.selection_range(0, "end")
 	entry.pack()
 	
@@ -497,7 +466,7 @@ def selectTitle(parent, mission):
 	
 	def apply():
 		title = entry.get()
-		mission.setTitle(title)
+		item.set("title", title)
 		
 	w.apply = apply
 	
@@ -593,4 +562,4 @@ def selectEp(parent, mission):
 	return w.wait()
 
 if __name__ == "__main__":
-	MainWindow()
+	MainWindow().run()

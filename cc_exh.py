@@ -48,7 +48,7 @@ _cachehtml = ""
 def getimgurl(html, **kw):
 	global _cachehtml
 	_cachehtml	= html
-	i = re.search("<img id=\"img\" src=\"(.+?)\"",html)
+	i = re.search("<img id=\"img\" src=\"(.+?)\"", html)
 	
 	i = i.group(1).replace("&amp;","&")
 	if re.search("509s?\.gif",i) is not None:
