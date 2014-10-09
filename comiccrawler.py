@@ -5,6 +5,7 @@
 import re
 import pickle
 import traceback
+import sys, os
 
 from safeprint import safeprint
 from collections import OrderedDict
@@ -996,54 +997,30 @@ class Main(Worker):
 		pass
 
 if __name__ == "__main__":
+	workingDir = os.getcwd()
+	scriptDir = os.path.dirname(os.path.realpath(__file__))
+	os.chdir(scriptDir)
 	
-	class CLI:
-		def __init__(self):
-			import os
-			
-			self.workingDir = os.getcwd()
-			self.scriptDir = os.path.dirname(os.path.realpath(__file__))
-			os.chdir(self.scriptDir)
-			
-			self.configManager = ConfigManager("setting.ini")
-			self.moduleManager = ModuleManager(configManager=self.configManager)
-			
-			from sys import argv
-			if len(argv) <= 1:
-				self.downloadManager = DownloadManager(
-					configManager=self.configManager,
-					moduleManager=self.moduleManager
-				).start()
-				
-				self.inputLoop()
-			
-			elif argv[1] == "domains":
-				self.listDomains()
-			elif argv[1] == "download":	
-				kw = {
-					"url": argv[2],
-					"savepath": self.workingDir
-				}
-				if len(argv) >= 5 and argv[3] == "-d":
-					kw["savepath"] = os.path.join(self.workingDir, argv[4])
-				
-				self.start(**kw)
-				
-		def start(self, url=None, savepath="."):
-			if not url:
-				return
-				
-			mission = Mission()
-			mission.url = url
-			mission.downloader = self.moduleManager.getDownloader(url)
-			AnalyzeWorker().analyze(mission)
-			DownloadWorker().download(mission, savepath)
-			
-		def listDomains(self):
-			safeprint("Valid domains:\n{}".format(", ".join(self.moduleManager.getdlHolder())))
-			
-		def inputLoop(self):
-			while True:
-				s = input(">>> ")
-				
-	CLI()
+	configManager = ConfigManager("setting.ini")
+	moduleManager = ModuleManager(configManager=configManager)
+	
+	if len(sys.argv) <= 1:
+		sys.exit("Need more arguments")
+		
+	elif sys.argv[1] == "domains":
+		safeprint("Valid domains:\n{}".format(", ".join(moduleManager.getdlHolder())))
+		
+	elif sys.argv[1] == "download":	
+		url = sys.argv[2]
+		savepath = workingDir
+		if len(sys.argv) >= 5 and sys.argv[3] == "-d":
+			savepath = os.path.join(self.workingDir, argv[4])
+		
+		mission = Mission()
+		mission.url = url
+		container = MissionContainer()
+		container.mission = mission
+		container.downloader = moduleManager.getDownloader(url)
+		
+		AnalyzeWorker(container).run()
+		DownloadWorker(container, savepath).run()
