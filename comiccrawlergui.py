@@ -387,7 +387,7 @@ class MainWindow(Main):
 		def libMenuDelete():
 			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
 				s = self.gLibTV.selection()
-				self.downloadManager.library.remove([self.libIdIndex[k] for k in s])
+				self.downloadManager.library.remove(*[self.libIdIndex[k] for k in s])
 		self.gLibMenu.entryconfig(0, command=libMenuDelete)
 		
 		def libMenuReselectEP():
