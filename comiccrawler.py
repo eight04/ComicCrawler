@@ -251,7 +251,6 @@ class DownloadWorker(Worker):
 		# never do mission.lock.acquire in callback...
 		safeprint("DownloadWorker start downloading " + self.mission.mission.title)
 		try:
-			self.mission.lock.acquire()
 			self.mission.set("state", "DOWNLOADING")
 			self.download(self.mission.mission, self.savepath, self.mission.downloader)
 		except WorkerSignal as er:
@@ -269,8 +268,6 @@ class DownloadWorker(Worker):
 			self.mission.set("state", "FINISHED")
 			self.bubble("DOWNLOAD_FINISHED", self.mission)
 			# self.callback(self.mission)
-		finally:
-			self.mission.lock.release()
 			
 	def download(self, mission, savepath, downloader):
 		"""Start mission download. This method will call cls.crawlpage()
@@ -597,8 +594,9 @@ class MissionList(Worker):
 		mission.
 		"""		
 		for key, item in self.data.items():
-			if item.mission.state != "FINISHED":
-				return item
+			if item.mission.state not in ["FINISHED", "DOWNLOADING"]:
+				if item.lock.acquire(blocking=False):
+					return item
 				
 	def clear(self):
 		self.data.clear()
@@ -672,15 +670,13 @@ class DownloadManager(Worker):
 		
 		# Message listeners
 		@self.listen
-		def DOWNLOAD_FINISHED(param, thread):
-			command = self.setting["runafterdownload"]
-			if command:
-				try:
-					from subprocess import call
-					call((command, "{}/{}".format(self.setting["savepath"], safefilepath(thread.mission.title))))
-				except Exception as er:
-					safeprint("Failed to run process: {}".format(er))
-					
+		def DOWNLOAD_TOO_MANY_RETRY(param, sender):
+			self.missions.drop(param)
+		
+		@self.listen("DOWNLOAD_FINISHED")
+		@self.listen("DOWNLOAD_ERROR")
+		def afterDownload(param, sender):
+			param.lock.release()
 			mission = self.missions.take()
 			if not mission:
 				safeprint("All download completed")
@@ -690,30 +686,26 @@ class DownloadManager(Worker):
 				self.downloadWorker = worker
 		
 		@self.listen
-		def DOWNLOAD_TOO_MANY_RETRY(param, sender):
-			self.missions.drop(param)
-		
-		@self.listen("DOWNLOAD_FINISHED")
-		@self.listen("DOWNLOAD_ERROR")
-		def afterDownload(param, sender):
-			mission = self.missions.take()
-			if not mission:
-				safeprint("All download completed")
-			else:
-				worker = DownloadWorker(mission, self.setting["savepath"])
-				worker.setParent(self).start()
-				self.downloadWorker = worker
-		
+		def DOWNLOAD_FINISHED(param, thread):
+			command = self.setting["runafterdownload"]
+			if command:
+				try:
+					from subprocess import call
+					call((command, "{}/{}".format(self.setting["savepath"], safefilepath(thread.mission.title))))
+				except Exception as er:
+					safeprint("Failed to run process: {}".format(er))
+				
 		@self.listen("ANALYZE_FAILED")
 		@self.listen("ANALYZE_FINISHED")
 		def afterAnalyze(param, sender):
 			if sender is self.libraryWorker:
-				if param.update:
+				if param.mission.update:
 					self.library.lift(param)
 					
 				mission = self.library.takeAnalyze()
 				if mission:
 					self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
+					print("OK next")
 				
 				if not param.error:
 					return False
@@ -721,6 +713,7 @@ class DownloadManager(Worker):
 	def worker(self):
 		self.conf()
 		self.load()
+		print(self.setting["libraryautocheck"])
 		if self.setting["libraryautocheck"] == "true":
 			self.startCheckUpdate()
 			
@@ -731,8 +724,7 @@ class DownloadManager(Worker):
 		"""Load config from controller. Set default"""		
 		import os.path
 		
-		conf = self.configManager
-		self.setting = conf.get()["DEFAULT"]
+		self.setting = self.configManager.get()["DEFAULT"]
 		default = {
 			"savepath": "download",
 			"runafterdownload": "",
@@ -792,7 +784,6 @@ class DownloadManager(Worker):
 		self.library.reset()
 		mission = self.library.takeAnalyze()
 		self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
-		print(self.libraryWorker)
 		
 	def saveFile(self, savepath, missionList):
 		"""Save mission list"""
