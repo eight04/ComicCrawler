@@ -766,7 +766,8 @@ class DownloadManager(Worker):
 			
 		mission = self.missions.take()
 		if not mission:
-			raise Error("All download completed")
+			safeprint("所有任務已下載完成")
+			return
 		safeprint("Start download " + mission.mission.title)
 		self.downloadWorker = self.createChild(DownloadWorker, mission, self.setting["savepath"]).start()
 		
