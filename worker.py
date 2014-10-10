@@ -48,6 +48,28 @@ class Worker:
 		self._ret = None
 		self._waiting = False
 		self._cache = queue.Queue()
+		self._listeners = {}
+		
+		@self.listen
+		def STOP_THREAD(param, sender):
+			raise StopWorker
+			
+		@self.listen
+		def CHILD_THREAD_START(param, sender):
+			self._children.add(sender)
+		
+		@self.listen
+		def CHILD_THREAD_END(param, sender):
+			self._children.remove(sender)
+			sender._parent = None
+			
+		@self.listen
+		def PAUSE_THREAD(param, sender):
+			if not self._waiting:
+				self._waiting = True
+				self.wait("RESUME_THREAD", sync=True)
+				self._waiting = False
+
 		
 	def tell(self, thread, message, param=None, flag=None):
 		"""Add message to other thread."""
@@ -87,41 +109,59 @@ class Worker:
 				if child != sender:
 					self.tell(child, message, param, flag)
 					
+	def listen(self, arg):
+		"""Add listener decorator"""
+		if callable(arg):
+			listener = arg
+			message = listener.__name__
+			if message not in self._listeners:
+				self._listeners[message] = []
+			self._listeners[message].append(listener)
+			return listener
+			
+		if type(arg) is str:
+			message = arg
+			def listen(listener):
+				if message not in self._listeners:
+					self._listeners[message] = []
+				self._listeners[message].append(listener)
+				return listener
+			return listen
+			
+		raise WorkerError("Worker.listen is a decorator")
+					
 	def _onMessage(self, message, param, flag, sender):
 		"""Message holder container, to ensure to transfer message"""
-		try:
-			self.onMessage(message, param, sender)
-		except WorkerSignal as er:
-			raise er
-		except Exception as er:
-			if self.printError:
-				print("In onMessage,", self)
-				traceback.print_exc()
-			self.error.put(er)
-			self.tellParent("CHILD_THREAD_ERROR", er)
-		self._transferMessage(message, param, flag, sender)
+		stopTransfer = self.onMessage(message, param, sender)
+		
+		if not stopTransfer:
+			self._transferMessage(message, param, flag, sender)
+			
 		return param
 	
 	def onMessage(self, message, param, sender):
-		"""Override"""
-		if message == "STOP_THREAD":
-			raise StopWorker
+		"""Run through message listener"""
+		if message not in self._listeners:
+			return
 			
-		if message == "CHILD_THREAD_START":
-			self._children.add(sender)
-
-		if message == "CHILD_THREAD_END":
-			self._children.remove(sender)
-			sender._parent = None
-			
-		if message == "CHILD_THREAD_ERROR":
-			pass
-			
-		if message == "PAUSE_THREAD" and not self._waiting:
-			self._waiting = True
-			self.wait("RESUME_THREAD", sync=True)
-			self._waiting = False
-
+		stopTransfer = False
+		for listener in self._listeners[message]:
+			ret = None
+			try:
+				ret = listener(param, sender)
+			except WorkerSignal as er:
+				raise er
+			except Exception as er:
+				if self.printError:
+					print("In listener {}:".format(message))
+					traceback.print_exc()
+				self.error.put(er)
+				self.tellParent("CHILD_THREAD_ERROR", er)
+			if ret is False:
+				stopTransfer = True
+				
+		return stopTransfer
+		
 	def processMessage(self):
 		"""Process message que untill empty"""
 		while True:
@@ -191,7 +231,7 @@ class Worker:
 					message = self._cache.get_nowait()
 				except queue.Empty:
 					message = self._messageBucket.get()
-					self._onMessage(*message)
+				self._onMessage(*message)
 				if message[0] == arg and (not sender or sender == message[3]):
 					return message[1]
 				elif sync:

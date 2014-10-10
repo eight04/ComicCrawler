@@ -414,8 +414,6 @@ class MainWindow(Main):
 		
 	def onMessage(self, message, param, sender):
 		"""GUI Message control"""
-		super().onMessage(message, param, sender)
-		
 		if message == "MESSAGE":
 			text = param.splitlines()[-1]
 			self.gStatusbar["text"] = text
@@ -451,6 +449,8 @@ class MainWindow(Main):
 			# mission, er_msg = param
 			tkinter.messagebox.showerror(
 				param.downloader.name, "解析錯誤！\n{}".format(param.error))
+				
+		super().onMessage(message, param, sender)
 
 def selectTitle(parent, item):
 	"""change mission title dialog"""

@@ -663,23 +663,17 @@ class DownloadManager(Worker):
 		
 		self.configManager = configManager
 		self.moduleManager = moduleManager
-		# self.missionPool = MissionPool("missions.dat")
-		# missions = MissionList("save.dat")
-		# self.addChild(missions)
-		self.missions = MissionList().setParent(self)
 		
-		# library = MissionList("library.dat")
-		# self.addChild(library)
+		self.missions = MissionList().setParent(self)
 		self.library = MissionList().setParent(self)
 		
 		self.downloadWorker = None
 		self.libraryWorker = None
-		# self.analyzeWorkers = []
 		
 		self.conf()
 		self.load()
 		
-		if self.setting["libraryautocheck"]:
+		if self.setting["libraryautocheck"] == "true":
 			self.startCheckUpdate()
 		
 	def conf(self):
@@ -749,7 +743,8 @@ class DownloadManager(Worker):
 		self.library.reset()
 		mission = self.library.takeAnalyze()
 		self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
-		
+		print(self.libraryWorker)
+
 	def onMessage(self, message, param, thread):
 		"""Override"""
 		super().onMessage(message, param, thread)
@@ -787,9 +782,6 @@ class DownloadManager(Worker):
 			pass
 
 		if message == "ANALYZE_FAILED" or message == "ANALYZE_FINISHED":
-			# if thread in self.analyzeWorkers:
-				# self.analyzeWorkers.remove(thread)
-				
 			if thread is self.libraryWorker:
 				mission = self.library.takeAnalyze()
 				if mission:
@@ -800,6 +792,7 @@ class DownloadManager(Worker):
 						if item.mission.update:
 							updated.append(item)
 					self.library.lift(*updated)
+				return False
 		
 	def saveFile(self, savepath, missionList):
 		"""Save mission list"""
