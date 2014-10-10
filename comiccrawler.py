@@ -670,11 +670,62 @@ class DownloadManager(Worker):
 		self.downloadWorker = None
 		self.libraryWorker = None
 		
+		# Message listeners
+		@self.listen
+		def DOWNLOAD_FINISHED(param, thread):
+			command = self.setting["runafterdownload"]
+			if command:
+				try:
+					from subprocess import call
+					call((command, "{}/{}".format(self.setting["savepath"], safefilepath(thread.mission.title))))
+				except Exception as er:
+					safeprint("Failed to run process: {}".format(er))
+					
+			mission = self.missions.take()
+			if not mission:
+				safeprint("All download completed")
+			else:
+				worker = DownloadWorker(mission, self.setting["savepath"])
+				worker.setParent(self).start()
+				self.downloadWorker = worker
+		
+		@self.listen
+		def DOWNLOAD_TOO_MANY_RETRY(param, sender):
+			self.missions.drop(param)
+		
+		@self.listen("DOWNLOAD_FINISHED")
+		@self.listen("DOWNLOAD_ERROR")
+		def afterDownload(param, sender):
+			mission = self.missions.take()
+			if not mission:
+				safeprint("All download completed")
+			else:
+				worker = DownloadWorker(mission, self.setting["savepath"])
+				worker.setParent(self).start()
+				self.downloadWorker = worker
+		
+		@self.listen("ANALYZE_FAILED")
+		@self.listen("ANALYZE_FINISHED")
+		def afterAnalyze(param, sender):
+			if sender is self.libraryWorker:
+				if param.update:
+					self.library.lift(param)
+					
+				mission = self.library.takeAnalyze()
+				if mission:
+					self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
+				
+				if not param.error:
+					return False
+		
+	def worker(self):
 		self.conf()
 		self.load()
-		
 		if self.setting["libraryautocheck"] == "true":
 			self.startCheckUpdate()
+			
+		while True:
+			self.wait()
 		
 	def conf(self):
 		"""Load config from controller. Set default"""		
@@ -687,10 +738,8 @@ class DownloadManager(Worker):
 			"runafterdownload": "",
 			"libraryautocheck": "true"
 		}
-		# conf.apply(self.setting, default)
 		extend(self.setting, default)
 		
-		# clean savepath
 		self.setting["savepath"] = os.path.normpath(self.setting["savepath"])
 		
 	def addURL(self, url):
@@ -744,55 +793,6 @@ class DownloadManager(Worker):
 		mission = self.library.takeAnalyze()
 		self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
 		print(self.libraryWorker)
-
-	def onMessage(self, message, param, thread):
-		"""Override"""
-		super().onMessage(message, param, thread)
-		
-		if message == "DOWNLOAD_FINISHED":
-			command = self.setting["runafterdownload"]
-			if command:
-				try:
-					from subprocess import call
-					call((command, "{}/{}".format(self.setting["savepath"], safefilepath(thread.mission.title))))
-				except Exception as er:
-					safeprint("Failed to run process: {}".format(er))
-					
-			mission = self.missions.take()
-			if not mission:
-				safeprint("All download completed")
-			else:
-				worker = DownloadWorker(mission, self.setting["savepath"])
-				worker.setParent(self).start()
-				self.downloadWorker = worker
-					
-		if message == "DOWNLOAD_TOO_MANY_RETRY":
-			self.missions.drop(param)
-					
-		if message == "DOWNLOAD_ERROR":
-			mission = self.missions.take()
-			if not mission:
-				safeprint("All download completed")
-			else:
-				worker = DownloadWorker(mission, self.setting["savepath"])
-				worker.setParent(self).start()
-				self.downloadWorker = worker
-			
-		if message == "DOWNLOAD_PAUSE":
-			pass
-
-		if message == "ANALYZE_FAILED" or message == "ANALYZE_FINISHED":
-			if thread is self.libraryWorker:
-				mission = self.library.takeAnalyze()
-				if mission:
-					self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
-				else:
-					updated = []
-					for key, item in self.library.data.items():
-						if item.mission.update:
-							updated.append(item)
-					self.library.lift(*updated)
-				return False
 		
 	def saveFile(self, savepath, missionList):
 		"""Save mission list"""

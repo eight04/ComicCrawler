@@ -97,6 +97,48 @@ class Dialog(Toplevel):
 	
 class MainWindow(Main):
 	"""Main GUI window class."""
+	def __init__(self):
+		"""Add listeners"""
+		super().__init__()
+		
+		@self.listen
+		def MESSAGE(param, sender):
+			text = param.splitlines()[-1]
+			self.gStatusbar["text"] = text
+	
+		@self.listen
+		def MISSION_PROPERTY_CHANGED(param, sender):
+			mission = param
+			if "iidholder" in vars(self):
+				for cid, m in self.iidholder.items():
+					if m is mission:
+						self.gTv.set(cid, "state", STATE[m.mission.state])
+						self.gTv.set(cid, "name", m.mission.title)
+			
+			if "libIdIndex" in vars(self):
+				for cid, m in self.libIdIndex.items():
+					if m is mission:
+						self.gLibTV.set(cid, "state", STATE[m.mission.state])
+						self.gLibTV.set(cid, "name", m.mission.title)
+
+		@self.listen
+		def MISSIONQUE_ARRANGE(param, sender):
+			if param == self.downloadManager.missions:
+				self.tvrefresh()
+			if param == self.downloadManager.library:
+				self.libTvRefresh()
+			
+		@self.listen
+		def ANALYZE_FINISHED(param, sender):
+			if sender is not self.downloadManager.libraryWorker:
+				if len(param.mission.episodelist) > 1:
+					selectEp(self.gRoot, param.mission)
+				self.downloadManager.addMission(param)
+			
+		@self.listen
+		def ANALYZE_FAILED(param, sender):
+			tkinter.messagebox.showerror(
+				param.downloader.name, "解析錯誤！\n{}".format(param.error))
 	
 	def view(self):
 		"""Draw the window."""
@@ -412,46 +454,6 @@ class MainWindow(Main):
 				values=(m.mission.title, m.downloader.name, STATE[m.mission.state]))
 			self.libIdIndex[cid] = m
 		
-	def onMessage(self, message, param, sender):
-		"""GUI Message control"""
-		if message == "MESSAGE":
-			text = param.splitlines()[-1]
-			self.gStatusbar["text"] = text
-	
-		if message == "MISSION_PROPERTY_CHANGED":
-			mission = param
-			if "iidholder" in vars(self):
-				for cid, m in self.iidholder.items():
-					if m is mission:
-						self.gTv.set(cid, "state", STATE[m.mission.state])
-						self.gTv.set(cid, "name", m.mission.title)
-			
-			if "libIdIndex" in vars(self):
-				for cid, m in self.libIdIndex.items():
-					if m is mission:
-						self.gLibTV.set(cid, "state", STATE[m.mission.state])
-						self.gLibTV.set(cid, "name", m.mission.title)
-
-
-		if message == "MISSIONQUE_ARRANGE":
-			if param == self.downloadManager.missions:
-				self.tvrefresh()
-			if param == self.downloadManager.library:
-				self.libTvRefresh()
-			
-		if message == "ANALYZE_FINISHED":
-			if sender is not self.downloadManager.libraryWorker:
-				if len(param.mission.episodelist) > 1:
-					selectEp(self.gRoot, param.mission)
-				self.downloadManager.addMission(param)
-			
-		if message == "ANALYZE_FAILED":
-			# mission, er_msg = param
-			tkinter.messagebox.showerror(
-				param.downloader.name, "解析錯誤！\n{}".format(param.error))
-				
-		super().onMessage(message, param, sender)
-
 def selectTitle(parent, item):
 	"""change mission title dialog"""
 	

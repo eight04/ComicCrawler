@@ -227,10 +227,7 @@ class Worker:
 					return message[1]
 				
 			while True:
-				try:
-					message = self._cache.get_nowait()
-				except queue.Empty:
-					message = self._messageBucket.get()
+				message = self._messageBucket.get()
 				self._onMessage(*message)
 				if message[0] == arg and (not sender or sender == message[3]):
 					return message[1]
