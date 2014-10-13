@@ -5,16 +5,15 @@
 """
 
 import re
-import comiccrawler
 from html import unescape
+from comiccrawler import Episode
 
-header = {
-	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) "
-			"Gecko/20100101 Firefox/23.0"
-}
+header = {}
 domain = ["exhentai.org", "g.e-hentai.org"]
 name = "e紳士"
 noepfolder = True
+
+class BandwidthLimitError(Exception): pass
 
 def loadconfig(config):
 	if name not in config:
@@ -38,37 +37,31 @@ def gettitle(html, **kw):
 	return unescape(t)
 	
 def getepisodelist(html, **kw):
-	e = comiccrawler.Episode()
+	e = Episode()
 	e.title = "image"
 	e.firstpageurl = re.search("href=\"([^\"]+?-1)\"", html).group(1)
 	e.totalpages = int(re.search("<td class=\"gdt2\">(\d+) @", html).group(1))
 	return [e]
 
-_cachehtml = ""	
 def getimgurl(html, **kw):
-	global _cachehtml
-	_cachehtml	= html
 	i = re.search("<img id=\"img\" src=\"(.+?)\"", html)
 	
 	i = i.group(1).replace("&amp;","&")
-	if re.search("509s?\.gif",i) is not None:
-		raise comiccrawler.BandwidthExceedError
-	if re.search("403s?\.gif",i) is not None:
-		raise comiccrawler.BandwidthExceedError
-	
-	return (i, {})
+	# bandwith limit
+	if re.search("509s?\.gif",i) is not None or re.search("403s?\.gif",i) is not None:
+		nl = re.search("nl\((\d+)\)", html).group(1)
+		raise BandwidthLimitError(nl)
+	return i
 
 def errorhandler(er, ep):
-	try:
-		nl = re.search("nl\((\d+)\)",_cachehtml).group(1)
+	if type(er) is BandwidthLimitError:
+		nl = er.args[0]
 		np = ep.currentpageurl.split("?")[0] + "?nl={}".format(nl)
 		if ep.currentpageurl == np:
 			ep.currentpageurl = np.split("?")[0]
 		else:
 			ep.currentpageurl = np
-	except Exception:
-		pass
-	
+
 def getnextpageurl(pagenumber, html, **kw):
 	r = re.search("href=\"([^\"]+?-{})\"".format(pagenumber+1), html)
 	if r is None:
