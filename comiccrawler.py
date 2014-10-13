@@ -349,7 +349,10 @@ class DownloadWorker(Worker):
 					if errorcount >= 10:
 						raise TooManyRetryError
 					if "errorhandler" in downloader.__dict__:
-						downloader.errorhandler(er, ep)
+						try:
+							downloader.errorhandler(er, ep)
+						except Exception as er:
+							safeprint("Error handler error:", er)
 					self.wait(5)
 				else:
 					break
@@ -430,7 +433,10 @@ class DownloadWorker(Worker):
 				errorcount += 1
 				if errorcount >= 10:
 					raise TooManyRetryError
-				downloader.errorhandler(er, ep)
+				try:
+					downloader.errorhandler(er, ep)
+				except Exception as er:
+					safeprint("In error handler:", er)
 				
 				self.wait(5)
 				continue
