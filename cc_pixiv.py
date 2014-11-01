@@ -73,7 +73,7 @@ def getimgurls(html, url=""):
 		return [o["src"]]
 		
 	header["Referer"] = url
-	url = re.search(r'"works_display"><a class="[^"]*" href="([^"]+)"', html).group(1)
+	url = re.search(r'"works_display"><a (?:class="[^"]*" )?href="([^"]+)"', html).group(1)
 	html = grabhtml(base + "/" + url, header)
 	
 	if "mode=big" in url:
