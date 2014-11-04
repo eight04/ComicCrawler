@@ -14,7 +14,7 @@ def loadconfig(config):
 	if name not in config:
 		config[name] = {}
 	if "cf_clearance" not in config[name]:
-		config[name] = "請輸入Cookie中的cf_clearance"
+		config[name]["cf_clearance"] = "請輸入Cookie中的cf_clearance"
 	header["Cookie"] = "cf_clearance=" + config[name]["cf_clearance"]
 
 def gettitle(html, **kw):
