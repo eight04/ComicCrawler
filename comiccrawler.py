@@ -790,7 +790,8 @@ class DownloadManager(Worker):
 			
 		self.library.reset()
 		mission = self.library.takeAnalyze()
-		self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
+		if mission:
+			self.libraryWorker = self.createChild(AnalyzeWorker, mission).start()
 		
 	def saveFile(self, savepath, missionList):
 		"""Save mission list"""
