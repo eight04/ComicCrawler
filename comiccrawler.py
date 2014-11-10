@@ -719,6 +719,10 @@ class DownloadManager(Worker):
 				if not param.error:
 					return False
 		
+		@self.listen
+		def DOWNLOAD_EP_COMPLETE(param, thread):
+			self.save()
+			
 	def worker(self):
 		self.conf()
 		self.load()
