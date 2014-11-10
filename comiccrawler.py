@@ -454,7 +454,10 @@ class DownloadWorker(Worker):
 			ep.currentpageurl = nextpageurl
 			ep.currentpagenumber += 1
 			errorcount = 0
-			# print("")
+			
+			# Rest after each page
+			if hasattr(downloader, "rest"):
+				self.wait(downloader.rest)
 	
 class AnalyzeWorker(Worker):
 	"""Analyze the mission.url, also the core of Comic Crawler"""

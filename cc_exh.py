@@ -12,6 +12,7 @@ header = {}
 domain = ["exhentai.org", "g.e-hentai.org"]
 name = "e紳士"
 noepfolder = True
+rest = 5
 
 class BandwidthLimitError(Exception): pass
 
