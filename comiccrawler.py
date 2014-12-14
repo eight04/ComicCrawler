@@ -138,14 +138,14 @@ def grabber(url, header=None, encode=False):
 	"""Http works"""
 	
 	defaultHeader = {
-		"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:32.0) Gecko/20100101 Firefox/32.0"
+		"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0",
+		"Accept-Language": "zh-tw,zh;q=0.8,en-us;q=0.5,en;q=0.3"
 	}
 	url = safeurl(url)
 	url = unescape(url)
 	print("Grabbing:", url)
 	# bugged when header contains non latin character...
 	extend(header, defaultHeader)
-	# safeprint(header)
 	header = safeheader(header)
 	
 	req = urllib.request.Request(url, headers=header)
