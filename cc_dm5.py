@@ -13,7 +13,6 @@ import comiccrawler
 from safeprint import safeprint
 
 header = {
-	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0",
 	"Cookie": "isAdult=1"
 }
 domain = ["www.dm5.com", "tel.dm5.com"]
@@ -25,14 +24,11 @@ def gettitle(html, **kw):
 	return t
 	
 def getepisodelist(html, url=""):
-	# html = html.replace("\n","")
-	# print("test")
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
 	html = html[html.index("cbc_1"):]
 	
 	ms = re.findall("class=\"tg\" href=\"([^\"]+)\" title=\"([^\"]+)\"", html)
-	# safeprint(str(ms))
 	
 	for m in ms:
 		url, title = m
