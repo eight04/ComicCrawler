@@ -36,9 +36,9 @@ def gettitle(html, **kw):
 	
 def getepisodelist(html, url=""):
 	s = []
-	base = re.search("(https?://.+)\?", url).group(1)
+	root = re.search("https?://[^/]+", url).group()
+	base = re.search("https?://[^?]+", url).group()
 	while True:
-		# ms = re.findall("<a href=\"([^\"]+)\" class=\"work ?\"><div class=\"_layout-thumbnail(?: ugoku-illust)?\"><img[^>]+></div><h1 class=\"title\" title=\"([^\"]+)\">", html)
 		ms = re.findall(r'<a href="([^"]+)"><h1 class="title" title="([^"]+)">', html)
 		# safeprint(ms)
 		for m in ms:
@@ -46,7 +46,7 @@ def getepisodelist(html, url=""):
 			uid = re.search("id=(\d+)", url).group(1)
 			e = Episode()
 			e.title = "{} - {}".format(uid, title)
-			e.firstpageurl = base + url
+			e.firstpageurl = root + url
 			s.append(e)
 			
 		un = re.search("href=\"([^\"]+)\" rel=\"next\"", html)
@@ -55,7 +55,6 @@ def getepisodelist(html, url=""):
 		u = un.group(1).replace("&amp;", "&")
 		safeprint(base + u)
 		html = grabhtml(base + u, hd=header)
-	# safeprint(s)
 	return s[::-1]
 
 def getimgurls(html, url=""):
@@ -72,6 +71,12 @@ def getimgurls(html, url=""):
 		o = eval(json)
 		return [o["src"]]
 		
+	# new image layout (2014/12/14)
+	rs = re.search(r'class="big" data-src="([^"]+)"', html)
+	if rs:
+		return [rs.group(1)]
+		
+	# old image layout
 	header["Referer"] = url
 	url = re.search(r'"works_display"><a (?:class="[^"]*" )?href="([^"]+)"', html).group(1)
 	html = grabhtml(base + "/" + url, header)
