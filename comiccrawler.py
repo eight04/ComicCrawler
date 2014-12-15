@@ -263,11 +263,9 @@ class DownloadWorker(Worker):
 			if type(er) is TooManyRetryError:
 				self.bubble("DOWNLOAD_TOO_MANY_RETRY", self.mission)
 			self.bubble("DOWNLOAD_ERROR", self.mission)
-			# self.callback(self.mission, er)
 		else:
 			self.mission.set("state", "FINISHED")
 			self.bubble("DOWNLOAD_FINISHED", self.mission)
-			# self.callback(self.mission)
 			
 	def download(self, mission, savepath, downloader):
 		"""Start mission download. This method will call cls.crawlpage()
@@ -297,10 +295,8 @@ class DownloadWorker(Worker):
 				self.crawlpage(ep, efd, mission, fexp, downloader)
 			except LastPageError:
 				safeprint("Episode download complete!")
-				# print("")
 				ep.complete = True
 				self.bubble("DOWNLOAD_EP_COMPLETE", (mission, ep))
-				# _evtcallback("DOWNLOAD_EP_COMPLETE", mission, ep)
 			except SkipEpisodeError:
 				safeprint("Something bad happened, skip the episode.")
 				ep.skip = True
@@ -512,14 +508,21 @@ class AnalyzeWorker(Worker):
 			mission.episodelist = epList
 			missionContainer.set("state", "ANALYZED")
 		else:
-			# re-analyze, put new ep into eplist
+			epIndex = {}
 			for ep in epList:
-				for oep in mission.episodelist:
-					if oep.firstpageurl == ep.firstpageurl:
-						# found
-						break
+				epIndex[ep.firstpageurl] = ep
+			for ep in mission.episodelist:
+				if ep.firstpageurl in epIndex:
+					newEp = epIndex[ep.firstpageurl]
+					newEp.currentpageurl = ep.currentpageurl
+					newEp.currentpagenumber = ep.currentpagenumber
+					newEp.skip = ep.skip
+					newEp.complete = ep.complete
+					newEp.errorpages = ep.errorpages
 				else:
-					mission.episodelist.append(ep)
+					epList.append(ep)
+			mission.episodelist = epList
+			
 			# check if there are incomplete ep
 			for ep in mission.episodelist:
 				if not ep.complete and not ep.skip:
@@ -693,6 +696,10 @@ class DownloadManager(Worker):
 				worker = DownloadWorker(mission, self.setting["savepath"])
 				worker.setParent(self).start()
 				self.downloadWorker = worker
+				
+		@self.listen
+		def DOWNLOAD_PAUSE(mission, thread):
+			mission.lock.release()
 		
 		@self.listen
 		def DOWNLOAD_FINISHED(param, thread):
