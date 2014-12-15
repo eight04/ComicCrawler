@@ -483,11 +483,13 @@ class AnalyzeWorker(Worker):
 	def removeDuplicateEP(self, mission):
 		"""remove duplicate episode"""
 		
-		dict = {}
+		s = set()
+		cleanList = []
 		for ep in mission.episodelist:
-			dict[ep.firstpageurl] = ep
-			
-		mission.episodelist = [dict[key] for key in dict]
+			if ep.firstpageurl not in s:
+				s.add(ep.firstpageurl)
+				cleanList.append(ep)
+		mission.episodelist = cleanList
 			
 	def analyze(self, missionContainer):
 		"""Analyze mission url."""		
