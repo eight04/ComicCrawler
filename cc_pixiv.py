@@ -76,6 +76,10 @@ def getimgurls(html, url=""):
 	if rs:
 		return [rs.group(1)]
 		
+	rs = re.search(r'data-src="([^"]+)" class="original-image"', html)
+	if rs:
+		return [rs.group(1)]
+		
 	# old image layout
 	header["Referer"] = url
 	url = re.search(r'"works_display"><a (?:class="[^"]*" )?href="([^"]+)"', html).group(1)
