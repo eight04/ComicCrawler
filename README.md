@@ -9,6 +9,7 @@ Todos
 * 下載時刪除無效
 * Episode 順序問題
 * 移除 tkinter root 前要移除 safeprint hook
+* 停止下載時 mission lock 沒被正確的移除？
 
 ## 下載和安裝（Windows）
 
