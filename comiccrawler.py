@@ -842,6 +842,10 @@ class DownloadManager(Worker):
 				
 			if mission.state in oldStateCode:
 				mission.state = oldStateCode[mission.state]
+				
+			# Program closed incorrectly last time
+			if mission.state == "DOWNLOADING":
+				mission.state = "PAUSE"
 			
 			item = MissionContainer().setParent(self)
 			item.mission = mission
