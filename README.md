@@ -1,17 +1,18 @@
 Comic Crawler Readme v.20141010
 ===============================
 
-Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管理員、圖書館功能、與方便的擴充能力。
+Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管理員、圖書館功能、
+與方便的擴充能力。
 
 Todos
 -----
 * 加入連結 > 取消無效
 * 下載時刪除無效
-* Episode 順序問題
 * 移除 tkinter root 前要移除 safeprint hook
-* 停止下載時 mission lock 沒被正確的移除？
+* On duplicate mission: Ask for re-analyzing ep list.
 
-## 下載和安裝（Windows）
+下載和安裝（Windows）
+-------------------
 
 ### Python
 
