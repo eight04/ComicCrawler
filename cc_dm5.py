@@ -42,12 +42,29 @@ def getepisodelist(html, url=""):
 
 def getimgurls(html, page=0, url=""):
 	header["Referer"] = url
+	key = re.search(r'id="dm5_key".+?<script.+?>\s*eval(.+?)</script>', html, re.S)
+	if key:
+		key = execjs.eval(key.group(1)).split(";")[1]
+		key = re.search(r"=(.+)$", key).group(1)
+		key = execjs.eval(key)
+	else:
+		key = ""
+		
+	base = re.search(r"(^.+)/[^/]*$", url).group(1)
 	pages = re.search("DM5_IMAGE_COUNT=(\d+);", html).group(1)
 	cid = re.search("DM5_CID=(\d+);", html).group(1)
 	s = []
 	for p in range(1, int(pages)+1):
-		ot = comiccrawler.grabhtml("http://www.dm5.com/m156516/chapterimagefun.ashx?cid={}&page={}&language=1&key=".format(cid, p), hd=header)
-		s.append(execjs.eval(ot)[0])
+		# ot = comiccrawler.grabhtml("http://www.dm5.com/m156516/chapterimagefun.ashx?cid={}&page={}&language=1&key=".format(cid, p), hd=header)
+		currentUrl = "{}/chapterfun.ashx?cid={}&page={}&language=1&key={}".format(base, cid, p, key)
+		ot = comiccrawler.grabhtml(currentUrl, hd=header)
+		context = execjs.compile(ot)
+		d = context.eval("d")
+		try:
+			d = context.eval("hd_c")
+		except Exception:
+			pass
+		s.append(d[0])
 	return s
 
 def errorhandler(er, ep):
