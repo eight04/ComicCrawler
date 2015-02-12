@@ -974,7 +974,7 @@ class ModuleManager:
 	def getDownloader(self, url):
 		"""Return the downloader mod of spect url or return None"""
 		
-		dm = re.search("https?://([^/]+?)(:\d+)?/", url)
+		dm = re.search("^https?://([^/]+?)(:\d+)?/", url)
 		if dm is None:
 			return None
 		dm = dm.group(1)
