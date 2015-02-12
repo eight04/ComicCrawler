@@ -505,14 +505,29 @@ class AnalyzeWorker(Worker):
 			mission.title = downloader.gettitle(html, url=mission.url)
 			
 		epList = self.waitChild(downloader.getepisodelist, html, url=mission.url)
+		
+		# Remove duplicate episode
+		urls = set()
+		duplicate = set()
+		
+		for ep in epList:
+			if ep.firstpageurl in urls:
+				duplicate.add(ep)
+			else:
+				urls.add(ep.firstpageurl)
+				
+		epList = [ep for ep in epList if ep not in duplicate]
+		
+		# Check if re-analyze
 		if not mission.episodelist:
-			# new mission
 			mission.episodelist = epList
 			missionContainer.set("state", "ANALYZED")
 		else:
 			epIndex = {}
+			
 			for ep in epList:
 				epIndex[ep.firstpageurl] = ep
+			
 			for ep in mission.episodelist:
 				if ep.firstpageurl in epIndex:
 					newEp = epIndex[ep.firstpageurl]
