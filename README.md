@@ -10,6 +10,7 @@ Todos
 * 下載時刪除無效
 * 移除 tkinter root 前要移除 safeprint hook
 * On duplicate mission: Ask for re-analyzing ep list.
+* Add "Open folder" to context menu.
 
 下載和安裝（Windows）
 -------------------
@@ -69,3 +70,5 @@ Comic Crawler 的核心就是個可以載入 module 的扒圖工具。基本命�
 ## 聮絡作者
 
 eight04@gmail.com
+
+
