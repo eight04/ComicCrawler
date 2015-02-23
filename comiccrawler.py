@@ -340,7 +340,7 @@ class DownloadWorker(Worker):
 					
 				except Exception as er:
 					safeprint("Get imgurls failed:", er)
-					# traceback.print_exc()
+					traceback.print_exc()
 					errorcount += 1
 					if errorcount >= 10:
 						raise TooManyRetryError

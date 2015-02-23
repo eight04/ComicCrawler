@@ -42,7 +42,7 @@ def getepisodelist(html, url=""):
 
 def getimgurls(html, page=0, url=""):
 	header["Referer"] = url
-	key = re.search(r'id="dm5_key".+?<script.+?>\s*eval(.+?)</script>', html, re.S)
+	key = re.search(r'id="dm5_key".+?<script[^>]+?>\s*eval(.+?)</script>', html, re.S)
 	if key:
 		key = execjs.eval(key.group(1)).split(";")[1]
 		key = re.search(r"=(.+)$", key).group(1)
