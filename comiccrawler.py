@@ -1041,7 +1041,7 @@ if __name__ == "__main__":
 		url = sys.argv[2]
 		savepath = workingDir
 		if len(sys.argv) >= 5 and sys.argv[3] == "-d":
-			savepath = os.path.join(self.workingDir, argv[4])
+			savepath = os.path.join(workingDir, sys.argv[4])
 		
 		mission = Mission()
 		mission.url = url
