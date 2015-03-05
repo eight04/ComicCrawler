@@ -11,6 +11,8 @@ Todos
 * 移除 tkinter root 前要移除 safeprint hook
 * On duplicate mission: Ask for re-analyzing ep list.
 * Add "Open folder" to context menu.
+* Can't add url during library analyzing?
+* After library analyze shouldn't show select ep dialog.
 
 下載和安裝（Windows）
 -------------------
