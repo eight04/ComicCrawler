@@ -58,12 +58,13 @@ def getimgurls(html, page=0, url=""):
 		# ot = comiccrawler.grabhtml("http://www.dm5.com/m156516/chapterimagefun.ashx?cid={}&page={}&language=1&key=".format(cid, p), hd=header)
 		currentUrl = "{}/chapterfun.ashx?cid={}&page={}&language=1&key={}".format(base, cid, p, key)
 		ot = comiccrawler.grabhtml(currentUrl, hd=header)
+		
+		#debug
+		with open("{}-{}.log".format(cid, p), "w", encoding="utf-8") as file:
+			file.write(ot)
+		
 		context = execjs.compile(ot)
-		d = context.eval("d")
-		try:
-			d = context.eval("hd_c")
-		except Exception:
-			pass
+		d = context.eval("typeof (hd_c) != 'undefined' && hd_c.length > 0 && typeof (isrev) == 'undefined' ? hd_c : d")
 		s.append(d[0])
 	return s
 
