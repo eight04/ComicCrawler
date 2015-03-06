@@ -124,10 +124,15 @@ def errorhandler(er, ep):
 	
 	# http://i1.pixiv.net/img21/img/raven1109/10841650_big_p0.jpg
 	from urllib.error import HTTPError
-	if type(er) == HTTPError and er.code == 404 and "imgurls" in dir(ep):
-		p = ep.currentpagenumber - 1
-		ep.imgurls[p] = ep.imgurls[p].replace("_big_", "_")
-		return True
+	if type(er) is HTTPError:
+		if er.code == 404 and "imgurls" in dir(ep):
+			p = ep.currentpagenumber - 1
+			ep.imgurls[p] = ep.imgurls[p].replace("_big_", "_")
+			return True
+			
+		# Private page?
+		if er.code == 403:
+			raise SkipEpisodeError
 
 def getnextpageurl(pagenumber, html, url=""):
 	pass

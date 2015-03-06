@@ -347,6 +347,8 @@ class DownloadWorker(Worker):
 					if "errorhandler" in downloader.__dict__:
 						try:
 							downloader.errorhandler(er, ep)
+						except SkipEpisodeError as er:
+							raise er
 						except Exception as er:
 							safeprint("Error handler error:", er)
 					self.wait(5)
