@@ -8,8 +8,10 @@ from tkinter import *
 from tkinter.ttk import *
 import tkinter.messagebox
 import sys
+import os
+import webbrowser
 
-from comiccrawler import Main
+from comiccrawler import Main, safefilepath
 from safeprint import safeprint, addcallback
 # import queue
 
@@ -214,6 +216,8 @@ class MainWindow(Main):
 		tvmenu.add_command(label="改名")
 		tvmenu.add_command(label="加入圖書館")
 		tvmenu.add_command(label="重新選擇集數")
+		tvmenu.add_command(label="開啟資料夾")
+		tvmenu.add_command(label="開啟網頁")
 		self.gTvmenu = tvmenu
 		
 		# library
@@ -259,6 +263,8 @@ class MainWindow(Main):
 		self.gLibMenu = Menu(self.gLibTV, tearoff=False)
 		self.gLibMenu.add_command(label="刪除")
 		self.gLibMenu.add_command(label="重新選擇集數")
+		self.gLibMenu.add_command(label="開啟資料夾")
+		self.gLibMenu.add_command(label="開啟網頁")
 		
 		# status bar
 		statusbar = Label(self.gRoot, text="Comic Crawler", anchor="e")
@@ -367,7 +373,24 @@ class MainWindow(Main):
 			for missionContainer in missionContainers:
 				selectEp(self.gRoot, missionContainer.mission)
 		self.gTvmenu.entryconfig(5, command=tvReselectEP)
-		
+				
+		def tvOpen():
+			s = self.gTv.selection()
+			missionContainers = [ self.iidholder[i] for i in s ]
+			for missionContainer in missionContainers:
+				mission = missionContainer.mission
+				savepath = self.downloadManager.setting["savepath"]
+				folder = os.path.join(savepath, safefilepath(mission.title))
+				os.startfile(folder)
+		self.gTvmenu.entryconfig(6, command=tvOpen)
+				
+		def tvOpenBrowser():
+			s = self.gTv.selection()
+			missionContainers = [ self.iidholder[i] for i in s ]
+			for missionContainer in missionContainers:
+				webbrowser.open(missionContainer.mission.url)
+		self.gTvmenu.entryconfig(7, command=tvOpenBrowser)
+				
 		def tvmenucall(event):
 			self.gTvmenu.post(event.x_root, event.y_root)
 		self.gTv.bind("<Button-3>", tvmenucall)
@@ -397,6 +420,26 @@ class MainWindow(Main):
 				selectEp(self.gRoot, mission)
 		self.gLibMenu.entryconfig(1, command=libMenuReselectEP)
 		
+		def libMenuOpen():
+			s = self.gLibTV.selection()
+			missions = [self.libIdIndex[k] for k in s]
+			for mission in missions:
+				mission = mission.mission
+				savepath = self.downloadManager.setting["savepath"]
+				folder = os.path.join(savepath, safefilepath(mission.title))
+				os.startfile(folder)
+		self.gLibMenu.entryconfig(2, command=libMenuOpen)
+				
+		def libMenuOpenBrowser():
+			safeprint("OK")
+			s = self.gLibTV.selection()
+			missions = [self.libIdIndex[k] for k in s]
+			for mission in missions:
+				mission = mission.mission
+				safeprint("Open {} ...".format(mission.url))
+				webbrowser.open(mission.url)
+		self.gLibMenu.entryconfig(3, command=libMenuOpenBrowser)
+				
 		def libMenuCall(event):
 			self.gLibMenu.post(event.x_root, event.y_root)
 		self.gLibTV.bind("<Button-3>", libMenuCall)
