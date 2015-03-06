@@ -60,8 +60,8 @@ def getimgurls(html, page=0, url=""):
 		ot = comiccrawler.grabhtml(currentUrl, hd=header)
 		
 		#debug
-		with open("{}-{}.log".format(cid, p), "w", encoding="utf-8") as file:
-			file.write(ot)
+		# with open("{}-{}.log".format(cid, p), "w", encoding="utf-8") as file:
+			# file.write(ot)
 		
 		context = execjs.compile(ot)
 		d = context.eval("typeof (hd_c) != 'undefined' && hd_c.length > 0 && typeof (isrev) == 'undefined' ? hd_c : d")
