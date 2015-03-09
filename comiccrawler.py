@@ -606,11 +606,15 @@ class MissionList(Worker):
 			return
 			
 		for item in items:
-			if not item.lock.acquire(blocking=False):
-				raise RuntimeError("Mission already in use")
+			if item.lock.acquire(blocking=False):
+				try:
+					del self.data[item.mission.url]
+				finally:
+					item.lock.release()
 			else:
-				del self.data[item.mission.url]
-				item.lock.release()
+				self.bubble("MISSION_REMOVE_FAILED", item)
+				raise RuntimeError("Mission already in use")
+				
 		self.bubble("MISSIONQUE_ARRANGE", self)
 		safeprint("Deleted {} mission(s)".format(len(items)))
 		

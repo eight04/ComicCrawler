@@ -133,14 +133,18 @@ class MainWindow(Main):
 		@self.listen
 		def ANALYZE_FINISHED(param, sender):
 			if sender is not self.downloadManager.libraryWorker:
-				if len(param.mission.episodelist) > 1:
-					selectEp(self.gRoot, param.mission)
-				self.downloadManager.addMission(param)
+				if (len(param.mission.episodelist) == 1 or 
+					selectEp(self.gRoot, param.mission)):
+						self.downloadManager.addMission(param)
 			
 		@self.listen
 		def ANALYZE_FAILED(param, sender):
 			tkinter.messagebox.showerror(
 				param.downloader.name, "解析錯誤！\n{}".format(param.error))
+				
+		@self.listen("MISSION_REMOVE_FAILED")
+		def failed_to_remove_mission(mission, sender):
+			tkinter.messagebox.showerror("Comic Crawler", "刪除失敗。任務使用中？")
 	
 	def view(self):
 		"""Draw the window."""

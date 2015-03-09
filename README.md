@@ -6,8 +6,6 @@ Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管�
 
 Todos
 -----
-* 加入連結 > 取消無效
-* 下載時刪除無效
 * 移除 tkinter root 前要移除 safeprint hook
 * On duplicate mission: Ask for re-analyzing ep list.
 * Can't add url during library analyzing?
