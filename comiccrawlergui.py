@@ -11,7 +11,7 @@ import sys
 import os
 import webbrowser
 
-from comiccrawler import Main, safefilepath
+from comiccrawler import Main, safefilepath, MissionDuplicateError
 from safeprint import safeprint, addcallback
 # import queue
 
@@ -312,10 +312,34 @@ class MainWindow(Main):
 			addurl()
 		self.gEntry_url.bind("<Return>", entrykeypress)
 		
+		def deleteUrl(url):
+			missions = self.downloadManager.missions
+			
+			try:
+				mission = missions.get(url)
+			except KeyError:
+				return False
+				
+			removeOld = tkinter.messagebox.askyesno(
+				"Comic Crawler",
+				"任務重覆，要刪除先前任務嗎？",
+				default="NO"
+			)
+			if not removeOld:
+				return False
+			
+			missions.remove(mission)
+			return True
+		
 		# interface for download manager
 		def addurl():
-			self.downloadManager.addURL(self.gEntry_url.get())
+			url = self.gEntry_url.get()
+			if (self.downloadManager.missions.containUrl(url)
+					and not deleteUrl(url)):
+				return			
+			self.downloadManager.addURL(url)
 			self.gEntry_url.delete(0, "end")
+				
 		self.gBtnaddurl["command"] = addurl
 		
 		def startdownload():

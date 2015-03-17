@@ -578,6 +578,9 @@ class MissionList(Worker):
 		
 	def contains(self, item):
 		return item.mission.url in self.data
+		
+	def containUrl(self, url):
+		return url in self.data
 	
 	def isEmpty(self):
 		"""return true if list is empty"""
