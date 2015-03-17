@@ -7,7 +7,7 @@ Ex:
 
 """
 
-import re
+import re, execjs
 from comiccrawler import Episode, extend, grabhtml, LastPageError, SkipEpisodeError
 from safeprint import safeprint
 from html import unescape
@@ -99,6 +99,14 @@ def getimgurls(html, url=""):
 			html = grabhtml(url, header)
 			img = re.search(r'img src="([^"]+)"', html).group(1)
 			imgs.append(img)
+			
+		# New manga reader (2015/3/18)
+		# http://www.pixiv.net/member_illust.php?mode=manga&illust_id=19254298
+		if not imgs:
+			for match in re.finditer(r'originalImages\[\d+\] = ("[^"]+")', html):
+				url = match.group(1)
+				url = execjs.eval(url)
+				imgs.append(url)
 			
 		return imgs
 		
