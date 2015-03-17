@@ -12,6 +12,7 @@ Todos
 * After library analyze shouldn't show select ep dialog.
 * Set `mission.complete = 0` after re-select episode.
 * Move `mission` param from `downloadWorker.__init__` to `.worker`.
+* Autosave.
 
 Next major update
 -----------------
