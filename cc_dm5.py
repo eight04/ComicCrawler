@@ -59,7 +59,7 @@ def getimgurls(html, page=0, url=""):
 		currentUrl = "{}/chapterfun.ashx?cid={}&page={}&language=1&key={}".format(base, cid, p, key)
 		ot = comiccrawler.grabhtml(currentUrl, hd=header)
 		
-		#debug
+		# debug
 		# with open("{}-{}.log".format(cid, p), "w", encoding="utf-8") as file:
 			# file.write(ot)
 		
