@@ -87,6 +87,9 @@ def getext(byte):
 	if h[:4] == b"PK\x03\x04":
 		return "zip"
 		
+	if h[:4] == b"\x1A\x45\xDF\xA3":
+		return "mkv"
+		
 	return None
 			
 def createdir(path):
