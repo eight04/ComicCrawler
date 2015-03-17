@@ -25,7 +25,7 @@ def getepisodelist(html, url="", **kw):
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
 	while True:
-		ms = re.findall(r'href="(/post/show/(\d+))"', html)
+		ms = re.findall(r'href="(/(?:[^/]*/)?post/show/(\d+))"', html)
 		
 		for m in ms:
 			url, pid = m
