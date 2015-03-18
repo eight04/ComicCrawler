@@ -323,7 +323,7 @@ class MainWindow(Main):
 			removeOld = tkinter.messagebox.askyesno(
 				"Comic Crawler",
 				"任務重覆，要刪除先前任務嗎？",
-				default="NO"
+				default="no"
 			)
 			if not removeOld:
 				return False
