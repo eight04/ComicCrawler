@@ -6,13 +6,12 @@ Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管�
 
 Todos
 -----
-* 移除 tkinter root 前要移除 safeprint hook
-* On duplicate mission: Ask for re-analyzing ep list.
 * Can't add url during library analyzing?
 * After library analyze shouldn't show select ep dialog.
 * Set `mission.complete = 0` after re-select episode.
 * Move `mission` param from `downloadWorker.__init__` to `.worker`.
 * Autosave.
+* Set worker parent in __init__.
 
 Next major update
 -----------------
