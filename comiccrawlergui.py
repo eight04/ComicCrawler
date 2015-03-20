@@ -10,6 +10,7 @@ import tkinter.messagebox
 import sys
 import os
 import webbrowser
+import safeprint as sp
 
 from comiccrawler import Main, safefilepath, MissionDuplicateError
 from safeprint import safeprint, addcallback
@@ -277,11 +278,13 @@ class MainWindow(Main):
 		
 		# ========GUI END========
 		
+		sp.addcallback(self.safeprintCallback)
 		self.bindevent()
 		self.tvrefresh()
 		self.libTvRefresh()
 		self.gRoot.after(100, self.tkloop)
 		self.gRoot.mainloop()
+		sp.removecallback(self.safeprintCallback)
 		
 	def tkloop(self):
 		"""get message from comiccrawler.messageBucket"""
@@ -482,10 +485,8 @@ class MainWindow(Main):
 			self.gRoot.destroy()
 		self.gRoot.protocol("WM_DELETE_WINDOW", beforequit)
 		
-		def safeprintCallback(text):
-			self.message("MESSAGE", text)
-		addcallback(safeprintCallback)
-		
+	def safeprintCallback(self, text):
+		self.message("MESSAGE", text)
 		
 	def addtotree(self, mission):
 		"""Add item into treeview."""
