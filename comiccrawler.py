@@ -692,6 +692,23 @@ class ConfigManager:
 				continue
 			config[key] = value
 		return
+		
+class Timer(Worker):
+	"""Autosave mission list"""
+	
+	def __init__(self, callback=None, timeout=0, infinite=False):
+		super().__init__()
+		
+		self.callback = callback
+		self.timeout = timeout
+		self.infinite = infinite
+		
+	def worker(self):
+		while True:
+			self.wait(self.timeout)
+			self.callback()
+			if not self.infinite:
+				break
 
 class DownloadManager(Worker):
 	"""DownloadManager class. Maintain the mission list."""
@@ -708,6 +725,12 @@ class DownloadManager(Worker):
 		
 		self.downloadWorker = None
 		self.libraryWorker = None
+		
+		self.autosave = Timer(
+			callback = self.save,
+			timeout = 5 * 60,
+			infinite = True
+		).setParent(self)
 		
 		# Message listeners
 		@self.listen
@@ -755,17 +778,16 @@ class DownloadManager(Worker):
 				if not param.error:
 					return False
 		
-		@self.listen
-		def DOWNLOAD_EP_COMPLETE(param, thread):
-			self.save()
+		# @self.listen
+		# def DOWNLOAD_EP_COMPLETE(param, thread):
+			# self.save()
 			
 	def worker(self):
 		self.conf()
 		self.load()
-		print(self.setting["libraryautocheck"])
 		if self.setting["libraryautocheck"] == "true":
 			self.startCheckUpdate()
-			
+		self.autosave.start()
 		while True:
 			self.wait()
 		
