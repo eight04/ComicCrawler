@@ -41,7 +41,7 @@ def getepisodelist(html, **kw):
 	e = Episode()
 	e.title = "image"
 	e.firstpageurl = re.search("href=\"([^\"]+?-1)\"", html).group(1)
-	e.totalpages = int(re.search("<td class=\"gdt2\">(\d+) @", html).group(1))
+	# e.totalpages = int(re.search("<td class=\"gdt2\">(\d+) @", html).group(1))
 	return [e]
 
 def getimgurl(html, **kw):
