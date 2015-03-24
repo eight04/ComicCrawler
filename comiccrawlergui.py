@@ -448,7 +448,7 @@ class MainWindow(Main):
 			s = self.gLibTV.selection()
 			missions = [self.libIdIndex[k] for k in s]
 			for mission in missions:
-				selectEp(self.gRoot, mission)
+				selectEp(self.gRoot, mission.mission)
 		self.gLibMenu.entryconfig(1, command=libMenuReselectEP)
 		
 		def libMenuOpen():
