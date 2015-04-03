@@ -55,16 +55,12 @@ def getimgurls(html, page=0, url=""):
 	cid = re.search("DM5_CID=(\d+);", html).group(1)
 	s = []
 	for p in range(1, int(pages)+1):
-		# ot = comiccrawler.grabhtml("http://www.dm5.com/m156516/chapterimagefun.ashx?cid={}&page={}&language=1&key=".format(cid, p), hd=header)
 		currentUrl = "{}/chapterfun.ashx?cid={}&page={}&language=1&key={}".format(base, cid, p, key)
 		ot = comiccrawler.grabhtml(currentUrl, hd=header)
 		
-		# debug
-		# with open("{}-{}.log".format(cid, p), "w", encoding="utf-8") as file:
-			# file.write(ot)
-		
 		context = execjs.compile(ot)
-		d = context.eval("typeof (hd_c) != 'undefined' && hd_c.length > 0 && typeof (isrev) == 'undefined' ? hd_c : d")
+		# window.ajaxloadimage
+		d = context.eval("(typeof (hd_c) != 'undefined' && hd_c.length > 0 && typeof (isrevtt) != 'undefined') ? hd_c : d")
 		s.append(d[0])
 	return s
 
