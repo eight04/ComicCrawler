@@ -274,6 +274,21 @@ class MainWindow(Main):
 		self.gLibMenu.add_command(label="開啟資料夾")
 		self.gLibMenu.add_command(label="開啟網頁")
 		
+		# domain list
+		frame = Frame(self.gNotebook)
+		self.gNotebook.add(frame, text="支援的網域")
+		
+		# domains scrollbar
+		scrollbar = Scrollbar(frame)
+		scrollbar.pack(side="right", fill="y")
+		
+		# domains
+		text = Text(frame, height=10, yscrollcommand=scrollbar.set)
+		text.insert("insert", "\n".join(sorted(self.moduleManager.getdlHolder())))
+		text.pack(side="left", fill="y")
+		
+		scrollbar.config(command=text.yview)
+		
 		# status bar
 		statusbar = Label(self.gRoot, text="Comic Crawler", anchor="e")
 		statusbar.pack(anchor="e")
