@@ -140,8 +140,11 @@ class MainWindow(Main):
 			
 		@self.listen
 		def ANALYZE_FAILED(param, sender):
-			tkinter.messagebox.showerror(
-				param.downloader.name, "解析錯誤！\n{}".format(param.error))
+			if not param.downloader:
+				tkinter.messagebox.showerror("Comic Crawler", "不支援的網址！")
+			else:
+				tkinter.messagebox.showerror(
+					param.downloader.name, "解析錯誤！\n{}".format(param.error))
 				
 		@self.listen("MISSION_REMOVE_FAILED")
 		def failed_to_remove_mission(mission, sender):
