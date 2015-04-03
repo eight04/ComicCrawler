@@ -57,7 +57,7 @@ Next major update
 
 ## 目前支援網址
 
-> manhua.dmzj.com, www.dm5.com, g.e-hentai.org, konachan.com, chan.sankakucomplex.com, exhentai.org, www.99comic.com, www.8comic.com, comic.ck101.com, comic.sfacg.com, deviantart.com, comic.example.com, www.pixiv.net, tel.dm5.com, www.example.com
+> chan.sankakucomplex.com, www.pixiv.net, comic.sfacg.com, www.example.com, exhentai.org, comic.example.com, www.comicvip.com, danbooru.donmai.us, manhua.dmzj.com, deviantart.com, tel.dm5.com, g.e-hentai.org, comic.acgn.cc, www.dm5.com, konachan.com, comic.ck101.com, www.8comic.com, www.99comic.com
 
 ## 命令介面
 
