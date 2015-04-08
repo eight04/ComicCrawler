@@ -1,6 +1,7 @@
 *.dat
 *.ini
 *.log
+*.pyc
 __pycache__/*
 download/*
 build/*
