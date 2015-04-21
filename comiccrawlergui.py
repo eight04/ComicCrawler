@@ -325,7 +325,6 @@ class MainWindow(Main):
 			if not sp and self.moduleManager.validUrl(s) and s != _presp:
 				self.gEntry_url.insert(0, s)
 				self.gEntry_url.selection_range(0, "end")
-				_presp = s
 				self.gEntry_url.focus_set()
 		self.gRoot.bind("<FocusIn>", trieveclipboard)	
 		
@@ -354,12 +353,14 @@ class MainWindow(Main):
 		
 		# interface for download manager
 		def addurl():
+			nonlocal _presp
 			url = self.gEntry_url.get()
 			if (self.downloadManager.missions.containUrl(url)
 					and not deleteUrl(url)):
 				return			
 			self.downloadManager.addURL(url)
 			self.gEntry_url.delete(0, "end")
+			_presp = url
 				
 		self.gBtnaddurl["command"] = addurl
 		
@@ -420,7 +421,8 @@ class MainWindow(Main):
 			# mission = self.iidholder[s[0]]
 			missionContainers = [ self.iidholder[i] for i in s ]
 			for missionContainer in missionContainers:
-				selectEp(self.gRoot, missionContainer.mission)
+				reselectEp(self.gRoot, missionContainer)
+				# selectEp(self.gRoot, missionContainer.mission)
 		self.gTvmenu.entryconfig(5, command=tvReselectEP)
 				
 		def tvOpen():
@@ -466,7 +468,8 @@ class MainWindow(Main):
 			s = self.gLibTV.selection()
 			missions = [self.libIdIndex[k] for k in s]
 			for mission in missions:
-				selectEp(self.gRoot, mission.mission)
+				reselectEp(self.gRoot, mission)
+				# selectEp(self.gRoot, mission.mission)
 		self.gLibMenu.entryconfig(1, command=libMenuReselectEP)
 		
 		def libMenuOpen():
@@ -543,6 +546,12 @@ class MainWindow(Main):
 			cid = tv.insert("","end",
 				values=(m.mission.title, m.downloader.name, STATE[m.mission.state]))
 			self.libIdIndex[cid] = m
+			
+def reselectEp(parent, container):
+	"""Reselect episode"""
+	ret = selectEp(parent, container.mission)
+	if ret:
+		container.set("state", "ANALYZED")
 		
 def selectTitle(parent, item):
 	"""change mission title dialog"""
