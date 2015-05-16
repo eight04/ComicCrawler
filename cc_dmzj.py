@@ -8,35 +8,14 @@ import re
 import comiccrawler
 import execjs
 
-"""
-Dictionary header. It contains cookie, user-agent, referer..., etc.
-List domain. If the input url match the domain, the downloader will be
-set to this module.
-String name. Module name, will be show on the gui.
-"""
-header = {
-	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:30.0) Gecko/20100101 Firefox/30.0",
-	"Referer": "http://manhua.dmzj.com/se/"
-}
+header = {}
 domain = ["manhua.dmzj.com"]
 name = "動漫之家"
 
 def gettitle(html, url):
-	"""gettitle(html, url="") -> title string
-	
-	The user input url should match your domain. html is the source of url.
-	Title will be used in image saving filepath, so becareful of duplicate 
-	title.
-	"""
 	return re.search("<h1>(.+?)</h1>", html).group(1)
 	
 def getepisodelist(html, url):
-	"""getepisodelist(html, url) -> Mission list
-	
-	The mission list should be sorted by date, latest at last, so the 
-	downloader will download oldest first.
-	"""
-	
 	base = re.search("(https?://[^/]+)", url).group(1)
 	comicurl = re.search("comic_url = \"(.+?)\"", html).group(1)
 	ms = re.findall("href=\"(/{}.+?)\" (?: class=\"color_red\")?>(.+?)</a></li>".format(comicurl), html)
@@ -45,44 +24,26 @@ def getepisodelist(html, url):
 		url, title = m
 		e = comiccrawler.Episode()
 		e.title = title
-		# safeprint(e.title)
 		e.firstpageurl = base + url
-		# print(e.firstpageurl)
 		s.append(e)
 	return s
 
-"""
-There are two methods to get images url. If you can get all urls from the 
-first page, then use getimgurls. If you have to download each pages to get
-image url, use getimgurl and nextpage functions.
-
-Note that you should only implement one of two methods. Never write 
-getimgurls and getimgurl both.
-"""
-
 def getimgurls(html, url):
-	"""getimgurls(html, url) -> url list
+	# Set header
+	header["Referer"] = url
 	
-	Return a list of urls.
-	"""
+	# Set base url
+	base = "http://images.dmzj.com/"
 	
+	# Get urls
 	html = html.replace("\n", "")
 	s = re.search("page = '';(.+?);var g_comic_name", html).group(1)
-	ctx = execjs.compile(s)
-	pages = execjs.eval(ctx.eval("pages"))
-	base = "http://images.dmzj.com/"
+	pages = execjs.compile(s).eval("pages");
+	pages = execjs.eval(pages);
 	
 	# thumbs.db?!
 	# http://manhua.dmzj.com/zhuoyandexiana/3488-20.shtml
 	return [base + page for page in pages if page and not page.lower().endswith("thumbs.db")]
 	
 def errorhandler(er, ep):
-	"""errorhandler(error, episode) -> void
-	
-	Downloader will call errorhandler if there is an error happened when
-	downloading image. Normally it does nothing.
-	"""
-	
-	if type(er) == comiccrawler.EmptyImageError:
-		ep.skip = True
-		raise comiccrawler.SkipEpisodeError
+	pass
