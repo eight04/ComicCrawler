@@ -146,7 +146,6 @@ def grabber(url, header=None, encode=False):
 	}
 	url = safeurl(url)
 	url = unescape(url)
-	print("Grabbing:", url)
 	# bugged when header contains non latin character...
 	extend(header, defaultHeader)
 	header = safeheader(header)
@@ -372,10 +371,10 @@ class DownloadWorker(Worker):
 		# crawl all pages
 		errorcount = 0
 		while True:
-			safeprint("Crawling {} {} page {}...".format(mission.title, 
-					ep.title, ep.currentpagenumber))
 			try:
 				if not imgurls:
+					safeprint("Crawling {} page {}...".format(ep.title,
+						ep.currentpagenumber))
 					# getimgurl method
 					html = self.waitChild(
 						grabhtml, 
@@ -425,7 +424,7 @@ class DownloadWorker(Worker):
 					raise TypeError("Invalid image type.")
 					
 			except ImageExistsError:
-				safeprint("...page {} already exist".format(
+				safeprint("page {} already exist".format(
 						ep.currentpagenumber))
 						
 			except WorkerSignal as er:
