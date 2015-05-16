@@ -6,6 +6,7 @@
 
 from tkinter import *
 from tkinter.ttk import *
+import config
 import tkinter.messagebox
 import sys
 import os
@@ -14,7 +15,6 @@ import safeprint as sp
 
 from comiccrawler import Main, safefilepath, MissionDuplicateError
 from safeprint import safeprint, addcallback
-# import queue
 
 STATE = {
 	"INIT": "準備",
@@ -377,7 +377,7 @@ class MainWindow(Main):
 		self.gBtnclean["command"] = cleanfinished
 		
 		def reloadconfig():
-			self.configManager.load()
+			config.load()
 			self.moduleManager.loadconfig()
 			self.downloadManager.conf()
 			safeprint("設定檔重載成功！")

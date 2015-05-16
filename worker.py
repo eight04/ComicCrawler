@@ -244,7 +244,7 @@ class Worker:
 			pass
 		except Exception as er:
 			if self.printError:
-				print("Something went wrong in Worker.worker")
+				print("Something went wrong in {}".format(self))
 				traceback.print_exc()
 			if self.running:
 				self.error.put(er)

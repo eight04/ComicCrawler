@@ -12,27 +12,19 @@ import comiccrawler
 from safeprint import safeprint
 from html import unescape
 
-header = {
-	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) "
-			"Gecko/20100101 Firefox/23.0"
-}
+header = {}
 domain = ["deviantart.com"]
 name = "dA"
 noepfolder = True
+config = {
+	"auth": "請輸入Cookie中的auth",
+	"userinfo": "請輸入Cookie中的userinfo"
+}
 
-def loadconfig(config):
-	if name not in config:
-		config[name] = {}
-	config = config[name]
+def loadconfig():
 	cookie = []
-	if "auth" in config:
-		cookie.append("auth=" + unescape(config["auth"]))
-	else:
-		config["auth"] = "請輸入Cookie中的auth"
-	if "userinfo" in config:
-		cookie.append("userinfo=" + unescape(config["userinfo"]))
-	else:
-		config["userinfo"] = "請輸入Cookie中的userinfo"
+	cookie.append("auth=" + unescape(config["auth"]))
+	cookie.append("userinfo=" + unescape(config["userinfo"]))
 	header["Cookie"] = ";".join(cookie)
 
 def gettitle(html, **kw):

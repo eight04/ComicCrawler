@@ -9,6 +9,7 @@ import sys, os
 
 from safeprint import safeprint
 from collections import OrderedDict
+from config import setting, section
 
 import urllib.request
 import urllib.parse
@@ -18,7 +19,6 @@ import threading
 import collections
 from worker import Worker, WorkerSignal
 from html import unescape
-
 
 oldStateCode = {
 	0: "INIT",
@@ -155,32 +155,34 @@ def grabber(url, header=None, encode=False):
 	rs = urllib.request.urlopen(req, timeout=20)
 	ot = rs.read()
 	
-	if not encode:
-		return ot
+	ret = ot
+	
+	if encode:
+		# find html defined encoding
+		ret = ot.decode("utf-8", "replace")
+		r = re.search(r"charset=[\"']?([^\"'>]+)", ret)
+		if r:
+			encode = r.group(1)
+			ret = ot.decode(encode, "replace")
+			
+	if setting.getboolean("errorlog"):
+		import pprint
+		errorlog("grabber.log", "{}\n\n{}\n\n{}".format(url, pprint.pformat(header), ret))
 		
-	# find html defined encoding
-	html = ot.decode("utf-8", "replace")
-	r = re.search(r"charset=[\"']?([^\"'>]+)", html)
-	if r:
-		encode = r.group(1)
-		# with open("grabber.html", "w", encoding=encode) as f:
-			# f.write(html)
-		return ot.decode(encode, "replace")
-		
-	# with open("grabber.html", "w", encoding=encode) as f:
-		# f.write(html)
-	return html
+	return ret
 
 def grabhtml(url, hd={}, encode="utf-8"):
 	"""Get html source of given url. Return String."""
-	
 	return grabber(url, hd, encode)
 
 def grabimg(url, hd={}):
-	"""Return byte stream."""
-	
+	"""Return byte stream."""	
 	return grabber(url, hd)
-
+	
+def errorlog(path, msg):
+	"""Log something to file"""
+	with open(path, "w", encoding="utf-8") as file:
+		file.write(msg)
 
 class Mission:
 	"""Mission data class. Contains a mission's information."""
@@ -590,8 +592,10 @@ class MissionList(Worker):
 		"""append item"""
 		for item in items:
 			if self.contains(item):
-				raise KeyError("Duplicate item")
-			self.data[item.mission.url] = item
+				# raise KeyError("Duplicate item")
+				print("Bug? Found duplicate item? " + item.mission.url)
+			else:
+				self.data[item.mission.url] = item
 		self.bubble("MISSIONQUE_ARRANGE", self)
 		
 	def lift(self, *items):
@@ -654,45 +658,6 @@ class MissionList(Worker):
 		"""Take mission with specify url"""
 		return self.data[url]
 
-class ConfigManager:
-	"""Load config for other classes"""
-
-	def __init__(self, path):
-		"""set config file path"""
-		import configparser as cp
-		self.path = path
-		self.config = cp.ConfigParser(interpolation=None)
-		
-		self.load()
-
-	def get(self):
-		"""return config"""
-		return self.config
-		
-	def load(self):
-		"""read config from file
-		
-		There's a utf-8 issue with configparser:
-		http://bugs.python.org/issue14311
-		"""
-		self.config.read(self.path, "utf-8-sig")
-		
-	def save(self):
-		with open(self.path, "w", encoding="utf-8") as f:
-			self.config.write(f)
-		
-	@classmethod
-	def apply(cls, config, dict, overwrite=False):
-		"""ConfigManager.apply(dict1, dict2, overwrite)
-		
-		copy dict2 into dict1
-		"""
-		for key, value in dict.items():
-			if not overwrite and key in config:
-				continue
-			config[key] = value
-		return
-		
 class Timer(Worker):
 	"""Autosave mission list"""
 	
@@ -713,11 +678,10 @@ class Timer(Worker):
 class DownloadManager(Worker):
 	"""DownloadManager class. Maintain the mission list."""
 	
-	def __init__(self, configManager=None, moduleManager=None):
+	def __init__(self, moduleManager=None):
 		"""set controller"""
 		super().__init__()
 		
-		self.configManager = configManager
 		self.moduleManager = moduleManager
 		
 		self.missions = MissionList().setParent(self)
@@ -745,7 +709,7 @@ class DownloadManager(Worker):
 			if not mission:
 				safeprint("All download completed")
 			else:
-				worker = DownloadWorker(mission, self.setting["savepath"])
+				worker = DownloadWorker(mission, setting["savepath"])
 				worker.setParent(self).start()
 				self.downloadWorker = worker
 				
@@ -755,11 +719,11 @@ class DownloadManager(Worker):
 		
 		@self.listen
 		def DOWNLOAD_FINISHED(param, thread):
-			command = self.setting["runafterdownload"]
+			command = setting["runafterdownload"]
 			if command:
 				try:
 					from subprocess import call
-					call((command, "{}/{}".format(self.setting["savepath"], safefilepath(thread.mission.title))))
+					call((command, "{}/{}".format(setting["savepath"], safefilepath(thread.mission.title))))
 				except Exception as er:
 					safeprint("Failed to run process: {}".format(er))
 				
@@ -785,7 +749,7 @@ class DownloadManager(Worker):
 	def worker(self):
 		self.conf()
 		self.load()
-		if self.setting["libraryautocheck"] == "true":
+		if setting.getboolean("libraryautocheck"):
 			self.startCheckUpdate()
 		self.autosave.start()
 		while True:
@@ -795,15 +759,14 @@ class DownloadManager(Worker):
 		"""Load config from controller. Set default"""		
 		import os.path
 		
-		self.setting = self.configManager.get()["DEFAULT"]
 		default = {
 			"savepath": "download",
 			"runafterdownload": "",
-			"libraryautocheck": "true"
+			"libraryautocheck": True
 		}
-		extend(self.setting, default)
+		section("DEFAULT", default)
 		
-		self.setting["savepath"] = os.path.normpath(self.setting["savepath"])
+		setting["savepath"] = os.path.normpath(setting["savepath"])
 		
 	def addURL(self, url):
 		"""add url"""
@@ -840,7 +803,7 @@ class DownloadManager(Worker):
 			safeprint("所有任務已下載完成")
 			return
 		safeprint("Start download " + mission.mission.title)
-		self.downloadWorker = self.createChild(DownloadWorker, mission, self.setting["savepath"]).start()
+		self.downloadWorker = self.createChild(DownloadWorker, mission, setting["savepath"]).start()
 		
 	def stopDownload(self):
 		"""Stop downloading"""
@@ -956,9 +919,8 @@ class ModuleManager:
 	
 	"""
 	
-	def __init__(self, configManager = None):
+	def __init__(self):
 		import os
-		self.configManager = configManager
 		self.dlHolder = {}
 		self.mods = []
 		self.mod_dir = os.path.dirname(os.path.realpath(__file__))
@@ -988,11 +950,11 @@ class ModuleManager:
 	def loadconfig(self):
 		"""Load setting.ini and set up module.
 		"""
-	
-		config = self.configManager.get()
-		for d in self.mods:
-			if "loadconfig" in d.__dict__:
-				d.loadconfig(config)
+		for mod in self.mods:
+			if hasattr(mod, "config"):
+				mod.config = section(mod.name, mod.config)
+			if hasattr(mod, "loadconfig"):
+				mod.loadconfig()
 		
 	def getdlHolder(self):
 		"""Return downloader dictionary."""
@@ -1030,16 +992,13 @@ class Main(Worker):
 	def loadClasses(self):
 		"""Load classes."""
 		
-		self.configManager = ConfigManager("setting.ini")
-		self.moduleManager = ModuleManager(configManager=self.configManager)
+		self.moduleManager = ModuleManager()
 		self.downloadManager = self.createChild(
 			DownloadManager,
-			configManager = self.configManager,
 			moduleManager = self.moduleManager
 		).start()
 		
 		self.downloadManager.load()
-		self.configManager.save()
 		
 	def unloadClasses(self):
 		"""Unload classes."""
@@ -1050,9 +1009,6 @@ class Main(Worker):
 			self.downloadManager.join()
 		self.downloadManager.save()
 		
-		# save config
-		self.configManager.save()
-		
 	def view(self):
 		"""Override."""
 		pass
@@ -1062,8 +1018,7 @@ if __name__ == "__main__":
 	scriptDir = os.path.dirname(os.path.realpath(__file__))
 	os.chdir(scriptDir)
 	
-	configManager = ConfigManager("setting.ini")
-	moduleManager = ModuleManager(configManager=configManager)
+	moduleManager = ModuleManager()
 	
 	if len(sys.argv) <= 1:
 		sys.exit("Need more arguments")

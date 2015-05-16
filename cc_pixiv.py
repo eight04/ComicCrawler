@@ -18,14 +18,12 @@ header = {
 domain = ["www.pixiv.net"]
 name = "Pixiv"
 noepfolder = True
+config = {
+	"SESSID": "請輸入Cookie中的PHPSESSID"
+}
 
-def loadconfig(config):
-	if name not in config:
-		config[name] = {}
-	extend(config[name], {
-		"SESSID": "請輸入Cookie中的PHPSESSID"
-	})
-	header["Cookie"] = "PHPSESSID=" + config[name]["SESSID"]
+def loadconfig():
+	header["Cookie"] = "PHPSESSID=" + config["SESSID"]
 
 def gettitle(html, **kw):
 	if "pixiv.user.loggedIn = true" not in html:
@@ -40,7 +38,6 @@ def getepisodelist(html, url=""):
 	base = re.search("https?://[^?]+", url).group()
 	while True:
 		ms = re.findall(r'<a href="([^"]+)"><h1 class="title" title="([^"]+)">', html)
-		# safeprint(ms)
 		for m in ms:
 			url, title = m
 			uid = re.search("id=(\d+)", url).group(1)

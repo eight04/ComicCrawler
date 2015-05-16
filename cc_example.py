@@ -1,56 +1,53 @@
 #! python3
 """
-This is an example of how to implement comiccrawler module.
+This is an example to showcase how to build a comiccrawler module.
 
 """
 
 import re
 import comiccrawler
 
-"""
-Dictionary header. It contains cookie, user-agent, referer..., etc.
-List domain. If the input url match the domain, the downloader will be
-set to this module.
-String name. Module name, will be show on the gui.
-"""
+# The header used in grabber method
 header = {
 	"Referer": "http://www.example.com"
 }
+
+# Match domain
 domain = ["www.example.com", "comic.example.com"]
+
+# Module name
 name = "This Is an Example"
 
+# With noepfolder = True, Comic Crawler won't generate subfolder for each episode.
+noepfolder = False
 
-def loadconfig(config):
-	"""loadfunction(config) -> void
+# Wait 5 seconds between each page
+rest = 5
 
-	This function will be called when module load first time. config is an 
-	object of configparser.ConfigParser.
+# Specific user settings
+config = {
+	"user": "user-default-value",
+	"hash": "hash-default-value"
+}
+
+def loadconfig():
+	"""This function will be called each time the config reloaded.
 	"""
-	if name not in config:
-		# defult value
-		config[name] = {
-			"user": "user-default-value",
-			"hash": "hash-default-value"
-		}
-	header["Cookie"] = "user={}; hash={}".format(
-			config[name]["user"], config[name]["hash"])
+	header["Cookie"] = "user={}; hash={}".format(config["user"], config["hash"])
 
 def gettitle(html, url):
-	"""gettitle(html, url="") -> title string
+	"""Return mission title.
 	
-	The user input url should match your domain. html is the source of url.
-	Title will be used in image saving filepath, so becareful of duplicate 
-	title.
+	Title will be used in saving filepath, so be sure to avoid duplicate title.
 	"""
 	return re.search("<h1 id='title'>(.+?)</h1>", html).group(1)
 	
 def getepisodelist(html, url):
-	"""getepisodelist(html, url) -> Mission list
+	"""Return episode list.
 	
-	The mission list should be sorted by date, latest at last, so the 
-	downloader will download oldest first.
+	The episode list should be sorted by date, latest at last, so the 
+	downloader will download the oldest first.
 	"""
-	
 	base = re.search("(https?://[^/]+)", url).group(1)
 	ms = re.findall("<a href='(.+?)'>(.+?)</a>", html)
 	s = []
@@ -72,25 +69,18 @@ getimgurls and getimgurl both.
 """
 
 def getimgurls(html, url):
-	"""getimgurls(html, url) -> url list
-	
-	Return a list of urls.
-	"""
+	"""Return the list of all images"""
 	
 	ms = re.findall("<img src='(.+?)'>", html)
 	return [m[0] for m in ms]
 	
 def getimgurl(html, page, url):
-	"""getimgurl(html, page, url) -> url string"""
+	"""Return the url of the image"""
 	
 	return re.search("<img id='showimage' src='(.+?)'>", html).group(1)
 	
 def getnextpageurl(page, html, url):
-	"""getnextpageurl(page, html, url) -> url string or empty string
-	
-	If this page is the last page, you should return empty string, else 
-	you should return the url of next page. Yeah I know I just misaround 
-	with getimgurl's params.
+	"""Return the url of the next page. Return '' if this is the last page.
 	"""
 	
 	r = re.search("<a id='nextpage' href='(.+?)'>next</a>", html)
@@ -99,11 +89,8 @@ def getnextpageurl(page, html, url):
 	return r.group(1)
 		
 def errorhandler(er, ep):
-	"""errorhandler(error, episode) -> void
-	
-	Downloader will call errorhandler if there is an error happened when
-	downloading image. Normally it does nothing.
+	"""Downloader will call errorhandler if there is an error happened when
+	downloading image. Normally you can just skip this function.
 	"""
-	
 	pass
 	

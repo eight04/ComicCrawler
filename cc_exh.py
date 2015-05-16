@@ -13,22 +13,17 @@ domain = ["exhentai.org", "g.e-hentai.org"]
 name = "e紳士"
 noepfolder = True
 rest = 5
+config = {
+	"ipb_member_id": "請輸入Cookie中的ipb_member_id",
+	"ipb_pass_hash": "請輸入Cookie中的ipb_pass_hash"
+}
 
 class BandwidthLimitError(Exception): pass
 
-def loadconfig(config):
-	if name not in config:
-		config[name] = {}
-	config = config[name]
+def loadconfig():
 	cookie = []
-	if "ipb_member_id" in config:
-		cookie.append("ipb_member_id=" + config["ipb_member_id"])
-	else:
-		config["ipb_member_id"] = "請輸入Cookie中的ipb_member_id"
-	if "ipb_pass_hash" in config:
-		cookie.append("ipb_pass_hash=" + config["ipb_pass_hash"])
-	else:
-		config["ipb_pass_hash"] = "請輸入Cookie中的ipb_pass_hash"
+	cookie.append("ipb_member_id=" + config["ipb_member_id"])
+	cookie.append("ipb_pass_hash=" + config["ipb_pass_hash"])
 	header["Cookie"] = ";".join(cookie)
 
 def gettitle(html, **kw):
@@ -41,7 +36,6 @@ def getepisodelist(html, **kw):
 	e = Episode()
 	e.title = "image"
 	e.firstpageurl = re.search("href=\"([^\"]+?-1)\"", html).group(1)
-	# e.totalpages = int(re.search("<td class=\"gdt2\">(\d+) @", html).group(1))
 	return [e]
 
 def getimgurl(html, **kw):
