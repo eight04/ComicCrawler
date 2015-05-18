@@ -5,7 +5,7 @@
 import re
 import pickle
 import traceback
-import sys, os
+import sys, os, gzip, pprint
 
 from safeprint import safeprint
 from collections import OrderedDict
@@ -142,7 +142,8 @@ def grabber(url, header=None, encode=False):
 	
 	defaultHeader = {
 		"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0",
-		"Accept-Language": "zh-tw,zh;q=0.8,en-us;q=0.5,en;q=0.3"
+		"Accept-Language": "zh-tw,zh;q=0.8,en-us;q=0.5,en;q=0.3",
+		"Accept-Encoding": "gzip, deflate"
 	}
 	url = safeurl(url)
 	url = unescape(url)
@@ -156,6 +157,10 @@ def grabber(url, header=None, encode=False):
 	
 	ret = ot
 	
+	# decompress gziped data
+	if rs.getheader("Content-Encoding") == "gzip":
+		ot = gzip.decompress(ot)
+	
 	if encode:
 		# find html defined encoding
 		ret = ot.decode("utf-8", "replace")
@@ -163,10 +168,15 @@ def grabber(url, header=None, encode=False):
 		if r:
 			encode = r.group(1)
 			ret = ot.decode(encode, "replace")
+	else:
+		ret = ot
 			
 	if setting.getboolean("errorlog"):
-		import pprint
-		errorlog("grabber.log", "{}\n\n{}\n\n{}".format(url, pprint.pformat(header), ret))
+		errorlog("grabber.header.log", "{}\n\n{}\n\n{}".format(
+			url, pprint.pformat(req.header_items()),
+			pprint.pformat(rs.getheaders())
+		))
+		errorlog("grabber.file.log", ot)
 		
 	return ret
 
@@ -180,9 +190,13 @@ def grabimg(url, hd={}):
 	
 def errorlog(path, msg):
 	"""Log something to file"""
-	with open(path, "w", encoding="utf-8") as file:
-		file.write(msg)
-
+	if type(msg) is str:
+		with open(path, "w", encoding="utf-8") as file:
+			file.write(msg)
+	else:
+		with open(path, "wb") as file:
+			file.write(msg)
+		
 class Mission:
 	"""Mission data class. Contains a mission's information."""
 	title = ""
