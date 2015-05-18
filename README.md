@@ -16,23 +16,7 @@ Next major update
 * Stop using pickle and remove mission_container.
 * Move saving/loading data to higher level.
 * Use `with` to deal with lock.
-* Rewrite worker?
-	- Naming convention?
-	- Stop using inherit?
-	- A better way to throw out worker signal? BaseException? WorkerExit?
-	- Build a complete event threading framework.
-		- Event class.
-		- Listener
-			- Listen event.
-			- Unlisten event.
-		- Passing
-			- Dispatch event.
-			- Send event.
-			- Bubble event.
-			- Broadcast event.
-		- Event loop.
-			- wait(seconds)
-			- waitEvent(event)
+* Use new [pyWorker](https://github.com/eight04/pyWorker).
 
 下載和安裝（Windows）
 -------------------
