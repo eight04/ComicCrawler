@@ -775,7 +775,7 @@ class DownloadManager(Worker):
 		default = {
 			"savepath": "download",
 			"runafterdownload": "",
-			"libraryautocheck": True
+			"libraryautocheck": "True"
 		}
 		section("DEFAULT", default)
 		
