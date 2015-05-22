@@ -4,6 +4,22 @@ Comic Crawler
 Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管理員、圖書館功能、
 與方便的擴充能力。
 
+This branch is for up coming update.
+
+Structure
+---------
+- ComicCrawlerGUI
+	- DownloadManager
+		- Analyzer
+		- Downloader
+		- ModuleManager
+			- ModPool
+		- MissionManager
+			- SaveFile
+			- MissionPool
+			- ViewList1
+			- ViewList2
+
 Todos
 -----
 * Can't add url during library analyzing?

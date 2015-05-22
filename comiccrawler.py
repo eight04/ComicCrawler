@@ -691,16 +691,18 @@ class Timer(Worker):
 class DownloadManager(Worker):
 	"""DownloadManager class. Maintain the mission list."""
 	
-	def __init__(self, moduleManager=None):
+	def __init__(self):
 		"""set controller"""
 		super().__init__()
 		
-		self.moduleManager = moduleManager
+		self.moduleManager = ModuleManager()
+		self.missionManager = MissionManager()
 		
 		self.missions = MissionList().setParent(self)
 		self.library = MissionList().setParent(self)
 		
 		self.downloadWorker = None
+		self.analyzeWorkers = set()
 		self.libraryWorker = None
 		
 		self.autosave = Timer(
