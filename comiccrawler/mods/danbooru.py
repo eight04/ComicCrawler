@@ -8,31 +8,28 @@ Ex:
 """
 
 import re
-import comiccrawler as cc
 from html import unescape
-from safeprint import safeprint
+
+from ..safeprint import safeprint
+from ..core import Episode, grabhtml
 
 domain = ["danbooru.donmai.us"]
 name = "Danbooru"
 noepfolder = True
-header = {}
 
-def gettitle(html, **kw):
-	title = re.search(r"<title>(.+?)</title>", html, flags=re.DOTALL).group(1)
+def gettitle(html, url):
+	title = re.search(r"<title>(.+?)</title>", html, re.DOTALL).group(1)
 	return title.strip()
 	
-def getepisodelist(html, url=""):
+def getepisodelist(html, url):
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
 	while True:
 		for match in re.finditer(r'href="(/posts/(\d+)[^"]*)"', html):
 			u = match.group(1)
 			title = match.group(2)
-			e = cc.Episode()
-			e.title = title
-			e.firstpageurl = base + u
+			e = Episode(title, base + u)
 			s.append(e)
-			# safeprint(u)
 			
 		u = re.search(r'"([^"]+)" rel="next"', html)
 		if not u:
@@ -43,18 +40,8 @@ def getepisodelist(html, url=""):
 			
 	return s[::-1]
 
-def getimgurls(html, url=""):
-	# with open("{}.log".format(cc.safefilepath(url)), "w", encoding="utf-8") as file:
-		# file.write(html)
+def getimgurls(html, url):
 	base = re.search(r"(https?://[^/]+)", url).group(1)
 	pos = re.search(r"image-container", html).start()
-	imgRe = re.compile(r'data-file-url="([^"]+)"')
-	img = imgRe.search(html, pos).group(1)
+	img = re.compile(r'data-file-url="([^"]+)"').search(html, pos).group(1)
 	return [base + img]
-
-def errorhandler(er, ep):
-	pass
-	
-def getnextpageurl(pagenumber, html, url=""):
-	pass
-	

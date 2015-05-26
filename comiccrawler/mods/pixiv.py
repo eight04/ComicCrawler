@@ -8,13 +8,14 @@ Ex:
 """
 
 import re, execjs
-from comiccrawler import Episode, extend, grabhtml, LastPageError, SkipEpisodeError
-from safeprint import safeprint
 from html import unescape
+from urllib.error import HTTPError
 
-header = {
-	"Referer": "http://www.pixiv.net/member_illust.php"
-}
+from ..core import Episode, grabhtml
+from ..error import LastPageError, SkipEpisodeError, AccountError
+from ..safeprint import safeprint
+
+header = {}
 domain = ["www.pixiv.net"]
 name = "Pixiv"
 noepfolder = True
@@ -25,14 +26,14 @@ config = {
 def loadconfig():
 	header["Cookie"] = "PHPSESSID=" + config["SESSID"]
 
-def gettitle(html, **kw):
+def gettitle(html, url):
 	if "pixiv.user.loggedIn = true" not in html:
-		raise Exception("you didn't login!")
+		raise AccountError("you didn't login!")
 	user = re.search("class=\"user\">(.+?)</h1>", html).group(1)
 	id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
 	return "{} - {}".format(id, user)
 	
-def getepisodelist(html, url=""):
+def getepisodelist(html, url):
 	s = []
 	root = re.search("https?://[^/]+", url).group()
 	base = re.search("https?://[^?]+", url).group()
@@ -41,9 +42,7 @@ def getepisodelist(html, url=""):
 		for m in ms:
 			url, title = m
 			uid = re.search("id=(\d+)", url).group(1)
-			e = Episode()
-			e.title = "{} - {}".format(uid, title)
-			e.firstpageurl = root + url
+			e = Episode("{} - {}".format(uid, title), root + url)
 			s.append(e)
 			
 		un = re.search("href=\"([^\"]+)\" rel=\"next\"", html)
@@ -51,21 +50,20 @@ def getepisodelist(html, url=""):
 			break
 		u = un.group(1).replace("&amp;", "&")
 		safeprint(base + u)
-		html = grabhtml(base + u, hd=header)
+		html = grabhtml(base + u, header)
 	return s[::-1]
 
-def getimgurls(html, url=""):
+def getimgurls(html, url):
 	if "pixiv.user.loggedIn = true" not in html:
-		raise Exception("you didn't login!")
+		raise AccountError("you didn't login!")
 		
 	base = re.search(r"https?://[^/]+", url).group()
 	
 	# ugoku
 	rs = re.search(r"pixiv\.context\.ugokuIllustFullscreenData\s+= ([^;]+)", html)
 	if rs:
-		from execjs import eval
 		json = rs.group(1)
-		o = eval(json)
+		o = execjs.eval(json)
 		return [o["src"]]
 		
 	# new image layout (2014/12/14)
@@ -122,15 +120,11 @@ def getimgurls(html, url=""):
 	if not rs:
 		raise SkipEpisodeError
 
-class RestrictPageError(Exception):
-	pass
-		
 def errorhandler(er, ep):
 	
 	# http://i1.pixiv.net/img21/img/raven1109/10841650_big_p0.jpg
-	from urllib.error import HTTPError
-	if type(er) is HTTPError:
-		if er.code == 404 and "imgurls" in dir(ep):
+	if isinstance(er, HTTPError):
+		if er.code == 404 and hasattr(ep, "imgurls"):
 			p = ep.currentpagenumber - 1
 			ep.imgurls[p] = ep.imgurls[p].replace("_big_", "_")
 			return True
@@ -138,7 +132,3 @@ def errorhandler(er, ep):
 		# Private page?
 		if er.code == 403:
 			raise SkipEpisodeError
-
-def getnextpageurl(pagenumber, html, url=""):
-	pass
-	

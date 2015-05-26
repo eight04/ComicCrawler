@@ -2,14 +2,14 @@
 
 import re
 from html import unescape
-from comiccrawler import Episode, grabhtml
-from safeprint import safeprint
+
+from ..core import Episode, grabhtml
+from ..safeprint import safeprint
 
 header = {}
 domain = ["chan.sankakucomplex.com"]
 name = "Sankaku"
 noepfolder = True
-
 config = {
 	"cf_clearance": "請輸入Cookie中的cf_clearance"
 }
@@ -17,11 +17,11 @@ config = {
 def loadconfig():
 	header["Cookie"] = "cf_clearance=" + config["cf_clearance"]
 
-def gettitle(html, **kw):
+def gettitle(html, url):
 	title = re.search(r"<title>/?(.+?) \|", html).group(1)
 	return "[sankaku] " + title
 	
-def getepisodelist(html, url="", **kw):
+def getepisodelist(html, url):
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
 	while True:
@@ -43,14 +43,9 @@ def getepisodelist(html, url="", **kw):
 		html = grabhtml(base + u, header)
 	return s[::-1]
 
-def getimgurls(html, url=""):
+def getimgurls(html, url):
 	u = re.search('href="([^"]+)" id=highres', html)
 	if not u:
 		u = re.search('embed src="([^"]+)"', html)
 	return ["https:" + u.group(1)]
 	
-def errorhandler(er, ep):
-	pass
-	
-def getnextpageurl(pagenumber, html):
-	pass

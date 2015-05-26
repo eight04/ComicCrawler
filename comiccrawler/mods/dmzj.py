@@ -4,11 +4,10 @@ http://manhua.dmzj.com/fklmfsnyly/
 
 """
 
-import re
-import comiccrawler
-import execjs
+import re, execjs
 
-header = {}
+from ..core import Episode
+
 domain = ["manhua.dmzj.com"]
 name = "動漫之家"
 
@@ -22,16 +21,11 @@ def getepisodelist(html, url):
 	s = []
 	for m in ms:	
 		url, title = m
-		e = comiccrawler.Episode()
-		e.title = title
-		e.firstpageurl = base + url
+		e = Episode(title, base + url)
 		s.append(e)
 	return s
 
 def getimgurls(html, url):
-	# Set header
-	header["Referer"] = url
-	
 	# Set base url
 	base = "http://images.dmzj.com/"
 	
@@ -45,5 +39,3 @@ def getimgurls(html, url):
 	# http://manhua.dmzj.com/zhuoyandexiana/3488-20.shtml
 	return [base + page for page in pages if page and not page.lower().endswith("thumbs.db")]
 	
-def errorhandler(er, ep):
-	pass

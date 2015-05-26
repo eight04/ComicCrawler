@@ -6,6 +6,12 @@ Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管�
 
 This branch is for up coming update.
 
+Rewrite
+-------
+* Use threadworker.
+* Distribute as package and upload to PyPI.
+* Save missions in pool.
+
 Structure
 ---------
 - ComicCrawlerGUI

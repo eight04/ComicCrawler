@@ -8,36 +8,29 @@ Ex:
 """
 
 import re
-import comiccrawler
-from safeprint import safeprint
 
-header = {}
+from ..core import Episode
+from ..safeprint import safeprint
+
 domain = ["comic.sfacg.com"]
 name = "SF"
 
-def gettitle(html, **kw):
+def gettitle(html, url):
 	html = html.replace("\n","")
 	t = re.search("<title>(.+?)</title>", html).group(1)
 	return t.split(",")[0]
 	
-def getepisodelist(html, url=""):
-	# html = html.replace("\n","")
-	ms = re.findall("<li><a href=\"(.+?)\" target=\"_blank\">(.+?)</a></li>", html, re.M)
+def getepisodelist(html, url):
 	base = re.search("(https?://[^/]+)", url).group(1)
-	safeprint(ms)
 	s = []
-	for m in ms:
+	for m in re.findall("<li><a href=\"(.+?)\" target=\"_blank\">(.+?)</a></li>", html, re.M):
 		url, title = m
-		e = comiccrawler.Episode()
 		title = re.sub("<.+?>","",title)
-		e.title = title
-		e.firstpageurl = base + url
+		e = Episode(title, base + url)
 		s.append(e)
 	return s[::-1]
-
 	
-def getimgurls(html, page=0, url=""):
-
+def getimgurls(html, url):
 	js = re.search("src=\"(/Utility/.+?\.js)\"", html).group(1)
 	base = re.search("(https?://[^/]+)", url).group(1)
 	
@@ -46,6 +39,3 @@ def getimgurls(html, page=0, url=""):
 	pics = re.findall("picAy\[\d+\] = \"(.+?)\"", htmljs)
 	return [base + pic for pic in pics]
 	
-
-def errorhandler(er, ep):
-	pass

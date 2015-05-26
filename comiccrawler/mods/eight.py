@@ -5,22 +5,21 @@
 """
 
 import re
-import comiccrawler
-from safeprint import safeprint
 
-header = {}
+from ..safeprint import safeprint
+from ..core import Episode
+
 domain = ["www.8comic.com", "www.comicvip.com"]
 name = "無限"
 
-def gettitle(html, **kw):
+def gettitle(html, url):
 	return re.search("<font color=\"#FF6600\" style=\"font:12pt;"
 			"font-weight:bold;\">(.+?)</font>",html).group(1)
 	
-def getepisodelist(html, **kw):
+def getepisodelist(html, url):
 	html = html.replace("\n","")
 	ms = re.findall("<a href='#' onclick=\"cview\('(.+?)',(\d+?)\);return "
 			"false;\" id=\"\w+?\" class=\"\w+?\">(.+?)</a>", html, re.M)
-	# safeprint(ms)
 	s = []
 	for m in ms:
 		url, catid, title = m
@@ -37,18 +36,16 @@ def getepisodelist(html, **kw):
 		else:
 			base = "http://new.comicvip.com/show/cool-"
 		
-		# I really don't know what is this
+		# I have no idea what is this
 		# base = "/view/"
 		
 		url = url.replace(".html", "").replace("-", ".html?ch=")
 		
-		e = comiccrawler.Episode()
-		e.title = title
-		e.firstpageurl = base + url
+		e = Episode(title, base + url)
 		s.append(e)
 	return s
 
-def getimgurls(html, url="", page=0):
+def getimgurls(html, url):
 	m = re.search("ch=(\d+)", url)
 	if m is None:
 		ch = "1"
@@ -75,8 +72,7 @@ def getimgurls(html, url="", page=0):
 		s = []
 		for p in range(1, int(pages)+1):
 			hash = (((p - 1) // 10) % 10) + (((p - 1) % 10) * 3)
-			s.append("http://img" + sid + ".8comic.com/" + did + "/" + itemid + "/" 
-					+ num + "/" + "{:03}_{}".format(p, code[hash:hash+3]) + ".jpg")
+			s.append("http://img" + sid + ".8comic.com/" + did + "/" + itemid + "/" + num + "/" + "{:03}_{}".format(p, code[hash:hash+3]) + ".jpg")
 		return s
 	except Exception:
 		pass
@@ -107,8 +103,3 @@ def getimgurls(html, url="", page=0):
 		s.append(src)
 	return s
 	
-def errorhandler(er, ep):
-	pass
-	
-def getnextpageurl(pagenumber, html):
-	pass

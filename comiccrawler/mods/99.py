@@ -8,31 +8,25 @@ Ex:
 """
 
 import re
-import comiccrawler
-# from safeprint import safeprint
+from ..core import Episode
 
-header = {"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0"}
 domain = ["www.99comic.com"]
 name = "99"
 
-def gettitle(html, **kw):
-	# html = html.replace("\n","")
-	t = re.search("<h1><a title='([^']+)'", html).group(1)
-	return t
+def gettitle(html, url):
+	return re.search("<h1><a title='([^']+)'", html).group(1)
 	
-def getepisodelist(html, url=""):
+def getepisodelist(html, url):
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
-	ms = re.findall("href='(/comics/[^']+/)'>([^<]+)</a>(?!</li>)", html)
-	for m in ms:
-		url, title = m
-		e = comiccrawler.Episode()
-		e.title = title
-		e.firstpageurl = base + url
+	for m in re.finditer("href='(/comics/[^']+/)'>([^<]+)</a>(?!</li>)", html):
+		url = m.group(1)
+		title = m.group(2)
+		e = Episode(title, base + url)
 		s.append(e)
 	return s[::-1]
 
-def getimgurls(html, page=0, url=""):	
+def getimgurls(html, url):	
 	ds = [
 		"http://218.24.35.163:9393/dm01/",
 		"http://218.24.35.163:9393/dm02/",
@@ -59,9 +53,3 @@ def getimgurls(html, page=0, url=""):
 	base = ds[int(spath) - 1]
 	
 	return [base + i for i in imgs]
-	
-def errorhandler(er, ep):
-	pass
-
-def getnextpageurl(pagenumber, html, url=""):
-	pass

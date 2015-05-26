@@ -6,7 +6,8 @@
 
 import re
 from html import unescape
-from comiccrawler import Episode
+
+from ..core import Episode
 
 header = {}
 domain = ["exhentai.org", "g.e-hentai.org"]
@@ -26,38 +27,38 @@ def loadconfig():
 	cookie.append("ipb_pass_hash=" + config["ipb_pass_hash"])
 	header["Cookie"] = ";".join(cookie)
 
-def gettitle(html, **kw):
+def gettitle(html, url):
 	t = re.findall("<h1 id=\"g(j|n)\">(.+?)</h1>", html)
 	t = t[-1][1]
 	
 	return unescape(t)
 	
-def getepisodelist(html, **kw):
-	e = Episode()
-	e.title = "image"
-	e.firstpageurl = re.search("href=\"([^\"]+?-1)\"", html).group(1)
+def getepisodelist(html, url):
+	title = "image"
+	url = re.search("href=\"([^\"]+?-1)\"", html).group(1)
+	e = Episode(title, url)
 	return [e]
 
-def getimgurl(html, **kw):
+def getimgurl(html, url, page):
 	i = re.search("<img id=\"img\" src=\"(.+?)\"", html)
+	i = unescape(i.group(1))
 	
-	i = i.group(1).replace("&amp;","&")
 	# bandwith limit
-	if re.search("509s?\.gif",i) is not None or re.search("403s?\.gif",i) is not None:
+	if re.search("509s?\.gif", i) or re.search("403s?\.gif", i):
 		nl = re.search("nl\((\d+)\)", html).group(1)
 		raise BandwidthLimitError(nl)
 	return i
 
 def errorhandler(er, ep):
-	if type(er) is BandwidthLimitError:
+	if isinstance(er, BandwidthLimitError):
 		nl = er.args[0]
-		np = ep.currentpageurl.split("?")[0] + "?nl={}".format(nl)
-		if ep.currentpageurl == np:
-			ep.currentpageurl = np.split("?")[0]
+		np = ep.current_url.split("?")[0] + "?nl={}".format(nl)
+		if ep.current_url == np:
+			ep.current_url = np.split("?")[0]
 		else:
-			ep.currentpageurl = np
+			ep.current_url = np
 
-def getnextpageurl(pagenumber, html, **kw):
+def getnextpageurl(html, url, pagenumber):
 	r = re.search("href=\"([^\"]+?-{})\"".format(pagenumber+1), html)
 	if r is None:
 		return ""
