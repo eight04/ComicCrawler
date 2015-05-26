@@ -2,18 +2,98 @@
 
 """Comic Crawler."""
 
-import re, traceback
-import sys, os, gzip, pprint
-
-from safeprint import safeprint
-from collections import OrderedDict
-from config import setting, section
-
-import urllib.request
-import urllib.parse
 from worker import Worker
-from html import unescape
+from json import JSONEncoder
+import os.path as path
+
+from .safeprint import safeprint
+from .config import setting, section
+from .core import Mission, Episode, download, analyze, createdir
+
+def shallow(dict, exclude=None):
+	new_dict = {}
+	for key in dict:
+		if not exclude or key not in exclude:
+			new_dict[key] = dict[key]
+	return new_dict
+	
+def content_write(file, content):
+	file = path.expanduser(file)
+	createdir(dirname(file))
+	with open(file, "w", encoding="utf-8") as f:
+		f.write(content)
 		
+def content_read(file):
+	file = path.expanduser(file)
+	with open(file, "r", encoding="utf-8") as f:
+		return f.read()
+
+class MissionPoolEncoder(JSONEncoder):
+	def default(self, object):
+		if isinstance(object, Mission):
+			return shallow(vars(object), exclude=["module"])
+		
+		if isinstance(object, Episode):
+			return shallow(vars(object))
+			
+		if isinstance(object, set):
+			return list(object)
+			
+		return super().default(object)
+		
+class MissionListEncoder(JSONEncoder):
+	def default(self, obj):
+		if isinstance(obj, Mission):
+			return obj.url
+			
+		return super().default(obj)
+
+class MissionManager:
+	"""Save, load missions from files"""
+	def __init__(self):
+		self.pool = {}
+		self.view = []
+		self.library = []
+		
+		try:
+			self.load()
+		except Exception:
+			pass
+
+	def save(self):
+		content_write("~/comiccrawler/pool.json", json.dumps(self.pool, cls=MissionPoolEncoder))
+		content_write("~/comiccrawler/view.json", json.dumps(self.view, cls=MissionListEncoder))
+		content_write("~/comiccrawler/library.json", json.dumps(self.library, cls=MissionListEncoder))
+		
+	def load(self, thread=None):
+		pool = json.loads(content_read("~/comiccrawler/pool.json"))
+		view = json.loads(content_read("~/comiccrawler/view.json"))
+		library = json.loads(content_read("~/comiccrawler/library.json"))
+		
+		for m_data in pool:
+			# build episodes
+			episodes = []
+			for ep_data in m_data["episodes"]:
+				episodes.append(Episode(**ep_data))
+			m_data["episodes"] = episodes
+			mission = Mission(**m_data)
+			
+			self.pool[mission.url] = mission
+			
+		self.add("view", *[self.pool[url] for url in view], thread=thread)
+		self.add("library", *[self.pool[url] for url in library], thread=thread)
+			
+	def add(self, pool_name, **missions, thread=None):
+		pool = getattr(self, pool_name)
+		
+		for mission in missions:
+			if mission.url not in self.pool:
+				self.pool[mission.url] = mission
+			pool.append(mission)
+			
+		if thread:
+			thread.message("MISSION_LIST_REARRANGED", pool, flag="BUBBLE")
+
 class MissionList(Worker):
 	"""Wrap OrderedDict. Add commonly using method."""
 	

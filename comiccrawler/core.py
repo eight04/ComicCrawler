@@ -22,12 +22,12 @@ default_header = {
 
 class Mission:
 	"""Mission data class. Contains a mission's information."""
-	def __init__(self, title, url, episodes):
+	def __init__(self, title=None, url=None, episodes=None, state="INIT", update=False):
 		self.title = title
 		self.url = url
 		self.episodes = episodes
-		self.state = "INIT"
-		self.update = False
+		self.state = state
+		self.update = update
 		self.module = get_module(url)
 		if not self.module:
 			raise Exception("Get module failed")
@@ -45,14 +45,14 @@ class Mission:
 class Episode:
 	"""Episode data class. Contains a book's information."""
 	
-	def __init__(self, title, url):
+	def __init__(self, title=None, url=None, current_url=None, current_page=0, skip=False, complete=False):
 	
 		self.title = title
 		self.url = url
-		self.current_url = None
-		self.current_page = 0
-		self.skip = False
-		self.complete = False
+		self.current_url = current_url
+		self.current_page = current_page
+		self.skip = skip
+		self.complete = complete
 	
 def getext(byte):
 	"""Test the file type according byte stream with imghdr
