@@ -4,7 +4,8 @@
 
 from worker import Worker
 from json import JSONEncoder
-import os.path as path
+from os import path
+from collections import OrderedDict
 
 from .safeprint import safeprint
 from .config import setting, section
@@ -43,6 +44,9 @@ class MissionPoolEncoder(JSONEncoder):
 		
 class MissionListEncoder(JSONEncoder):
 	def default(self, obj):
+		if isinstance(obj, OrderedDict):
+			return list(obj)
+		
 		if isinstance(obj, Mission):
 			return obj.url
 			
@@ -52,8 +56,8 @@ class MissionManager:
 	"""Save, load missions from files"""
 	def __init__(self):
 		self.pool = {}
-		self.view = []
-		self.library = []
+		self.view = OrderedDict()
+		self.library = OrderedDict()
 		
 		try:
 			self.load()
@@ -89,8 +93,24 @@ class MissionManager:
 		for mission in missions:
 			if mission.url not in self.pool:
 				self.pool[mission.url] = mission
-			pool.append(mission)
+			pool[mission.url] = mission
 			
+		if thread:
+			thread.message("MISSION_LIST_REARRANGED", pool, flag="BUBBLE")
+			
+	def remove(self, pool_name, **missions, thread=None):
+		pool = getattr(self, pool_name)
+		
+		# check mission state
+		for mission in missions:
+			if mission.state in ("ANALYZING", "DOWNLOADING"):
+				raise Exception("Mission in use")
+		
+		for mission in missions:
+			del pool[mission.url]
+			if mission.url not in self.view and mission.url not in self.library:
+				del self.pool[mission.url]
+
 		if thread:
 			thread.message("MISSION_LIST_REARRANGED", pool, flag="BUBBLE")
 
