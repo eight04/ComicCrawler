@@ -38,14 +38,28 @@ def getepisodelist(html, url=""):
 	return s[::-1]
 
 def getimgurls(html, url=""):
-	sFiles = re.search('sFiles="([^"]+)"').group(1)
-	sPath = re.search('sPath="([^"]+)"').group(1)
+	header["Referer"] = url
+	
+	sFiles = re.search('sFiles="([^"]+)"', html).group(1)
+	sPath = re.search('sPath="([^"]+)"', html).group(1)
 	
 	viewhtm = grabhtml("http://www.iibq.com/script/viewhtm.js")
 	
+	env = """
+	window = {
+		eval: eval,
+		parseInt: parseInt,
+		String: String,
+		RegExp: RegExp
+	};
+	location = {
+		hostname: "www.iibq.com"
+	};
+	"""
+	
 	unsuan = partial(
 		execjs.compile(
-			re.search('window["\x65\x76\x61\x6c"](.+?)var cuImg', viewhtm, re.DOTALL).group(1).replace("location.hostname", "'www.iibq.com'")
+			env + re.search(r'(.+?)var cuImg', viewhtm, re.DOTALL).group(1)
 		).call,
 		"unsuan"
 	)
