@@ -121,9 +121,7 @@ class MissionManager(UserWorker):
 		pool = getattr(self, pool_name)
 		
 		# check mission state
-		for mission in missions:
-			if mission.state in ("ANALYZING", "DOWNLOADING"):
-				raise Exception("Mission in use")
+		missions = [m for m in missions if m.state not in ("ANALYZING", "DOWNLOADING")]
 		
 		for mission in missions:
 			del pool[mission.url]
