@@ -6,12 +6,15 @@ Usage:
   comiccrawler domains
   comiccrawler download URL [--dest SAVE_FOLDER]
   comiccrawler gui
+  comiccrawler migrate
   comiccrawler (--help | --version)
   
 Commands:
   domains             List supported domains.
   download URL        Download from the URL.
   gui                 Launch TKinter GUI.
+  migrate             Migrate from old version, convert save file to new
+                      format.
   
 Options:
   --dest SAVE_FOLDER  Set download save path. [default: .]
@@ -417,3 +420,7 @@ def console_init():
 		
 	elif arguments["download"]:
 		console_download(arguments["URL"], arguments["savepath"])
+		
+	elif arguments["migrate"]:
+		from .migrate import migrate
+		migrate()
