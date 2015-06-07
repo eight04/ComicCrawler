@@ -11,12 +11,14 @@ https://github.com/pypa/sampleproject
 from setuptools import setup, find_packages
 from build import find_version, read
 
+import pypandoc
+
 settings = {
 	"name": "comiccrawler",
 	"version": find_version("comiccrawler/__init__.py"),
 	"description": 'An image crawler with extendible modules and gui',
 	# Get the long description from the relevant file
-	"long_description": read("README.rst"),
+	"long_description": pypandoc.convert("README.md", "rst").replace("\r", ""),
 	"url": 'https://github.com/eight04/ComicCrawler',
 	"author": 'eight',
 	"author_email": 'eight04@gmail.com',

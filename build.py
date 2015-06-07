@@ -18,20 +18,18 @@ def find_version(file):
 
 if __name__ == "__main__":
 	from comiccrawler.mods import list_domain
+	from setup import settings
+	version = settings["version"]
+	
 	write(
 		"README.md",
 		read("README.src.md").replace(
 			"@@SUPPORTED_DOMAINS",
 			" ".join(list_domain())
-		)
+		).replace("@@VERSION", version)
 	)
 	
-	from pypandoc import convert
-	write("README.rst", convert("README.md", "rst").replace("\r", ""))
-	
-	from setup import settings
 	import os
-	version = settings["version"]
 	os.system("py setup.py sdist bdist_wheel")
 	os.system("twine upload dist/*")
 	os.system("rm -R dist")

@@ -25,8 +25,9 @@ Development Dependencies
 下載和安裝（Windows）
 ---------------------
 
-Comic Crawler is on `PyPI <>`__. 安裝完 python 後，可以直接用 pip
-指令自動安裝。
+Comic Crawler is on
+`PyPI <https://pypi.python.org/pypi/comiccrawler/2015.6.8>`__. 安裝完
+python 後，可以直接用 pip 指令自動安裝。
 
 Python
 ~~~~~~
