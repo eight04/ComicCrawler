@@ -21,7 +21,7 @@ settings = {
 	"version": find_version("comiccrawler/__init__.py"),
 	"description": 'An image crawler with extendible modules and gui',
 	# Get the long description from the relevant file
-	"long_description": pypandoc.convert("README.md", "rst").replace("\r", ""),
+	"long_description": read("README.rst"),
 	"url": 'https://github.com/eight04/ComicCrawler',
 	"author": 'eight',
 	"author_email": 'eight04@gmail.com',

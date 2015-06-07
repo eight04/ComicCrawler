@@ -26,6 +26,9 @@ if __name__ == "__main__":
 		)
 	)
 	
+	from pypandoc import convert
+	write("README.rst", convert("README.md", "rst").replace("\r", ""))
+	
 	from setup import settings
 	import os
 	version = settings["version"]
