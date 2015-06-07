@@ -24,7 +24,7 @@ default_header = {
 
 class Mission(UserWorker):
 	"""Mission data class. Contains a mission's information."""
-	def __init__(self, title=None, url=None, episodes=None, state="INIT", update=False):
+	def __init__(self, title=None, url=None, episodes=None, state="INIT"):
 		from .mods import get_module
 		
 		super().__init__()
@@ -33,7 +33,6 @@ class Mission(UserWorker):
 		self.url = url
 		self.episodes = episodes
 		self.state = state
-		self.update = update
 		self.module = get_module(url)
 		if not self.module:
 			raise Exception("Get module failed")
@@ -191,9 +190,11 @@ def download(mission, savepath, thread=None):
 		raise
 	except Exception:
 		mission.set("state", "ERROR")
+		thread.bubble("DOWNLOAD_ERROR", mission)
 		raise
 	else:
 		mission.set("state", "FINISHED")
+		thread.bubble("DOWNLOAD_FINISHED", mission)
 			
 def crawl(mission, savepath, thread):
 	"""Start mission download. This method will call cls.crawlpage()
@@ -232,7 +233,6 @@ def crawl(mission, savepath, thread):
 			ep.skip = True
 	else:
 		safeprint("Mission complete!")
-		mission.update = False
 
 def crawlpage(ep, downloader, savepath, fexp, thread):
 	"""Crawl all pages of an episode.
@@ -293,7 +293,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 			
 			if not imgurls:
 				safeprint("Crawling {} page {}...".format(ep.title,
-					ep.currentpagenumber))
+					ep.current_page))
 					
 				# getimgurl method
 				html = thread.sync(
@@ -344,7 +344,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 				
 		except ImageExistsError:
 			safeprint("page {} already exist".format(
-					ep.currentpagenumber))
+					ep.current_page))
 					
 		except Exception as er:
 			safeprint("Crawl page error")
@@ -386,13 +386,11 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 def analyze(mission, thread=None):	
 	"""Analyze mission.url"""
 
-	mission.set("state", "ANALYZING")
-	
 	try:
 		analyze_info(mission, mission.module, thread)
 		
 	except WorkerExit:
-		mission.set("state", "PAUSE")
+		mission.set("state", "ERROR")
 		raise
 		
 	except Exception as er:
@@ -401,10 +399,6 @@ def analyze(mission, thread=None):
 		thread.bubble("ANALYZE_FAILED", (mission, er))
 		
 	else:
-		if mission.update:
-			mission.set("state", "UPDATE")
-		else:
-			mission.set("state", "ANALYZED")
 			
 		thread.bubble("ANALYZE_FINISHED", mission)
 
@@ -422,6 +416,9 @@ def remove_duplicate_episode(mission):
 def analyze_info(mission, downloader, thread):
 	"""Analyze mission url."""		
 	safeprint("Start analyzing {}".format(mission.url))
+	
+	complete = mission.state == "FINISHED"
+	mission.set("state", "ANALYZING")
 	
 	header = getattr(downloader, "header", None)
 	
@@ -441,12 +438,25 @@ def analyze_info(mission, downloader, thread):
 		for ep in mission.episodes:
 			old_ep.add(ep.url)
 			
+		update = False
+			
 		for ep in episodes:
 			if ep.url not in old_ep:
 				mission.episodes.append(ep)
-				mission.update = True
+				update = True
+		
+		if update:
+			mission.set("state", "UPDATE")
+			
+		elif complete:
+			mission.set("state", "FINISHED")
+			
+		else:
+			mission.set("state", "ANALYZED")
+
 	else:
 		mission.episodes = episodes
+		mission.set("state", "ANALYZED")
 		
 	# remove duplicate
 	remove_duplicate_episode(mission)

@@ -30,11 +30,11 @@ from collections import OrderedDict
 
 from .safeprint import safeprint
 from .config import setting, section
-from .core import Mission, Episode, download, analyze
+from .core import Mission, Episode, download, analyze, safefilepath
 from .io import content_read, content_write, is_file
 from .mods import list_domain, load_config
 
-from . import config
+from . import config, io
 
 def shallow(dict, exclude=None):
 	new_dict = {}
@@ -51,25 +51,8 @@ class MissionPoolEncoder(json.JSONEncoder):
 		if isinstance(object, Episode):
 			return shallow(vars(object))
 			
-		if isinstance(object, dict):
-			for url, mission in object.items():
-				if not instanceof(mission, dict) or mission.get("url", None) != url:
-					break
-			else:
-				return list(object.values())
-			
 		return super().default(object)
 		
-class MissionListEncoder(json.JSONEncoder):
-	def default(self, obj):
-		if isinstance(obj, OrderedDict):
-			return list(obj)
-		
-		if isinstance(obj, Mission):
-			return obj.url
-			
-		return super().default(obj)
-
 class MissionManager(UserWorker):
 	"""Save, load missions from files"""
 	def __init__(self):
@@ -78,15 +61,79 @@ class MissionManager(UserWorker):
 		self.pool = {}
 		self.view = OrderedDict()
 		self.library = OrderedDict()
+		self.edit = False
 		
+	def worker(self):
+		@self.listen("MISSION_PROPERTY_CHANGED")
+		@self.listen("DOWNLOAD_EP_COMPLETE")
+		def dummy():
+			"""Flag to save file"""
+			self.edit = True
+	
+		@self.listen("WORKER_DONE")
+		def dummy():
+			"""Save missions after self.thread terminate"""
+			self.save()
+					
 		self.load()
-
+		while True:
+			self.wait(setting.getint("autosave", 5))
+			if self.edit:
+				self.save()
+		
 	def save(self):
-		content_write("~/comiccrawler/pool.json", json.dumps(self.pool, cls=MissionPoolEncoder, indent=4, ensure_ascii=False))
-		content_write("~/comiccrawler/view.json", json.dumps(self.view, cls=MissionListEncoder, indent=4, ensure_ascii=False))
-		content_write("~/comiccrawler/library.json", json.dumps(self.library, cls=MissionListEncoder, indent=4, ensure_ascii=False))
+		content_write(
+			"~/comiccrawler/pool.json",
+			json.dumps(
+				list(self.pool.values()),
+				cls=MissionPoolEncoder,
+				indent=4,
+				ensure_ascii=False
+			)
+		)
+		content_write(
+			"~/comiccrawler/view.json",
+			json.dumps(
+				list(self.view),
+				indent=4,
+				ensure_ascii=False
+			)
+		)
+		content_write(
+			"~/comiccrawler/library.json",
+			json.dumps(
+				list(self.library),
+				indent=4,
+				ensure_ascii=False
+			)
+		)
+		self.edit = False
 		
 	def load(self):
+		try:
+			self._load()
+		except Exception:
+			import time
+			dest = path.join(
+				"~/comiccrawler/invalid-save",
+				time.strftime("%Y-%m-%d %H.%M.%S")
+			)
+			
+			exc = traceback.format_exc()
+		
+			safeprint("Can't read save files! Move files to {}\n\n{}".format(
+				dest,
+				exc
+			))
+			
+			io.move(
+				"~/comiccrawler/*.json",
+				dest
+			)
+			
+			self.bubble("MISSION_POOL_LOAD_FAILED", (dest, exc))
+		
+	def _load(self):
 		pool = []
 		view = []
 		library = []
@@ -125,6 +172,7 @@ class MissionManager(UserWorker):
 			pool[mission.url] = mission
 			
 		self.bubble("MISSION_LIST_REARRANGED", pool)
+		self.edit = True
 			
 	def remove(self, pool_name, *missions):
 		pool = getattr(self, pool_name)
@@ -138,6 +186,7 @@ class MissionManager(UserWorker):
 				del self.pool[mission.url]
 
 		self.bubble("MISSION_LIST_REARRANGED", pool)
+		self.edit = True
 		
 	def contains(self, mission, pool_name=None):
 		"""Check if mission in pool"""
@@ -160,12 +209,14 @@ class MissionManager(UserWorker):
 		for mission in reversed(missions):
 			pool.move_to_end(mission.url, last=False)
 		self.bubble("MISSION_LIST_REARRANGED", pool)
+		self.edit = True
 		
 	def drop(self, pool_name, *missions):
 		pool = getattr(self, pool_name)
 		for mission in missions:
 			pool.move_to_end(mission.url)
 		self.bubble("MISSION_LIST_REARRANGED", pool)
+		self.edit = True
 		
 	def get_by_state(self, pool_name, states):
 		for mission in getattr(self, pool_name).values():
@@ -200,7 +251,7 @@ class DownloadManager(UserWorker):
 	def worker(self):
 	
 		# Message listeners
-		@self.listen("DOWNLOAD_TOO_MANY_RETRY")
+		@self.listen("DOWNLOAD_ERROR")
 		def dummy(mission):
 			self.mission_manager.drop("view", mission)
 		
@@ -212,9 +263,9 @@ class DownloadManager(UserWorker):
 				
 			command = (
 				setting.get("runafterdownload"),
-				"{}/{}".format(
+				path.join(
 					setting["savepath"],
-					safefilepath(thread.mission.title)
+					safefilepath(mission.title)
 				)
 			)
 			
@@ -233,8 +284,8 @@ class DownloadManager(UserWorker):
 			if thread is self.download_thread:
 				mission = self.get_mission_to_download()
 				if mission:
-					worker = self.create_child(download, mission, setting["savepath"])
-					worker.start()
+					worker = self.create_child(download)
+					worker.start(mission, setting["savepath"])
 					self.downloadWorker = worker
 				else:
 					safeprint("All download completed")
@@ -263,11 +314,8 @@ class DownloadManager(UserWorker):
 				self.analyze_threads.remove(thread)
 				self.bubble("AFTER_ANALYZE_FAILED", mission)
 				
-		@self.listen("WORKER_DONE")
-		def dummy():
-			self.mission_manager.save()
-					
 		self.reload_config()
+		self.mission_manager.start()
 					
 		if setting.getboolean("libraryautocheck"):
 			self.start_check_update()

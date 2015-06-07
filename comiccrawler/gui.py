@@ -13,6 +13,7 @@ import tkinter.messagebox as messagebox
 
 from . import config, mods, DownloadManager
 from .safeprint import safeprint, addcallback as sp_addcallback, removecallback as sp_removecallback
+from .core import safefilepath
 
 STATE = {
 	"INIT": "準備",
@@ -101,8 +102,8 @@ class MainWindow(worker.UserWorker):
 	
 	def worker(self):
 		"""Main window worker"""
-		self.init()
 		self.register_message()
+		self.init()
 		self.create_view()
 		self.bindevent()
 		self.mainloop()
@@ -165,7 +166,7 @@ class MainWindow(worker.UserWorker):
 			
 		@self.listen("AFTER_ANALYZE")
 		def dummy(mission):
-			if len(mission.episodes) == 1 or selectEp(self.root, mission):
+			if len(mission.episodes) == 1 or select_episodes(self.root, mission):
 				self.downloader.mission_manager.add("view", mission)
 			
 		@self.listen("AFTER_ANALYZE_FAILED")
@@ -174,6 +175,13 @@ class MainWindow(worker.UserWorker):
 			messagebox.showerror(
 				mission.module.name,
 				"解析錯誤！\n{}".format(error)
+			)
+			
+		@self.listen("MISSION_POOL_LOAD_FAILED")
+		def dummy(param):
+			messagebox.showerror(
+				"Comic Crawler",
+				"讀取存檔失敗！移至 {}\n{}".format(*param)
 			)
 				
 	def create_view(self):
@@ -288,12 +296,7 @@ class MainWindow(worker.UserWorker):
 		self.lib_scrbar.config(command=self.tv_library.yview)
 		
 		# library context menu
-		menu = Menu(self.tv_library, tearoff=False)
-		menu.add_command(label="刪除")
-		menu.add_command(label="重新選擇集數")
-		menu.add_command(label="開啟資料夾")
-		menu.add_command(label="開啟網頁")
-		self.library_menu = menu
+		self.library_menu = Menu(self.tv_library, tearoff=False)
 		
 		# domain list
 		frame = Frame(self.notebook)
@@ -368,7 +371,7 @@ class MainWindow(worker.UserWorker):
 			except KeyError:
 				pass
 			else:
-				if not ask_delete_mission():
+				if not ask_delete_mission(url):
 					return
 				self.remove("view", mission)				
 				
@@ -436,7 +439,7 @@ class MainWindow(worker.UserWorker):
 				s = tv.selection()
 				missions = [ cid_index[i] for i in s ]
 				for mission in missions:
-					reselectEp(self.root, mission)
+					reselect_episodes(self.root, mission)
 			
 			@bind_menu("開啟資料夾")
 			def tvOpen():
@@ -520,12 +523,12 @@ class MainWindow(worker.UserWorker):
 			)
 			cid_index[cid] = mission
 					
-def reselectEp(parent, mission):
+def reselect_episodes(parent, mission):
 	"""Reselect episode"""
-	if selectEp(parent, mission):
+	if select_episodes(parent, mission):
 		mission.set("state", "ANALYZED")
 		
-def selectTitle(parent, mission):
+def select_title(parent, mission):
 	"""change mission title dialog"""
 	
 	w = Dialog(parent)
@@ -546,7 +549,7 @@ def selectTitle(parent, mission):
 	ret = w.wait()
 	return ret
 	
-def selectEp(parent, mission):
+def select_episodes(parent, mission):
 	"""select episode dialog"""
 	
 	w = Dialog(parent)
