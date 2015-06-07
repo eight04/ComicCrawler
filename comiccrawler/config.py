@@ -26,6 +26,8 @@ Usage:
 
 import configparser, atexit
 
+from .io import prepare_file
+
 def section(name, default = None):
 	if name not in config:
 		config[name] = {}
@@ -52,14 +54,16 @@ def setPath(func):
 
 @setPath
 def load():
+	path = prepare_file(path)
 	config.read(path, "utf-8-sig")
 	
 @setPath
 def save():
+	path = prepare_file(path)
 	with open(path, "w", encoding="utf-8") as file:
 		config.write(file)
 
-path = "setting.ini"
+path = "~/comiccrawler/setting.ini"
 config = configparser.ConfigParser(interpolation=None)
 load()
 setting = section("DEFAULT")
