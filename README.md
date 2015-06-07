@@ -10,96 +10,92 @@ Features
 * Easy to use function grabhtml, grabimg.
 * Auto setup referer and other common headers.
 
-This branch is for up coming update.
+Dependencies
+------------
+* pyexecjs - to execute javascript.
+* pythreadworker - a small threading library.
 
-Rewrite
--------
-* Use threadworker.
-* Distribute as package and upload to PyPI.
-* Save missions in pool.
-
-Structure
----------
-- ComicCrawlerGUI
-	- DownloadManager
-		- Analyzer
-		- Downloader
-		- ModuleManager
-			- ModPool
-		- MissionManager
-			- SaveFile
-			- MissionPool
-			- ViewList1
-			- ViewList2
-
-Todos
------
-* Can't add url during library analyzing?
-* After library analyze shouldn't show select ep dialog.
-* Move `mission` param from `downloadWorker.__init__` to `.worker`.
-* Set worker parent in __init__.
-
-Next major update
------------------
-* Stop using pickle and remove mission_container.
-* Move saving/loading data to higher level.
-* Use `with` to deal with lock.
-* Use new [pyWorker](https://github.com/eight04/pyWorker).
+Development Dependencies
+------------------------
+* pypandoc - to convert markdown to rst.
 
 下載和安裝（Windows）
--------------------
+------------------
+Comic Crawler 是一個 python package。安裝完 python 後，可以直接用 pip 指令自動安裝。
 
-### Python
+### Python ###
+你需要 Python 3.4 以上。安裝檔可以從它的 [官方網站][1] 下載。
 
-你需要 Python 3.4 以上。安裝檔可以從它的[官方網站](https://www.python.org/)下載。
+[1]: https://www.python.org/
+
+安裝時記得要選「Add python.exe to path」，才能使用 pip 指令。
+
+### Comic Crawler ###
+在 cmd 底下輸入以下指令
+
+	pip install comiccrawler
 	
-安裝時記得要選「Add python.exe to path」，否則安裝 PyExecJS 時會找不到 `pip` 命令。
-	
-### PyExecJS
+要更新時用
 
-[PyExecJS](https://pypi.python.org/pypi/PyExecJS) 是 Python 的套件，用來執行 JavaScript。裝完 Python 後在 cmd 底下直接用 pip 指令
+	pip install --update comiccrawler
 
-	pip install pyexecjs
-	
-### Comic Crawler
+Supported domains
+-----------------
 
-直接從 Github 下載原始碼就能執行了。點右方的「Download ZIP」按鈕。
+```
+@@SUPPORTED_DOMAINS
+```
 
-## 目前支援網址
+使用說明
+-------
+```
+Usage:
+  comiccrawler domains
+  comiccrawler download URL [--dest SAVE_FOLDER]
+  comiccrawler gui
+  comiccrawler (--help | --version)
+  
+Commands:
+  domains             列出支援的網址
+  download URL        下載指定的 url
+  gui                 啟動主視窗
+  
+Options:
+  --dest SAVE_FOLDER  設定下載目錄（預設為 "."）
+  --help              顯示幫助訊息
+  --version           顯示版本
+```
 
-> chan.sankakucomplex.com, www.pixiv.net, comic.sfacg.com, www.example.com, exhentai.org, comic.example.com, www.comicvip.com, danbooru.donmai.us, manhua.dmzj.com, deviantart.com, tel.dm5.com, g.e-hentai.org, comic.acgn.cc, www.dm5.com, konachan.com, comic.ck101.com, www.8comic.com, www.99comic.com
+圖形介面
+-------
+![主視窗](http://i.imgur.com/ZzF0YFx.png)
 
-## 命令介面
+* 在文字欄貼上網址後點「加入連結」或是按 Enter
+* 若是剪貼簿裡有支援的網址，且文字欄同時是空的，程式會自動貼上
+* 對著任務右鍵，可以選擇把任務加入圖書館。圖書館內的任務，在每次程式啟動時，都會檢查是否有更新。
 
-Comic Crawler 的核心就是個可以載入 module 的扒圖工具。基本命令只有兩個。
+設定檔
+-----
+```
+[DEFAULT]
+; 設定下載完成後要執行的程式，會傳入下載資料夾的位置
+runafterdownload = 
 
-### 列出支援的網址
+; 啟動時自動檢查圖書館更新
+libraryautocheck = true
 
-	comiccrawler.py domains
+; 下載目的資料夾
+savepath = ~/comiccrawler/download
 
-### 下載網址內的漫畫至特定目錄
+; 開啟 grabber 偵錯
+logerror = false
 
-	comiccrawler.py download URL -d FILE_PATH
+; 每隔 5 分鐘自動存檔
+autosave = 5
 
-## 圖形介面
-
-### 下載
-
-執行comiccrawlergui.py，貼上連結後點「加入連結」，若是程式支援的網址，在復製完後切換到 Comic Crawler 的視窗就會自動貼上。貼上後按 Enter 也可以加入連結。加入連結後點「開始下載」就會自動下載到指定資料夾中了。
-
-### 圖書館
-
-對著任務右鍵，可以選擇把任務加入圖書館。圖書館內的任務，在每次程式啟動時，都會檢查是否有更新。也可以手動點選「檢查更新」。點「下載更新」會把顯示「有更新」的任務加到下載列表裡面，並自動開始下載。
-
-### 設定檔（setting.ini）
-
-第一次執行程式時會在同目錄下產生 setting.ini，可以設定...
-
-	savepath = 下載目錄。
-	runafterdownload = 下載完後欲呼叫的程式，會傳入任務資料夾位置。
-	libraryautocheck = 是否要自動檢查圖書館更新
-
-`zip.bat` 是預先寫好的 Windows 批次檔，會呼叫 7z 命令將檔案壓縮後刪除資料夾（小心！）。與 `runafterdownload` 配合使用。
+```
+* 設定檔位於 `%USERPROFILE%\comiccrawler\setting.ini`
+* 執行一次 `comiccrawler gui` 後關閉，設定檔會自動產生
 
 Module example
 --------------
@@ -168,8 +164,8 @@ There are two methods to get images url. If you can get all urls from the
 first page, then use getimgurls. If you have to download each pages to get
 image url, use getimgurl and nextpage functions.
 
-Note that you should only implement one of two methods. Never write 
-getimgurls and getimgurl both.
+You should only use one of two methods. Never write getimgurls and getimgurl
+both.
 """
 
 def getimgurls(html, url):
@@ -199,6 +195,6 @@ def errorhandler(er, ep):
 	pass
 ```
 
-Contributors
-------------
+Author
+------
 * eight <eight04@gmail.com>

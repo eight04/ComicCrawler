@@ -13,7 +13,7 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-import re
+import re, pypandoc
 
 here = path.abspath(path.dirname(__file__))
 
@@ -26,32 +26,35 @@ def find_version(file):
 	return re.search(r"__version__ = (\S*)", read(file)).group(1).strip("\"'")
 	
 settings = {
-	"name": "pythreadworker",
-	"version": find_version("worker/__init__.py"),
-	"description": 'A threading library written in python',
+	"name": "comiccrawler",
+	"version": find_version("comiccrawler/__init__.py"),
+	"description": 'An image crawler with extendible modules and gui',
 	# Get the long description from the relevant file
-	"long_description": read("README.md"),
-	"url": 'https://github.com/eight04/pyWorker',
+	"long_description": pypandoc.convert("README.md", "rst"),
+	"url": 'https://github.com/eight04/ComicCrawler',
 	"author": 'eight',
 	"author_email": 'eight04@gmail.com',
 	"license": 'MIT',
 	# See https://pypi.python.org/pypi?%3Aaction=list_classifiers
 	"classifiers": [
 		'Development Status :: 5 - Production/Stable',
-
-		# Indicate who your project is intended for
-		'Intended Audience :: Developers',
-		'Topic :: Software Development :: Libraries :: Python Modules',
-
-		# Pick your license as you wish (should match "license" above)
-		'License :: OSI Approved :: MIT License',
-
-		# Specify the Python versions you support here. In particular, ensure
-		# that you indicate whether you support Python 2, Python 3 or both.
-		'Programming Language :: Python :: 3.4'
+		"Environment :: Console",
+		"Environment :: Win32 (MS Windows)",
+		"Intended Audience :: End Users/Desktop",
+		"License :: OSI Approved :: MIT License",
+		"Natural Language :: Chinese (Traditional)",
+		"Operating System :: Microsoft :: Windows :: Windows 7",
+		"Programming Language :: Python :: 3.4",
+		"Topic :: Internet"
 	],
-	"keywords": 'thread',
+	"keywords": 'crawler',
 	"packages": find_packages(),
+	"install_requires": ["pyexecjs", "pythreadworker"]
+	"entry_points": {
+		"console_scripts": [
+			"comiccrawler = comiccrawler:console_init"
+		]
+	}
 }
 
 if __name__ == "__main__":	
