@@ -21,6 +21,7 @@ if __name__ == "__main__":
 	from setup import settings
 	version = settings["version"]
 	
+	# Create readme
 	write(
 		"README.md",
 		read("README.src.md").replace(
@@ -29,6 +30,7 @@ if __name__ == "__main__":
 		).replace("@@VERSION", version)
 	)
 	
+	# Packaging
 	import os
 	os.system("py setup.py sdist bdist_wheel")
 	os.system("twine upload dist/*")
