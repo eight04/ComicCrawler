@@ -38,7 +38,7 @@ loadconfig()
 
 def list_domain():
 	"""Return downloader dictionary."""
-	return [key for key in domain_index]
+	return sorted(domain_index)
 	
 def get_module(url):
 	"""Return the downloader mod of spect url or return None"""
