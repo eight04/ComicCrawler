@@ -104,70 +104,74 @@ class MainWindow(worker.UserWorker):
 		self.init()
 		self.register_message()
 		self.create_view()
+		self.bindevent()
 		self.mainloop()
 		self.uninit()
 		
 	def init(self):
 		"""Create mission downloader"""
-		sp.addcallback(self.safeprintCallback)
-		self.bindevent()
-		self.tvrefresh()
-		self.libTvRefresh()
+		sp.addcallback(self.sp_callback)
+		
+		self.downloader = DownloadManager().start()
+		self.cid_view = {}
+		self.cid_library = {}
 		
 	def mainloop(self):
 		"""Main loop, including gtk and worker"""
-		self.gRoot.after(100, self.tkloop)
-		self.gRoot.mainloop()
+		self.root.after(100, self.tkloop)
+		self.root.mainloop()
 		
 	def uninit(self):
 		"""Remove safeprint callback"""
-		sp.removecallback(self.safeprintCallback)
+		sp.removecallback(self.sp_callback)
+		
+	def get_cid(self, cid_index, mission):
+		"""Get matched cid from cid index"""
+		for cid, mission2 in cid_index.items():
+			if mission2 is mission:
+				return cid
+				
+	def update_mission_info(self, tv, cid, mission):
+		"""Update mission info on treeview"""
+		tv.set(cid, "state", STATE[mission.state])
+		tv.set(cid, "name", mission.title)
 	
 	def register_message(self):
 		"""Add listeners"""
-		super().__init__()
-		
-		@self.listen
-		def MESSAGE(param, sender):
-			text = param.splitlines()[-1]
-			self.gStatusbar["text"] = text
+		@self.listen("LOG_MESSAGE")
+		def dummy(text):
+			text = text.splitlines()[-1]
+			self.statusbar["text"] = text
 	
-		@self.listen
-		def MISSION_PROPERTY_CHANGED(param, sender):
-			mission = param
-			if "iidholder" in vars(self):
-				for cid, m in self.iidholder.items():
-					if m is mission:
-						self.gTv.set(cid, "state", STATE[m.mission.state])
-						self.gTv.set(cid, "name", m.mission.title)
+		@self.listen("MISSION_PROPERTY_CHANGED")
+		def dummy(mission):
+			cid = self.get_cid(self.cid_view, mission)
+			if cid is not None:
+				self.update_mission_info(self.tv_view, cid, mission)
 			
-			if "libIdIndex" in vars(self):
-				for cid, m in self.libIdIndex.items():
-					if m is mission:
-						self.gLibTV.set(cid, "state", STATE[m.mission.state])
-						self.gLibTV.set(cid, "name", m.mission.title)
-
-		@self.listen
-		def MISSIONQUE_ARRANGE(param, sender):
-			if param == self.downloadManager.missions:
-				self.tvrefresh()
-			if param == self.downloadManager.library:
-				self.libTvRefresh()
+			cid = self.get_cid(self.cid_library, mission)
+			if cid is not None:
+				self.update_mission_info(self.tv_library, cid, mission)
 			
-		@self.listen
-		def ANALYZE_FINISHED(param, sender):
-			if sender is not self.downloadManager.libraryWorker:
-				if (len(param.mission.episodelist) == 1 or 
-					selectEp(self.gRoot, param.mission)):
-						self.downloadManager.addMission(param)
+		@self.listen("MISSIONQUE_ARRANGE")
+		def dummy(que):
+			if que == self.downloader.mission_manager.view:
+				self.tv_refresh("view")
+			if que == self.downloader.mission_manager.library:
+				self.tv_refresh("library")
 			
-		@self.listen
-		def ANALYZE_FAILED(param, sender):
-			if not param.downloader:
-				messagebox.showerror("Comic Crawler", "不支援的網址！")
-			else:
-				messagebox.showerror(
-					param.downloader.name, "解析錯誤！\n{}".format(param.error))
+		@self.listen("AFTER_ANALYZE")
+		def dummy(mission):
+			if len(mission.episodes) == 1 or selectEp(self.root, mission):
+				self.downloader.mission_manager.add("view", mission)
+			
+		@self.listen("AFTER_ANALYZE_FAILED")
+		def dummy(param):
+			mission, error = param
+			messagebox.showerror(
+				mission.module.name,
+				"解析錯誤！\n{}".format(error)
+			)
 				
 		@self.listen("MISSION_REMOVE_FAILED")
 		def failed_to_remove_mission(mission, sender):
@@ -222,11 +226,11 @@ class MainWindow(worker.UserWorker):
 		self.gNotebook.add(frame, text="任務列表")
 		
 		# mission list scrollbar		
-		self.gTvScrbar = Scrollbar(frame)
-		self.gTvScrbar.pack(side="right", fill="y")
+		self.tv_viewScrbar = Scrollbar(frame)
+		self.tv_viewScrbar.pack(side="right", fill="y")
 		
 		# mission list
-		tv = Treeview(frame, columns=("name","host","state"), yscrollcommand=self.gTvScrbar.set)
+		tv = Treeview(frame, columns=("name","host","state"), yscrollcommand=self.tv_viewScrbar.set)
 		tv.heading("#0", text="#")
 		tv.heading("name", text="任務")
 		tv.heading("host", text="主機")
@@ -235,9 +239,9 @@ class MainWindow(worker.UserWorker):
 		tv.column("host", width="50", anchor="center")
 		tv.column("state", width="70", anchor="center")
 		tv.pack(expand=True, fill="both")
-		self.gTv = tv
+		self.tv_view = tv
 		
-		self.gTvScrbar.config(command=tv.yview)
+		self.tv_viewScrbar.config(command=tv.yview)
 		
 		# mission context menu
 		tvmenu = Menu(tv, tearoff=False)
@@ -249,7 +253,7 @@ class MainWindow(worker.UserWorker):
 		tvmenu.add_command(label="重新選擇集數")
 		tvmenu.add_command(label="開啟資料夾")
 		tvmenu.add_command(label="開啟網頁")
-		self.gTvmenu = tvmenu
+		self.tv_viewmenu = tvmenu
 		
 		# library
 		frame = Frame(self.gNotebook)
@@ -402,65 +406,65 @@ class MainWindow(worker.UserWorker):
 		# interface for mission list
 		def tvdelete():
 			if messagebox.askyesno("Comic Crawler", "確定刪除？"):
-				s = self.gTv.selection()
+				s = self.tv_view.selection()
 				self.downloadManager.missions.remove(*[self.iidholder[k] for k in s])
-		self.gTvmenu.entryconfig(0, command=tvdelete)
+		self.tv_viewmenu.entryconfig(0, command=tvdelete)
 		
 		def tvlift():
-			s = self.gTv.selection()
+			s = self.tv_view.selection()
 			self.downloadManager.missions.lift(*[self.iidholder[k] for k in s])
-		self.gTvmenu.entryconfig(1, command=tvlift)
+		self.tv_viewmenu.entryconfig(1, command=tvlift)
 			
 		def tvdrop():
-			s = self.gTv.selection()
+			s = self.tv_view.selection()
 			self.downloadManager.missions.drop(*[self.iidholder[k] for k in s])
-		self.gTvmenu.entryconfig(2, command=tvdrop)
+		self.tv_viewmenu.entryconfig(2, command=tvdrop)
 		
 		def tvchangetitle():
-			s = self.gTv.selection()
+			s = self.tv_view.selection()
 			mission = self.iidholder[s[0]]
 			selectTitle(self.gRoot, mission)
-		self.gTvmenu.entryconfig(3, command=tvchangetitle)
+		self.tv_viewmenu.entryconfig(3, command=tvchangetitle)
 		
 		def tvAddToLib():
-			s = self.gTv.selection()
+			s = self.tv_view.selection()
 			# mission = self.iidholder[s[0]]
 			missions = [ self.iidholder[i] for i in s ]
 			titles = [ m.mission.title for m in missions ]
 			for mission in missions:
 				self.downloadManager.addLibrary(mission)
 			safeprint("已加入圖書館︰{}".format(", ".join(titles)))
-		self.gTvmenu.entryconfig(4, command=tvAddToLib)
+		self.tv_viewmenu.entryconfig(4, command=tvAddToLib)
 		
 		def tvReselectEP():
-			s = self.gTv.selection()
+			s = self.tv_view.selection()
 			# mission = self.iidholder[s[0]]
 			missionContainers = [ self.iidholder[i] for i in s ]
 			for missionContainer in missionContainers:
 				reselectEp(self.gRoot, missionContainer)
 				# selectEp(self.gRoot, missionContainer.mission)
-		self.gTvmenu.entryconfig(5, command=tvReselectEP)
+		self.tv_viewmenu.entryconfig(5, command=tvReselectEP)
 				
 		def tvOpen():
-			s = self.gTv.selection()
+			s = self.tv_view.selection()
 			missionContainers = [ self.iidholder[i] for i in s ]
 			for missionContainer in missionContainers:
 				mission = missionContainer.mission
 				savepath = self.downloadManager.setting["savepath"]
 				folder = os.path.join(savepath, safefilepath(mission.title))
 				os.startfile(folder)
-		self.gTvmenu.entryconfig(6, command=tvOpen)
+		self.tv_viewmenu.entryconfig(6, command=tvOpen)
 				
 		def tvOpenBrowser():
-			s = self.gTv.selection()
+			s = self.tv_view.selection()
 			missionContainers = [ self.iidholder[i] for i in s ]
 			for missionContainer in missionContainers:
 				webbrowser.open(missionContainer.mission.url)
-		self.gTvmenu.entryconfig(7, command=tvOpenBrowser)
+		self.tv_viewmenu.entryconfig(7, command=tvOpenBrowser)
 				
 		def tvmenucall(event):
-			self.gTvmenu.post(event.x_root, event.y_root)
-		self.gTv.bind("<Button-3>", tvmenucall)
+			self.tv_viewmenu.post(event.x_root, event.y_root)
+		self.tv_view.bind("<Button-3>", tvmenucall)
 		
 		# interface for library
 		def libCheckUpdate():
@@ -530,7 +534,7 @@ class MainWindow(worker.UserWorker):
 
 		downloader = mission.downloader
 		m = mission.mission
-		cid = self.gTv.insert("","end",
+		cid = self.tv_view.insert("","end",
 				values=(m.title, downloader.name, STATE[m.state]))
 		self.iidholder[cid] = mission
 			
@@ -544,8 +548,8 @@ class MainWindow(worker.UserWorker):
 	def tvrefresh(self):
 		"""refresh treeview"""
 
-		ids = self.gTv.get_children()
-		self.gTv.delete(*ids)
+		ids = self.tv_view.get_children()
+		self.tv_view.delete(*ids)
 		self.iidholder = {}
 		self.load()
 		
