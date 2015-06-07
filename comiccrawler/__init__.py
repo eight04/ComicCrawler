@@ -1,6 +1,26 @@
 #! python3
 
-"""Comic Crawler."""
+"""Comic Crawler
+
+Usage:
+  comiccrawler domains
+  comiccrawler download URL [--dest SAVE_FOLDER]
+  comiccrawler gui
+  comiccrawler (--help | --version)
+  
+Commands:
+  domains             List supported domains.
+  download URL        Download from the URL.
+  gui                 Launch TKinter GUI.
+  
+Options:
+  --dest SAVE_FOLDER  Set download save path. [default: .]
+  --help              Show help message.
+  --version           Show current version.
+
+"""
+
+__version__ = "20150607"
 
 import subprocess, traceback
 
@@ -12,6 +32,10 @@ from collections import OrderedDict
 from .safeprint import safeprint
 from .config import setting, section
 from .core import Mission, Episode, download, analyze, createdir
+from .io import content_read, content_write
+from .mods import list_domain, load_config
+
+import .config as config
 
 def shallow(dict, exclude=None):
 	new_dict = {}
@@ -20,17 +44,6 @@ def shallow(dict, exclude=None):
 			new_dict[key] = dict[key]
 	return new_dict
 	
-def content_write(file, content):
-	file = path.expanduser(file)
-	createdir(dirname(file))
-	with open(file, "w", encoding="utf-8") as f:
-		f.write(content)
-		
-def content_read(file):
-	file = path.expanduser(file)
-	with open(file, "r", encoding="utf-8") as f:
-		return f.read()
-
 class MissionPoolEncoder(JSONEncoder):
 	def default(self, object):
 		if isinstance(object, Mission):
@@ -237,7 +250,7 @@ class DownloadManager(UserWorker):
 				self.analyze_threads.remove(thread)
 				self.bubble("AFTER_ANALYZE_FAILED", mission)
 					
-		self.prepare_config()
+		self.reload_config()
 					
 		if setting.getboolean("libraryautocheck"):
 			self.start_check_update()
@@ -252,8 +265,10 @@ class DownloadManager(UserWorker):
 		states = ("ANALYZE_INIT",)
 		return self.mission_manager.get_by_state("library", states)
 			
-	def prepare_config(self):
+	def reload_config(self):
 		"""Load config from controller. Set default"""
+		config.load("~/comiccrawler/setting.ini")
+		
 		default = {
 			"savepath": "download",
 			"runafterdownload": "",
@@ -263,6 +278,8 @@ class DownloadManager(UserWorker):
 		section("DEFAULT", default)
 		
 		setting["savepath"] = path.normpath(setting["savepath"])
+		
+		load_config()
 		
 	def add_url(self, url):
 		"""add url"""
@@ -315,132 +332,27 @@ class DownloadManager(UserWorker):
 		missions = [mission for mission in self.mission_manager.library.values() if mission.state == "UPDATE"]
 		self.mission_manager.add("view", *missions)
 		
-class ModuleManager:
-	"""Import all the downloader module.
+def console_download(url, savepath):
+	mission = Mission(url=url)
+	Worker.sync(analyze, mission, pass_instance=True).get()
+	Worker.sync(download, mission, savepath, pass_instance=True).get()
+		
+def console_init():
+	"""Console init"""
+	from docopt import docopt
 	
-	DLModuleManger will automatic import all modules in the same directory 
-	which name prefixed with "cc_".
+	arguments = docopt(__doc__, version="Comic Crawler v" + __version__)
 	
-	"""
-	
-	def __init__(self):
-		import os
-		self.dlHolder = {}
-		self.mods = []
-		self.mod_dir = os.path.dirname(os.path.realpath(__file__))
+	if arguments["domains"]:
+		print("Supported domains:\n" + ", ".join(list_domain()))
 		
-		self.loadMods()
-		self.registHolders()
-		self.loadconfig()
+	elif arguments["gui"]:
+		from .gui import MainWindow
+		MainWindow().start().join()
 		
-	def loadMods(self):
-		"""Load mods to self.mods"""
-		import importlib, os
+	elif arguments["download"]:
+		console_download(arguments["URL"], arguments["savepath"])
 		
-		for f in os.listdir(self.mod_dir):
-			if not re.search("^cc_.+\.py$", f):
-				continue
-			mod = f.replace(".py","")
-			self.mods.append(importlib.import_module(mod))
-		
-	def registHolders(self):
-		"""Regist domain with mod to self.dlHolder"""
-		
-		for mod in self.mods:
-			for url in mod.domain:
-				self.dlHolder[url] = mod
-
-		
-	def loadconfig(self):
-		"""Load setting.ini and set up module.
-		"""
-		for mod in self.mods:
-			if hasattr(mod, "config"):
-				mod.config = section(mod.name, mod.config)
-			if hasattr(mod, "loadconfig"):
-				mod.loadconfig()
-		
-	def getdlHolder(self):
-		"""Return downloader dictionary."""
-		return [key for key in self.dlHolder]
-		
-	def validUrl(self,url):
-		"""Return if the url is valid and in downloaders domain."""
-		
-		if self.getDownloader(url):
-			return True
-		return False
-		
-	def getDownloader(self, url):
-		"""Return the downloader mod of spect url or return None"""
-		
-		dm = re.search("^https?://([^/]+?)(:\d+)?/", url)
-		if dm is None:
-			return None
-		dm = dm.group(1)
-		for d in self.dlHolder:
-			if d in dm:
-				return self.dlHolder[d]
-		return None
-		
-class Main(Worker):
-	"""workflow logic"""
-	
-	def worker(self):
-		"""Load class -> view -> unload class"""
-		
-		self.loadClasses()
-		self.view()
-		self.unloadClasses()
-	
-	def loadClasses(self):
-		"""Load classes."""
-		
-		self.moduleManager = ModuleManager()
-		self.downloadManager = self.createChild(
-			DownloadManager,
-			moduleManager = self.moduleManager
-		).start()
-		
-		self.downloadManager.load()
-		
-	def unloadClasses(self):
-		"""Unload classes."""
-		
-		# wait download manager stop
-		if self.downloadManager.running:
-			self.downloadManager.stop()
-			self.downloadManager.join()
-		self.downloadManager.save()
-		
-	def view(self):
-		"""Override."""
-		pass
-
 if __name__ == "__main__":
-	workingDir = os.getcwd()
-	scriptDir = os.path.dirname(os.path.realpath(__file__))
-	os.chdir(scriptDir)
+	console_init()
 	
-	moduleManager = ModuleManager()
-	
-	if len(sys.argv) <= 1:
-		sys.exit("Need more arguments")
-		
-	elif sys.argv[1] == "domains":
-		safeprint("Valid domains:\n{}".format(", ".join(moduleManager.getdlHolder())))
-		
-	elif sys.argv[1] == "download":	
-		url = sys.argv[2]
-		savepath = workingDir
-		if len(sys.argv) >= 5 and sys.argv[3] == "-d":
-			savepath = os.path.join(workingDir, sys.argv[4])
-		
-		mission = Mission()
-		mission.url = url
-		container = MissionContainer()
-		container.mission = mission
-		container.downloader = moduleManager.getDownloader(url)
-		
-		AnalyzeWorker(container).run()
-		DownloadWorker(container, savepath).run()
