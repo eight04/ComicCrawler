@@ -29,7 +29,7 @@ def getepisodelist(html, url):
 	
 	for match in finditer("class=\"tg\" href=\"([^\"]+)\" title=\"([^\"]+)\"", html):
 		s.append(Episode(
-			match.group(2)
+			match.group(2),
 			base + match.group(1)
 		))
 		

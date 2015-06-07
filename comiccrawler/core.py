@@ -12,7 +12,6 @@ from traceback import print_exc
 
 from .safeprint import safeprint
 from .error import TooManyRetryError, LastPageError, SkipEpisodeError
-from .mods import get_module
 
 default_header = {
 	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0",
@@ -23,6 +22,8 @@ default_header = {
 class Mission(UserWorker):
 	"""Mission data class. Contains a mission's information."""
 	def __init__(self, title=None, url=None, episodes=None, state="INIT", update=False):
+		from .mods import get_module
+		
 		super().__init__()
 		
 		self.title = title

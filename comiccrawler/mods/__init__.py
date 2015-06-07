@@ -20,6 +20,8 @@ here = dirname(__file__)
 for file in listdir(here):
 	if file == "__init__.py":
 		continue
+	if not file.endswith(".py"):
+		continue
 	mod = file.replace(".py", "")
 	mods.add(import_module("comiccrawler.mods." + mod))
 	
@@ -28,7 +30,7 @@ for mod in mods:
 	for url in mod.domain:
 		domain_index[url] = mod
 
-def loadconfig(self):
+def load_config():
 	"""Load setting.ini and set up module.
 	"""
 	for mod in mods:
@@ -37,7 +39,7 @@ def loadconfig(self):
 		if hasattr(mod, "loadconfig"):
 			mod.loadconfig()
 			
-loadconfig()
+load_config()
 
 def list_domain():
 	"""Return downloader dictionary."""

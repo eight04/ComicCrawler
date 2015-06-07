@@ -12,7 +12,7 @@ import sys, os, webbrowser, worker
 import tkinter.messagebox as messagebox
 
 from . import config, mods, safeprint as sp
-from safeprint import safeprint
+from .safeprint import safeprint
 
 STATE = {
 	"INIT": "準備",

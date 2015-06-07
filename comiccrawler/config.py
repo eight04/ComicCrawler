@@ -44,21 +44,17 @@ def get(key, default = None):
 		setting[key] = default
 	return setting[key]
 	
-def setPath(func):
-	def _setPath(newPath = None):
-		if newPath is not None:
-			global path
-			path = newPath
-		func()
-	return _setPath
-
-@setPath
-def load():
+def load(new_path=None):
+	global path
+	if new_path:
+		path = new_path
 	path = prepare_file(path)
 	config.read(path, "utf-8-sig")
 	
-@setPath
-def save():
+def save(new_path=None):
+	global path
+	if new_path:
+		path = new_path
 	path = prepare_file(path)
 	with open(path, "w", encoding="utf-8") as file:
 		config.write(file)
