@@ -1,19 +1,20 @@
 #! python3
 
-"""this is yandere module for comiccrawler
+"""iibq
 
 Ex:
-	https://yande.re/post?tags=koikishi_purely_kiss
+	http://www.iibq.com/comic/82012136189/
 
 """
 
 import re, execjs
-from ..core import Episode, grabhtml
 from html import unescape
-from safeprint import safeprint
 from functools import partial
 
-domain = ["iibq.com"]
+from ..safeprint import safeprint
+from ..core import Episode, grabhtml
+
+domain = ["www.iibq.com"]
 name = "精明眼"
 
 def gettitle(html, url):
