@@ -6,15 +6,13 @@
 
 from tkinter import *
 from tkinter.ttk import *
-import config
-import tkinter.messagebox
-import sys
-import os
-import webbrowser
-import safeprint as sp
 
-from comiccrawler import Main, safefilepath, MissionDuplicateError
-from safeprint import safeprint, addcallback
+import sys, os, webbrowser, worker
+import tkinter.messagebox as messagebox
+import .config as config
+import .safeprint as sp
+
+from safeprint import safeprint
 
 STATE = {
 	"INIT": "準備",
@@ -98,9 +96,34 @@ class Dialog(Toplevel):
 		self.wait_window(self)
 		return self.result
 	
-class MainWindow(Main):
+class MainWindow(worker.UserWorker):
 	"""Main GUI window class."""
-	def __init__(self):
+	
+	def worker(self):
+		"""Main window worker"""
+		self.init()
+		self.register_message()
+		self.create_view()
+		self.mainloop()
+		self.uninit()
+		
+	def init(self):
+		"""Create mission downloader"""
+		sp.addcallback(self.safeprintCallback)
+		self.bindevent()
+		self.tvrefresh()
+		self.libTvRefresh()
+		
+	def mainloop(self):
+		"""Main loop, including gtk and worker"""
+		self.gRoot.after(100, self.tkloop)
+		self.gRoot.mainloop()
+		
+	def uninit(self):
+		"""Remove safeprint callback"""
+		sp.removecallback(self.safeprintCallback)
+	
+	def register_message(self):
 		"""Add listeners"""
 		super().__init__()
 		
@@ -141,16 +164,16 @@ class MainWindow(Main):
 		@self.listen
 		def ANALYZE_FAILED(param, sender):
 			if not param.downloader:
-				tkinter.messagebox.showerror("Comic Crawler", "不支援的網址！")
+				messagebox.showerror("Comic Crawler", "不支援的網址！")
 			else:
-				tkinter.messagebox.showerror(
+				messagebox.showerror(
 					param.downloader.name, "解析錯誤！\n{}".format(param.error))
 				
 		@self.listen("MISSION_REMOVE_FAILED")
 		def failed_to_remove_mission(mission, sender):
-			tkinter.messagebox.showerror("Comic Crawler", "刪除失敗。任務使用中？")
+			messagebox.showerror("Comic Crawler", "刪除失敗。任務使用中？")
 	
-	def view(self):
+	def create_view(self):
 		"""Draw the window."""
 		self.gRoot = Tk()
 		
@@ -296,13 +319,6 @@ class MainWindow(Main):
 		
 		# ========GUI END========
 		
-		sp.addcallback(self.safeprintCallback)
-		self.bindevent()
-		self.tvrefresh()
-		self.libTvRefresh()
-		self.gRoot.after(100, self.tkloop)
-		self.gRoot.mainloop()
-		sp.removecallback(self.safeprintCallback)
 		
 	def tkloop(self):
 		"""get message from comiccrawler.messageBucket"""
@@ -340,7 +356,7 @@ class MainWindow(Main):
 			except KeyError:
 				return False
 				
-			removeOld = tkinter.messagebox.askyesno(
+			removeOld = messagebox.askyesno(
 				"Comic Crawler",
 				"任務重覆，要刪除先前任務嗎？",
 				default="no"
@@ -385,7 +401,7 @@ class MainWindow(Main):
 		
 		# interface for mission list
 		def tvdelete():
-			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
+			if messagebox.askyesno("Comic Crawler", "確定刪除？"):
 				s = self.gTv.selection()
 				self.downloadManager.missions.remove(*[self.iidholder[k] for k in s])
 		self.gTvmenu.entryconfig(0, command=tvdelete)
@@ -459,7 +475,7 @@ class MainWindow(Main):
 		
 		# interface for library list
 		def libMenuDelete():
-			if tkinter.messagebox.askyesno("Comic Crawler", "確定刪除？"):
+			if messagebox.askyesno("Comic Crawler", "確定刪除？"):
 				s = self.gLibTV.selection()
 				self.downloadManager.library.remove(*[self.libIdIndex[k] for k in s])
 		self.gLibMenu.entryconfig(0, command=libMenuDelete)
@@ -499,7 +515,7 @@ class MainWindow(Main):
 		# close window event
 		def beforequit():
 			if (self.downloadManager.downloadWorker and self.downloadManager.downloadWorker.running and 
-					not tkinter.messagebox.askokcancel("Comic Crawler",
+					not messagebox.askokcancel("Comic Crawler",
 						"任務下載中，確定結束？")):
 				return
 			self.downloadManager.stopDownload()
@@ -662,5 +678,3 @@ def selectEp(parent, mission):
 	
 	return w.wait()
 
-if __name__ == "__main__":
-	MainWindow().run()

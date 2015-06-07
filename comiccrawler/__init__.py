@@ -20,7 +20,7 @@ Options:
 
 """
 
-__version__ = "20150607"
+__version__ = "2015.6.7"
 
 import subprocess, traceback
 
