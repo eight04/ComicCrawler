@@ -52,10 +52,10 @@ def migrate():
 				url=mission.url,
 				episodes=[get_new_ep(ep) for ep in mission.episodelist]
 			)
-			mission_manager.add(pool_name, mission)
+			mission_manager.add(pool_name, new_mission)
 			
 	put_missions("save.dat", "view")
 	put_missions("library.dat", "library")
 	
 	print("Mission manager save files...")
-	module_manager.save()
+	mission_manager.save()
