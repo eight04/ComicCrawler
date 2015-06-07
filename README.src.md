@@ -4,6 +4,10 @@ Comic Crawler
 Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管理員、圖書館功能、
 與方便的擴充能力。
 
+20150608 更新
+-------------
+* 
+
 Features
 --------
 * Extendible module design.
@@ -108,7 +112,7 @@ This is an example to show how to write a comiccrawler module.
 """
 
 import re
-import comiccrawler.core
+from ..core import Episode
 
 # The header used in grabber method
 header = {}
@@ -150,15 +154,12 @@ def getepisodelist(html, url):
 	downloader will download the oldest first.
 	"""
 	base = re.search("(https?://[^/]+)", url).group(1)
-	ms = re.findall("<a href='(.+?)'>(.+?)</a>", html)
-	s = []
-	for m in ms:	
-		u, title = m
-		e = comiccrawler.Episode()
-		e.title = title
-		e.firstpageurl = base + url
-		s.append(e)
-	return s
+	match_iter = re.finditer("<a href='(.+?)'>(.+?)</a>", html)
+	episodes = []
+	for match in match_iter:
+		m_url, title = match.groups()
+		episodes.append(Episode(title, base + m_url))
+	return episodes
 
 """
 There are two methods to get images url. If you can get all urls from the 
@@ -172,8 +173,8 @@ both.
 def getimgurls(html, url):
 	"""Return the list of all images"""
 	
-	ms = re.findall("<img src='(.+?)'>", html)
-	return [m[0] for m in ms]
+	match_iter = re.finditer("<img src='(.+?)'>", html)
+	return [match.group(1) for match in match_iter]
 	
 def getimgurl(html, page, url):
 	"""Return the url of the image"""
@@ -181,13 +182,11 @@ def getimgurl(html, page, url):
 	return re.search("<img id='showimage' src='(.+?)'>", html).group(1)
 	
 def getnextpageurl(page, html, url):
-	"""Return the url of the next page. Return '' if this is the last page.
+	"""Return the url of the next page. Return None if this is the last page.
 	"""
 	
-	r = re.search("<a id='nextpage' href='(.+?)'>next</a>", html)
-	if r is None:
-		return ""
-	return r.group(1)
+	match = re.search("<a id='nextpage' href='(.+?)'>next</a>", html)
+	return match and match.group(1)
 		
 def errorhandler(er, ep):
 	"""Downloader will call errorhandler if there is an error happened when

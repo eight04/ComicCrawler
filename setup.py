@@ -37,7 +37,7 @@ settings = {
 	],
 	"keywords": 'crawler',
 	"packages": find_packages(),
-	"install_requires": ["pyexecjs", "pythreadworker"],
+	"install_requires": ["docopt", "pyexecjs", "pythreadworker"],
 	"entry_points": {
 		"console_scripts": [
 			"comiccrawler = comiccrawler:console_init"
