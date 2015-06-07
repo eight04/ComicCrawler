@@ -38,7 +38,7 @@ def section(name, default = None):
 	return config[name]
 	
 def get(key, default = None):
-	if key not in setting:
+	if key not in setting and default is not None:
 		setting[key] = default
 	return setting[key]
 	
