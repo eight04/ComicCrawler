@@ -3,9 +3,9 @@
 *.log
 *.pyc
 
-__pycache__/*
-download/*
-build/*
+__pycache__/
+download/
+build/
 *.egg-info/
 
 test*
