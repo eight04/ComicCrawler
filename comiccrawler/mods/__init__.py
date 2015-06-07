@@ -1,6 +1,9 @@
 #! python3
 
-"""Import all downloader modules"""
+"""comiccrawler.mods
+
+Import all downloader modules
+"""
 
 from os.path import dirname, realpath, join
 from os import listdir
@@ -54,4 +57,3 @@ def get_module(url):
 		return None
 	
 	return domain_index[domain]
-

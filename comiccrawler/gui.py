@@ -6,12 +6,12 @@
 
 from tkinter import *
 from tkinter.ttk import *
+from functools import partial
 
 import sys, os, webbrowser, worker
 import tkinter.messagebox as messagebox
-import .config as config
-import .safeprint as sp
 
+from . import config, mods, safeprint as sp
 from safeprint import safeprint
 
 STATE = {
@@ -116,6 +116,9 @@ class MainWindow(worker.UserWorker):
 		self.cid_view = {}
 		self.cid_library = {}
 		
+		# Work with clipboard
+		self.pre_url = None
+		
 	def mainloop(self):
 		"""Main loop, including gtk and worker"""
 		self.root.after(100, self.tkloop)
@@ -173,64 +176,62 @@ class MainWindow(worker.UserWorker):
 				"解析錯誤！\n{}".format(error)
 			)
 				
-		@self.listen("MISSION_REMOVE_FAILED")
-		def failed_to_remove_mission(mission, sender):
-			messagebox.showerror("Comic Crawler", "刪除失敗。任務使用中？")
-	
 	def create_view(self):
 		"""Draw the window."""
-		self.gRoot = Tk()
+		self.root = Tk()
 		
-		# ========GUI START========
-
-		self.gRoot.title("Comic Crawler")
-		self.gRoot.geometry("500x400")
+		self.root.title("Comic Crawler")
+		self.root.geometry("500x400")
 		
-		Label(self.gRoot,text="輸入連結︰").pack(anchor="w")
+		Label(self.root,text="輸入連結︰").pack(anchor="w")
 		
 		# url entry
-		entry_url = Entry(self.gRoot)
+		entry_url = Entry(self.root)
 		entry_url.pack(fill="x")
-		self.gEntry_url = entry_url
+		self.entry_url = entry_url
 		
 		# bunch of buttons
-		buttonbox = Frame(self.gRoot)
+		buttonbox = Frame(self.root)
 		buttonbox.pack()
 		
 		btnaddurl = Button(buttonbox, text="加入連結")
 		btnaddurl.pack(side="left")
-		self.gBtnaddurl = btnaddurl
+		self.btn_addurl = btnaddurl
 		
 		btnstart = Button(buttonbox, text="開始下載")
 		btnstart.pack(side="left")
-		self.gBtnstart = btnstart
+		self.btn_start = btnstart
 		
 		btnstop = Button(buttonbox,text="停止下載")
 		btnstop.pack(side="left")
-		self.gBtnstop = btnstop
+		self.btn_stop = btnstop
 			
 		btnclean = Button(buttonbox, text="移除已完成")
 		btnclean.pack(side="left")
-		self.gBtnclean = btnclean		
+		self.btn_clean = btnclean
 		
 		btnconfig = Button(buttonbox, text="重載設定檔")
 		btnconfig.pack(side="left")
-		self.gBtnconfig = btnconfig
+		self.btn_config = btnconfig
 		
 		# notebook
-		self.gNotebook = Notebook(self.gRoot)
-		self.gNotebook.pack(expand=True, fill="both")
+		self.notebook = Notebook(self.root)
+		self.notebook.pack(expand=True, fill="both")
 		
 		# download manager
-		frame = Frame(self.gNotebook)
-		self.gNotebook.add(frame, text="任務列表")
+		frame = Frame(self.notebook)
+		self.notebook.add(frame, text="任務列表")
 		
 		# mission list scrollbar		
-		self.tv_viewScrbar = Scrollbar(frame)
-		self.tv_viewScrbar.pack(side="right", fill="y")
+		self.view_scrbar = Scrollbar(frame)
+		self.view_scrbar.pack(side="right", fill="y")
 		
 		# mission list
-		tv = Treeview(frame, columns=("name","host","state"), yscrollcommand=self.tv_viewScrbar.set)
+		tv = Treeview(
+			frame,
+			columns=("name","host","state"),
+			yscrollcommand=self.view_scrbar.set
+		)
 		tv.heading("#0", text="#")
 		tv.heading("name", text="任務")
 		tv.heading("host", text="主機")
@@ -241,69 +242,62 @@ class MainWindow(worker.UserWorker):
 		tv.pack(expand=True, fill="both")
 		self.tv_view = tv
 		
-		self.tv_viewScrbar.config(command=tv.yview)
+		self.view_scrbar.config(command=tv.yview)
 		
 		# mission context menu
-		tvmenu = Menu(tv, tearoff=False)
-		tvmenu.add_command(label="刪除")
-		tvmenu.add_command(label="移至頂部")
-		tvmenu.add_command(label="移至底部")
-		tvmenu.add_command(label="改名")
-		tvmenu.add_command(label="加入圖書館")
-		tvmenu.add_command(label="重新選擇集數")
-		tvmenu.add_command(label="開啟資料夾")
-		tvmenu.add_command(label="開啟網頁")
-		self.tv_viewmenu = tvmenu
+		self.view_menu = Menu(tv, tearoff=False)
 		
 		# library
-		frame = Frame(self.gNotebook)
-		self.gNotebook.add(frame, text="圖書館")
+		frame = Frame(self.notebook)
+		self.notebook.add(frame, text="圖書館")
 		
 		# library buttons
 		btnBar = Frame(frame)
 		btnBar.pack()
 		
-		self.gBtnUpdate = Button(btnBar, text="檢查更新")
-		self.gBtnUpdate.pack(side="left")
+		self.btn_update = Button(btnBar, text="檢查更新")
+		self.btn_update.pack(side="left")
 		
-		self.gBtnDownloadUpdate = Button(btnBar, text="下載更新")
-		self.gBtnDownloadUpdate.pack(side="left")
+		self.btn_download_update = Button(btnBar, text="下載更新")
+		self.btn_download_update.pack(side="left")
 		
 		# library treeview scrollbar container
-		self.gLibFrame = Frame(frame)
-		self.gLibFrame.pack(expand=True, fill="both")
+		frame_lib = Frame(frame)
+		frame_lib.pack(expand=True, fill="both")
 		
 		# scrollbar
-		self.gLibScrbar = Scrollbar(self.gLibFrame)
-		self.gLibScrbar.pack(side="right", fill="y")
+		self.lib_scrbar = Scrollbar(frame_lib)
+		self.lib_scrbar.pack(side="right", fill="y")
 	
 		# library treeview
-		self.gLibTV = Treeview(
-			self.gLibFrame, 
+		tv = Treeview(
+			frame_lib, 
 			columns=("name","host","state"), 
-			yscrollcommand=self.gLibScrbar.set
+			yscrollcommand=self.lib_scrbar.set
 		)
-		self.gLibTV.heading("#0", text="#")
-		self.gLibTV.heading("name", text="任務")
-		self.gLibTV.heading("host", text="主機")
-		self.gLibTV.heading("state", text="狀態")
-		self.gLibTV.column("#0", width="25")
-		self.gLibTV.column("host", width="50", anchor="center")
-		self.gLibTV.column("state", width="70", anchor="center")
-		self.gLibTV.pack(side="left", expand=True, fill="both")
+		tv.heading("#0", text="#")
+		tv.heading("name", text="任務")
+		tv.heading("host", text="主機")
+		tv.heading("state", text="狀態")
+		tv.column("#0", width="25")
+		tv.column("host", width="50", anchor="center")
+		tv.column("state", width="70", anchor="center")
+		tv.pack(side="left", expand=True, fill="both")
+		self.tv_library = tv
 		
-		self.gLibScrbar.config(command=self.gLibTV.yview)
+		self.lib_scrbar.config(command=self.tv_library.yview)
 		
 		# library context menu
-		self.gLibMenu = Menu(self.gLibTV, tearoff=False)
-		self.gLibMenu.add_command(label="刪除")
-		self.gLibMenu.add_command(label="重新選擇集數")
-		self.gLibMenu.add_command(label="開啟資料夾")
-		self.gLibMenu.add_command(label="開啟網頁")
+		menu = Menu(self.tv_library, tearoff=False)
+		menu.add_command(label="刪除")
+		menu.add_command(label="重新選擇集數")
+		menu.add_command(label="開啟資料夾")
+		menu.add_command(label="開啟網頁")
+		self.library_menu = menu
 		
 		# domain list
-		frame = Frame(self.gNotebook)
-		self.gNotebook.add(frame, text="支援的網域")
+		frame = Frame(self.notebook)
+		self.notebook.add(frame, text="支援的網域")
 		
 		# domains scrollbar
 		scrollbar = Scrollbar(frame)
@@ -311,275 +305,226 @@ class MainWindow(worker.UserWorker):
 		
 		# domains
 		text = Text(frame, height=10, yscrollcommand=scrollbar.set)
-		text.insert("insert", "\n".join(sorted(self.moduleManager.getdlHolder())))
+		text.insert("insert", "\n".join(mods.list_domain()))
 		text.pack(side="left", fill="y")
 		
 		scrollbar.config(command=text.yview)
 		
 		# status bar
-		statusbar = Label(self.gRoot, text="Comic Crawler", anchor="e")
+		statusbar = Label(self.root, text="Comic Crawler", anchor="e")
 		statusbar.pack(anchor="e")
-		self.gStatusbar = statusbar
-		
-		# ========GUI END========
-		
+		self.statusbar = statusbar
 		
 	def tkloop(self):
 		"""get message from comiccrawler.messageBucket"""
 		
 		self.processMessage()
 		self.gRoot.after(100, self.tkloop)
+		
+	def remove(self, pool_name, *missions):
+		"""Wrap mission_manager.remove"""
+		for mission in missions:
+			if mission.state in ("DOWNLOADING", "ANALYZING"):
+				messagebox.showerror("Comic Crawler", "刪除任務失敗！任務使用中")
+		self.downloader.mission_manager.remove(pool_name, *missions)
 
 	def bindevent(self):
 		"""Bind events"""
 		
 		# something about entry
-		_presp = ""
 		def trieveclipboard(event):
-			nonlocal _presp
+			# Do nothing if there is something in the entry
+			if self.entry_url.get():
+				return
+				
 			try:
-				s = self.gRoot.clipboard_get(type="STRING")
+				url = self.root.clipboard_get(type="STRING")
 			except Exception:
 				return
-			sp = self.gEntry_url.get()
-			if not sp and self.moduleManager.validUrl(s) and s != _presp:
-				self.gEntry_url.insert(0, s)
-				self.gEntry_url.selection_range(0, "end")
-				self.gEntry_url.focus_set()
-		self.gRoot.bind("<FocusIn>", trieveclipboard)	
+			
+			if mods.get_module(url) and url != self.pre_url:
+				self.entry_url.insert(0, s)
+				self.entry_url.selection_range(0, "end")
+				self.entry_url.focus_set()
+		self.root.bind("<FocusIn>", trieveclipboard)	
 		
 		def entrykeypress(event):
 			addurl()
-		self.gEntry_url.bind("<Return>", entrykeypress)
+		self.entry_url.bind("<Return>", entrykeypress)
 		
-		def deleteUrl(url):
-			missions = self.downloadManager.missions
-			
-			try:
-				mission = missions.get(url)
-			except KeyError:
-				return False
-				
-			removeOld = messagebox.askyesno(
+		def ask_delete_mission(url):
+			return messagebox.askyesno(
 				"Comic Crawler",
 				"任務重覆，要刪除先前任務嗎？",
 				default="no"
 			)
-			if not removeOld:
-				return False
-			
-			missions.remove(mission)
-			return True
 		
 		# interface for download manager
 		def addurl():
-			nonlocal _presp
-			url = self.gEntry_url.get()
-			if (self.downloadManager.missions.containUrl(url)
-					and not deleteUrl(url)):
-				return			
-			self.downloadManager.addURL(url)
-			self.gEntry_url.delete(0, "end")
-			_presp = url
-				
-		self.gBtnaddurl["command"] = addurl
+			url = self.entry_url.get()
+			
+			mission = self.downloader.mission_manager.get_by_url(url, "view")
+			if mission:
+				if not ask_delete_mission():
+					return
+				self.remove("view", mission)				
+			self.downloader.add_url(url)
+			
+			self.entry_url.delete(0, "end")
+			self.pre_url = url
+		self.btn_addurl["command"] = addurl
 		
 		def startdownload():
-			self.downloadManager.startDownload()
-		self.gBtnstart["command"] = startdownload
+			self.downloader.start_download()
+		self.btn_start["command"] = startdownload
 		
 		def stopdownload():
-			self.downloadManager.stopDownload()
-		self.gBtnstop["command"] = stopdownload
+			self.downloader.stop_download()
+		self.btn_stop["command"] = stopdownload
 		
 		def cleanfinished():
-			self.downloadManager.missions.cleanfinished()
-		self.gBtnclean["command"] = cleanfinished
+			self.downloader.mission_manager.clean_finished()
+		self.btn_clean["command"] = cleanfinished
 		
 		def reloadconfig():
-			config.load()
-			self.moduleManager.loadconfig()
-			self.downloadManager.conf()
+			self.downloader.reload_config()
 			safeprint("設定檔重載成功！")
-		self.gBtnconfig["command"] = reloadconfig
+		self.btn_config["command"] = reloadconfig
 		
-		# interface for mission list
-		def tvdelete():
-			if messagebox.askyesno("Comic Crawler", "確定刪除？"):
-				s = self.tv_view.selection()
-				self.downloadManager.missions.remove(*[self.iidholder[k] for k in s])
-		self.tv_viewmenu.entryconfig(0, command=tvdelete)
-		
-		def tvlift():
-			s = self.tv_view.selection()
-			self.downloadManager.missions.lift(*[self.iidholder[k] for k in s])
-		self.tv_viewmenu.entryconfig(1, command=tvlift)
+		def create_menu_set(name):
+			"""Create a set of menu"""
+			menu = getattr(self, name + "_menu")
+			tv = getattr(self, "tv_" + name)
+			cid_index = getattr(self, "cid_" + name)
 			
-		def tvdrop():
-			s = self.tv_view.selection()
-			self.downloadManager.missions.drop(*[self.iidholder[k] for k in s])
-		self.tv_viewmenu.entryconfig(2, command=tvdrop)
-		
-		def tvchangetitle():
-			s = self.tv_view.selection()
-			mission = self.iidholder[s[0]]
-			selectTitle(self.gRoot, mission)
-		self.tv_viewmenu.entryconfig(3, command=tvchangetitle)
-		
-		def tvAddToLib():
-			s = self.tv_view.selection()
-			# mission = self.iidholder[s[0]]
-			missions = [ self.iidholder[i] for i in s ]
-			titles = [ m.mission.title for m in missions ]
-			for mission in missions:
-				self.downloadManager.addLibrary(mission)
-			safeprint("已加入圖書館︰{}".format(", ".join(titles)))
-		self.tv_viewmenu.entryconfig(4, command=tvAddToLib)
-		
-		def tvReselectEP():
-			s = self.tv_view.selection()
-			# mission = self.iidholder[s[0]]
-			missionContainers = [ self.iidholder[i] for i in s ]
-			for missionContainer in missionContainers:
-				reselectEp(self.gRoot, missionContainer)
-				# selectEp(self.gRoot, missionContainer.mission)
-		self.tv_viewmenu.entryconfig(5, command=tvReselectEP)
+			# bind menu helper			
+			def bind_menu(label):
+				def bind_menu_inner(func)
+					menu.add_command(label=label, command=func)
+					return func
+				return bind_menu_inner
+			
+			# add commands...
+			@bind_menu("刪除")
+			def tvdelete():
+				if messagebox.askyesno("Comic Crawler", "確定刪除？"):
+					selected = tv.selection()
+					self.remove(name, *[cid_index[cid] for cid in selected])
+			
+			@bind_menu("移至頂部")
+			def tvlift():
+				selected = tv.selection()
+				self.downloader.mission_manager.lift(name, *[cid_index[cid] for cid in selected])
 				
-		def tvOpen():
-			s = self.tv_view.selection()
-			missionContainers = [ self.iidholder[i] for i in s ]
-			for missionContainer in missionContainers:
-				mission = missionContainer.mission
-				savepath = self.downloadManager.setting["savepath"]
-				folder = os.path.join(savepath, safefilepath(mission.title))
-				os.startfile(folder)
-		self.tv_viewmenu.entryconfig(6, command=tvOpen)
-				
-		def tvOpenBrowser():
-			s = self.tv_view.selection()
-			missionContainers = [ self.iidholder[i] for i in s ]
-			for missionContainer in missionContainers:
-				webbrowser.open(missionContainer.mission.url)
-		self.tv_viewmenu.entryconfig(7, command=tvOpenBrowser)
-				
-		def tvmenucall(event):
-			self.tv_viewmenu.post(event.x_root, event.y_root)
-		self.tv_view.bind("<Button-3>", tvmenucall)
+			@bind_menu("移至底部")
+			def tvdrop():
+				selected = tv.selection()
+				self.downloader.mission_manager.drop(name, *[cid_index[cid] for cid in selected])
+			
+			@bind_menu("改名")
+			def tvchangetitle():
+				selected = tv.selection()
+				mission = cid_index[selected[0]]
+				select_title(self.root, mission)
+			
+			@bind_menu("重新選擇集數")
+			def tvReselectEP():
+				s = tv.selection()
+				missions = [ cid_index[i] for i in s ]
+				for mission in missions:
+					reselectEp(self.root, mission)
+			
+			@bind_menu("開啟資料夾")
+			def tvOpen():
+				s = tv.selection()
+				missions = [ cid_index[i] for i in s ]
+				savepath = self.downloader.setting["savepath"]
+				for mission in missions:
+					folder = os.path.join(savepath, safefilepath(mission.title))
+					os.startfile(folder)
+
+			@bind_menu("開啟網頁")
+			def tvOpenBrowser():
+				s = tv.selection()
+				missions = [ cid_index[i] for i in s ]
+				for mission in missions:
+					webbrowser.open(mission.url)
+					
+			if name == "view":
+				@bind_menu("加入圖書館")
+				def tvAddToLib():
+					s = tv.selection()
+					missions = [ cid_index[i] for i in s ]
+					titles = [ m.title for m in missions ]
+					self.downloader.mission_manager.add("library", *missions)
+					safeprint("已加入圖書館︰{}".format(", ".join(titles)))
+			
+			# menu call
+			def tvmenucall(event):
+				tv.post(event.x_root, event.y_root)
+			tv.bind("<Button-3>", tvmenucall)
+			
+		create_menu_set("view")
 		
 		# interface for library
 		def libCheckUpdate():
-			self.downloadManager.startCheckUpdate()
-		self.gBtnUpdate["command"] = libCheckUpdate
+			self.downloader.start_check_update()
+		self.btn_update["command"] = libCheckUpdate
 		
 		def libDownloadUpdate():
-			self.downloadManager.addMissionUpdate()
-			self.gNotebook.select(0)
-			self.downloadManager.startDownload()
-		self.gBtnDownloadUpdate["command"] = libDownloadUpdate
+			self.downloader.add_mission_update()
+			self.downloadManager.start_download()
+			self.notebook.select(0)
+		self.btn_download_update["command"] = libDownloadUpdate
 		
-		# interface for library list
-		def libMenuDelete():
-			if messagebox.askyesno("Comic Crawler", "確定刪除？"):
-				s = self.gLibTV.selection()
-				self.downloadManager.library.remove(*[self.libIdIndex[k] for k in s])
-		self.gLibMenu.entryconfig(0, command=libMenuDelete)
-		
-		def libMenuReselectEP():
-			s = self.gLibTV.selection()
-			missions = [self.libIdIndex[k] for k in s]
-			for mission in missions:
-				reselectEp(self.gRoot, mission)
-				# selectEp(self.gRoot, mission.mission)
-		self.gLibMenu.entryconfig(1, command=libMenuReselectEP)
-		
-		def libMenuOpen():
-			s = self.gLibTV.selection()
-			missions = [self.libIdIndex[k] for k in s]
-			for mission in missions:
-				mission = mission.mission
-				savepath = self.downloadManager.setting["savepath"]
-				folder = os.path.join(savepath, safefilepath(mission.title))
-				os.startfile(folder)
-		self.gLibMenu.entryconfig(2, command=libMenuOpen)
-				
-		def libMenuOpenBrowser():
-			safeprint("OK")
-			s = self.gLibTV.selection()
-			missions = [self.libIdIndex[k] for k in s]
-			for mission in missions:
-				mission = mission.mission
-				safeprint("Open {} ...".format(mission.url))
-				webbrowser.open(mission.url)
-		self.gLibMenu.entryconfig(3, command=libMenuOpenBrowser)
-				
-		def libMenuCall(event):
-			self.gLibMenu.post(event.x_root, event.y_root)
-		self.gLibTV.bind("<Button-3>", libMenuCall)
+		# interface for library menu
+		create_menu_set("library")
 		
 		# close window event
 		def beforequit():
-			if (self.downloadManager.downloadWorker and self.downloadManager.downloadWorker.running and 
-					not messagebox.askokcancel("Comic Crawler",
-						"任務下載中，確定結束？")):
-				return
-			self.downloadManager.stopDownload()
-			self.gRoot.destroy()
-		self.gRoot.protocol("WM_DELETE_WINDOW", beforequit)
+			if is_running(self.downloader.download_thread)
+				if not messagebox.askokcancel(
+						"Comic Crawler",
+						"任務下載中，確定結束？"):
+					return
+			self.downloader.stop_download()
+			self.root.destroy()
+		self.root.protocol("WM_DELETE_WINDOW", beforequit)
 		
-	def safeprintCallback(self, text):
-		self.message("MESSAGE", text)
+	def sp_callback(self, text):
+		self.message("LOG_MESSAGE", text)
 		
-	def addtotree(self, mission):
-		"""Add item into treeview."""
-
-		downloader = mission.downloader
-		m = mission.mission
-		cid = self.tv_view.insert("","end",
-				values=(m.title, downloader.name, STATE[m.state]))
-		self.iidholder[cid] = mission
-			
-	def load(self):
-		"""load mission from mission que"""
-		
-		missionlist = self.downloadManager.missions.data
-		for key, m in missionlist.items():
-			self.addtotree(m)
-	
-	def tvrefresh(self):
+	def tv_refresh(self, pool_name):
 		"""refresh treeview"""
-
-		ids = self.tv_view.get_children()
-		self.tv_view.delete(*ids)
-		self.iidholder = {}
-		self.load()
 		
-	def libTvRefresh(self):
-		"""refresh lib treeview"""
-		
-		tv = self.gLibTV
+		# cleanup
+		tv = getattr(self, "tv_" + pool_name)
+		cid_index = getattr(sef, "cid_" + pool_name)
 		ids = tv.get_children()
 		tv.delete(*ids)
-		self.libIdIndex = {}
+		cid_index.clear()
 		
-		list = self.downloadManager.library.data
-		for key, m in list.items():
-			cid = tv.insert("","end",
-				values=(m.mission.title, m.downloader.name, STATE[m.mission.state]))
-			self.libIdIndex[cid] = m
-			
-def reselectEp(parent, container):
+		missions = getattr(self.downloader.missions_manager, pool_name).values()
+		for m in missions:
+			cid = tv.insert(
+				"", 
+				"end",
+				values=(mission.title, mission.module.name, STATE[mission.state])
+			)
+			cid_index[cid] = mission
+					
+def reselectEp(parent, mission):
 	"""Reselect episode"""
-	ret = selectEp(parent, container.mission)
-	if ret:
-		container.set("state", "ANALYZED")
+	if selectEp(parent, mission):
+		mission.set("state", "ANALYZED")
 		
-def selectTitle(parent, item):
+def selectTitle(parent, mission):
 	"""change mission title dialog"""
 	
 	w = Dialog(parent)
 	
 	entry = Entry(w.body)
-	entry.insert(0, item.mission.title)
+	entry.insert(0, mission.title)
 	entry.selection_range(0, "end")
 	entry.pack()
 	
@@ -587,7 +532,7 @@ def selectTitle(parent, item):
 	
 	def apply():
 		title = entry.get()
-		item.set("title", title)
+		mission.set("title", title)
 		
 	w.apply = apply
 	
@@ -608,7 +553,7 @@ def selectEp(parent, mission):
 	i = 0
 	
 	# make checkbutton into inner frame
-	for ep in mission.episodelist:
+	for ep in mission.episodes:
 		ck = Checkbutton(inner, text=ep.title)
 		ck.state(("!alternate",))
 		if not ep.skip:
@@ -630,10 +575,9 @@ def selectEp(parent, mission):
 		return _
 		
 	from math import ceil
-	for i in range(ceil(len(mission.episodelist) / 20)):
+	for i in range(ceil(len(mission.episodes) / 20)):
 		ck = Checkbutton(inner)
 		ck.state(("!alternate", "selected"))
-		# print(ck.state())
 		ck.grid(column=i, row=20, sticky="w")
 		ck.config(command=colsel(ck, i))
 		

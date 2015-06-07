@@ -35,7 +35,7 @@ from .core import Mission, Episode, download, analyze, createdir
 from .io import content_read, content_write
 from .mods import list_domain, load_config
 
-import .config as config
+from . import config
 
 def shallow(dict, exclude=None):
 	new_dict = {}
