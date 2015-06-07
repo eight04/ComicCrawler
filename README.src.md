@@ -44,7 +44,7 @@ Comic Crawler is on [PyPI][2]. 安裝完 python 後，可以直接用 pip 指令
 	
 Supported domains
 -----------------
-> chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org g.e-hentai.org konachan.com manhua.dmzj.com tel.dm5.com www.8comic.com www.99comic.com www.comicvip.com www.dm5.com www.manhuadao.com www.pixiv.net yande.re
+> @@SUPPORTED_DOMAINS
 
 
 使用說明
