@@ -9,10 +9,11 @@ from urllib.request import Request, urlopen
 from gzip import decompress
 from worker import WorkerExit, UserWorker
 from traceback import print_exc
+from html import unescape
 
 from .safeprint import safeprint
-from .error import TooManyRetryError, LastPageError, SkipEpisodeError
-from .io import content_write
+from .error import TooManyRetryError, LastPageError, SkipEpisodeError, ImageExistsError
+from .io import content_write, is_file
 from .config import setting
 
 default_header = {
@@ -182,17 +183,17 @@ def download(mission, savepath, thread=None):
 	# warning there is a deadlock, 
 	# never do mission.lock.acquire in callback...
 	safeprint("Start downloading " + mission.title)
-	mission.set("state", "DOWNLOADING", thread)
+	mission.set("state", "DOWNLOADING")
 	try:
 		crawl(mission, savepath, thread)
 	except WorkerExit:
-		mission.set("state", "PAUSE", thread)
+		mission.set("state", "PAUSE")
 		raise
 	except Exception:
-		mission.set("state", "ERROR", thread)
+		mission.set("state", "ERROR")
 		raise
 	else:
-		mission.set("state", "FINISHED", thread)
+		mission.set("state", "FINISHED")
 			
 def crawl(mission, savepath, thread):
 	"""Start mission download. This method will call cls.crawlpage()
@@ -284,9 +285,6 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 		if len(imgurls) < ep.current_page:
 			raise LastPageError			
 
-	# some file already in directory
-	downloadedlist = [ i.rpartition(".")[0] for i in listdir(savepath) ]
-	
 	# crawl all pages
 	errorcount = 0
 	while True:
@@ -330,7 +328,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 			fn = fexp.format(ep.current_page)
 			
 			# file already exist
-			if fn in downloadedlist:
+			if is_file(fn):
 				raise ImageExistsError
 				
 			safeprint("Downloading {} page {}: {}".format(
@@ -388,25 +386,25 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 def analyze(mission, thread=None):	
 	"""Analyze mission.url"""
 
-	mission.set("state", "ANALYZING", thread)
+	mission.set("state", "ANALYZING")
 	
 	try:
 		analyze_info(mission, mission.module, thread)
 		
 	except WorkerExit:
-		mission.set("state", "PAUSE", thread)
+		mission.set("state", "PAUSE")
 		raise
 		
 	except Exception as er:
-		mission.set("state", "ERROR", thread)
+		mission.set("state", "ERROR")
 		print_exc()
 		thread.bubble("ANALYZE_FAILED", (mission, er))
 		
 	else:
 		if mission.update:
-			mission.set("state", "UPDATE", thread)
+			mission.set("state", "UPDATE")
 		else:
-			mission.set("state", "ANALYZED", thread)
+			mission.set("state", "ANALYZED")
 			
 		thread.bubble("ANALYZE_FINISHED", mission)
 
@@ -417,7 +415,7 @@ def remove_duplicate_episode(mission):
 	cleanList = []
 	for ep in mission.episodes:
 		if ep.url not in s:
-			s.add(ep.firstpageurl)
+			s.add(ep.url)
 			cleanList.append(ep)
 	mission.episodes = cleanList
 			

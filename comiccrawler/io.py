@@ -4,6 +4,11 @@
 
 import os, os.path as path, pprint
 
+def is_file(file):
+	file = path.expanduser(file)
+	
+	return path.isfile(file)
+
 def content_write(file, content):
 	file = path.expanduser(file)
 	
@@ -14,11 +19,12 @@ def content_write(file, content):
 		with open(file, "wb") as f:
 			f.write(content)
 			
-	if not isinstance(content, str):
-		content = pprint.pformat(content)
-		
-	with open(file, "w", encoding="utf-8") as f:
-		f.write(content)	
+	else:				
+		if not isinstance(content, str):
+			content = pprint.pformat(content)
+			
+		with open(file, "w", encoding="utf-8") as f:
+			f.write(content)	
 		
 def content_read(file):
 	file = path.expanduser(file)

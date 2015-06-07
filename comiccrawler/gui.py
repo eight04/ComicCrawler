@@ -156,7 +156,7 @@ class MainWindow(worker.UserWorker):
 			if cid is not None:
 				self.update_mission_info(self.tv_library, cid, mission)
 			
-		@self.listen("MISSIONQUE_ARRANGE")
+		@self.listen("MISSION_LIST_REARRANGED")
 		def dummy(que):
 			if que == self.downloader.mission_manager.view:
 				self.tv_refresh("view")
@@ -343,7 +343,7 @@ class MainWindow(worker.UserWorker):
 				return
 			
 			if mods.get_module(url) and url != self.pre_url:
-				self.entry_url.insert(0, s)
+				self.entry_url.insert(0, url)
 				self.entry_url.selection_range(0, "end")
 				self.entry_url.focus_set()
 		self.root.bind("<FocusIn>", trieveclipboard)	
@@ -363,11 +363,15 @@ class MainWindow(worker.UserWorker):
 		def addurl():
 			url = self.entry_url.get()
 			
-			mission = self.downloader.mission_manager.get_by_url(url, "view")
-			if mission:
+			try:
+				mission = self.downloader.mission_manager.get_by_url(url, "view")
+			except KeyError:
+				pass
+			else:
 				if not ask_delete_mission():
 					return
 				self.remove("view", mission)				
+				
 			self.downloader.add_url(url)
 			
 			self.entry_url.delete(0, "end")
@@ -438,10 +442,10 @@ class MainWindow(worker.UserWorker):
 			def tvOpen():
 				s = tv.selection()
 				missions = [ cid_index[i] for i in s ]
-				savepath = self.downloader.setting["savepath"]
+				savepath = config.get("savepath")
 				for mission in missions:
 					folder = os.path.join(savepath, safefilepath(mission.title))
-					os.startfile(folder)
+					os.startfile(os.expanduser(folder))
 
 			@bind_menu("開啟網頁")
 			def tvOpenBrowser():
@@ -461,7 +465,7 @@ class MainWindow(worker.UserWorker):
 			
 			# menu call
 			def tvmenucall(event):
-				tv.post(event.x_root, event.y_root)
+				menu.post(event.x_root, event.y_root)
 			tv.bind("<Button-3>", tvmenucall)
 			
 		create_menu_set("view")
@@ -502,13 +506,13 @@ class MainWindow(worker.UserWorker):
 		
 		# cleanup
 		tv = getattr(self, "tv_" + pool_name)
-		cid_index = getattr(sef, "cid_" + pool_name)
+		cid_index = getattr(self, "cid_" + pool_name)
 		ids = tv.get_children()
 		tv.delete(*ids)
 		cid_index.clear()
 		
-		missions = getattr(self.downloader.missions_manager, pool_name).values()
-		for m in missions:
+		missions = getattr(self.downloader.mission_manager, pool_name).values()
+		for mission in missions:
 			cid = tv.insert(
 				"", 
 				"end",
@@ -611,7 +615,7 @@ def selectEp(parent, mission):
 		for v in vs:
 			ck, ep = v
 			ep.skip = not ck.instate(("selected",))
-		w.result = len([ i for i in mission.episodelist if not i.skip ])
+		w.result = len([ i for i in mission.episodes if not i.skip ])
 	w.apply = apply
 	
 	def toggle():

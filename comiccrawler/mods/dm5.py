@@ -48,7 +48,7 @@ def getimgurls(html, url):
 	pages = search("DM5_IMAGE_COUNT=(\d+);", html).group(1)
 	cid = search("DM5_CID=(\d+);", html).group(1)
 	s = []
-	for p in range(1, int(pages)+1):
+	for p in range(1, int(pages) + 1):
 		currentUrl = "{}/chapterfun.ashx?cid={}&page={}&language=1&key={}".format(base, cid, p, key)
 		text = grabhtml(currentUrl, referer=url)
 		
