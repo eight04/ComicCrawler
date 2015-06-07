@@ -38,24 +38,24 @@ def getepisodelist(html, **kw):
 	e.firstpageurl = re.search("href=\"([^\"]+?-1)\"", html).group(1)
 	return [e]
 
+nl = 0
 def getimgurl(html, **kw):
-	i = re.search("<img id=\"img\" src=\"(.+?)\"", html)
+	global nl
+	nl = re.search("nl\((\d+)\)", html).group(1)
 	
+	i = re.search("<img id=\"img\" src=\"(.+?)\"", html)
 	i = i.group(1).replace("&amp;","&")
 	# bandwith limit
 	if re.search("509s?\.gif",i) is not None or re.search("403s?\.gif",i) is not None:
-		nl = re.search("nl\((\d+)\)", html).group(1)
 		raise BandwidthLimitError(nl)
 	return i
 
 def errorhandler(er, ep):
-	if type(er) is BandwidthLimitError:
-		nl = er.args[0]
-		np = ep.currentpageurl.split("?")[0] + "?nl={}".format(nl)
-		if ep.currentpageurl == np:
-			ep.currentpageurl = np.split("?")[0]
-		else:
-			ep.currentpageurl = np
+	np = ep.currentpageurl.split("?")[0] + "?nl={}".format(nl)
+	if ep.currentpageurl == np:
+		ep.currentpageurl = np.split("?")[0]
+	else:
+		ep.currentpageurl = np
 
 def getnextpageurl(pagenumber, html, **kw):
 	r = re.search("href=\"([^\"]+?-{})\"".format(pagenumber+1), html)
