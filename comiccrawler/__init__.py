@@ -2,7 +2,7 @@
 
 """Comic Crawler."""
 
-from worker import Worker
+from worker import Worker, UserWorker
 from json import JSONEncoder
 from os import path
 from collections import OrderedDict
@@ -52,9 +52,11 @@ class MissionListEncoder(JSONEncoder):
 			
 		return super().default(obj)
 
-class MissionManager:
+class MissionManager(UserWorker):
 	"""Save, load missions from files"""
 	def __init__(self):
+		super().__init__()
+		
 		self.pool = {}
 		self.view = OrderedDict()
 		self.library = OrderedDict()
@@ -69,7 +71,7 @@ class MissionManager:
 		content_write("~/comiccrawler/view.json", json.dumps(self.view, cls=MissionListEncoder))
 		content_write("~/comiccrawler/library.json", json.dumps(self.library, cls=MissionListEncoder))
 		
-	def load(self, thread=None):
+	def load(self):
 		pool = json.loads(content_read("~/comiccrawler/pool.json"))
 		view = json.loads(content_read("~/comiccrawler/view.json"))
 		library = json.loads(content_read("~/comiccrawler/library.json"))
@@ -81,24 +83,26 @@ class MissionManager:
 				episodes.append(Episode(**ep_data))
 			m_data["episodes"] = episodes
 			mission = Mission(**m_data)
+			self._add(mission)
 			
+		self.add("view", *[self.pool[url] for url in view])
+		self.add("library", *[self.pool[url] for url in library])
+		
+	def _add(self, mission):
+		if mission.url not in self.pool:
+			self.add_child(mission)
 			self.pool[mission.url] = mission
 			
-		self.add("view", *[self.pool[url] for url in view], thread=thread)
-		self.add("library", *[self.pool[url] for url in library], thread=thread)
-			
-	def add(self, pool_name, **missions, thread=None):
+	def add(self, pool_name, **missions):
 		pool = getattr(self, pool_name)
 		
 		for mission in missions:
-			if mission.url not in self.pool:
-				self.pool[mission.url] = mission
+			self._add(mission)
 			pool[mission.url] = mission
 			
-		if thread:
-			thread.message("MISSION_LIST_REARRANGED", pool, flag="BUBBLE")
+		self.bubble("MISSION_LIST_REARRANGED", pool)
 			
-	def remove(self, pool_name, **missions, thread=None):
+	def remove(self, pool_name, **missions):
 		pool = getattr(self, pool_name)
 		
 		# check mission state
@@ -111,8 +115,7 @@ class MissionManager:
 			if mission.url not in self.view and mission.url not in self.library:
 				del self.pool[mission.url]
 
-		if thread:
-			thread.message("MISSION_LIST_REARRANGED", pool, flag="BUBBLE")
+		self.bubble("MISSION_LIST_REARRANGED", pool)
 
 class MissionList(Worker):
 	"""Wrap OrderedDict. Add commonly using method."""

@@ -7,7 +7,7 @@ from re import sub, search
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 from gzip import decompress
-from worker import WorkerExit
+from worker import WorkerExit, UserWorker
 from traceback import print_exc
 
 from .safeprint import safeprint
@@ -20,9 +20,11 @@ default_header = {
 	"Accept-Encoding": "gzip, deflate"
 }
 
-class Mission:
+class Mission(UserWorker):
 	"""Mission data class. Contains a mission's information."""
 	def __init__(self, title=None, url=None, episodes=None, state="INIT", update=False):
+		super().__init__()
+		
 		self.title = title
 		self.url = url
 		self.episodes = episodes
@@ -32,15 +34,14 @@ class Mission:
 		if not self.module:
 			raise Exception("Get module failed")
 		
-	def set(self, key, value, thread):
+	def set(self, key, value):
 		"""Set new attribute"""
 		
 		if not hasattr(self, key):
 			return
 		
 		setattr(self, key, value)
-		thread.bubble("MISSION_PROPERTY_CHANGED", self)
-		thread.message("MISSION_PROPERTY_CHANGED", self)
+		self.bubble("MISSION_PROPERTY_CHANGED", self)
 
 class Episode:
 	"""Episode data class. Contains a book's information."""
