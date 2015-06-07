@@ -12,6 +12,8 @@ from traceback import print_exc
 
 from .safeprint import safeprint
 from .error import TooManyRetryError, LastPageError, SkipEpisodeError
+from .io import content_write
+from .config import setting
 
 default_header = {
 	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0",
@@ -89,24 +91,6 @@ def getext(byte):
 		
 	return None
 			
-def createdir(path):
-	"""Create folder of filepath. 
-	
-	This function can handle sub-folder like 
-	"this_doesnt_exist\sure_this_doesnt_exist_either\I_want_to_create_this"
-	"""
-	
-	path = normpath(path)
-	
-	try:
-		mkdir(path)
-	except FileExistsError:
-		pass
-	except FileNotFoundError as er:
-		a, b = split(path)
-		createdir(a)
-		createdir(path)
-	
 def safefilepath(s):
 	"""Return a safe directory name. Return string."""
 
@@ -133,7 +117,7 @@ def safeheader(header):
 	for key in header:
 		header[key] = quote_unicode(header[key])
 	return header
-
+	
 def grabber(url, header=None, raw=False, referer=None):
 	"""Http works"""
 	
@@ -156,20 +140,33 @@ def grabber(url, header=None, raw=False, referer=None):
 	response = urlopen(request, timeout=20)
 	b = response.read()
 	
-	if raw:
-		return b
-	
-	# decompress gziped data
-	if response.getheader("Content-Encoding") == "gzip":
-		b = decompress(b)
-	
-	# find html defined encoding
-	s = b.decode("utf-8", "replace")
-	match = search(r"charset=[\"']?([^\"'>]+)", s)
-	if match:
-		s = b.decode(match.group(1), "replace")
+	def parse_content(b):
+		if raw:
+			return b
 			
-	return s
+		# decompress gziped data
+		if response.getheader("Content-Encoding") == "gzip":
+			b = decompress(b)
+		
+		# find html defined encoding
+		s = b.decode("utf-8", "replace")
+		match = search(r"charset=[\"']?([^\"'>]+)", s)
+		if match:
+			s = b.decode(match.group(1), "replace")
+			
+		return s
+	
+	content = parse_content(b)
+	
+	if setting.getboolean("errorlog"):
+		from pprint import pformat
+		content_write("~/comiccrawler/grabber.file.log", content)
+		content_write("~/comiccrawler/grabber.header.log", "{}\n\n{}".format(
+			pformat(request.header_items()),
+			pformat(response.getheaders())
+		))
+	
+	return content
 
 def grabhtml(url, header=None, referer=None):
 	"""Get html source of given url. Return String."""
@@ -288,7 +285,6 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 			raise LastPageError			
 
 	# some file already in directory
-	createdir(savepath)
 	downloadedlist = [ i.rpartition(".")[0] for i in listdir(savepath) ]
 	
 	# crawl all pages
@@ -374,8 +370,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 			
 		else:
 			# everything is ok, save image
-			with open(join(savepath, "{}.{}".format(fn, ext)), "wb") as f:
-				f.write(oi)
+			content_write(join(savepath, "{}.{}".format(fn, ext)), oi)
 			
 		# something have to rewrite, check currentpage url rather than
 		# nextpage. Cuz sometime currentpage doesn't exist either.

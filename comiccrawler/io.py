@@ -2,7 +2,7 @@
 
 """Simple io module depress exceptions"""
 
-import os, os.path as path
+import os, os.path as path, pprint
 
 def content_write(file, content):
 	file = path.expanduser(file)
@@ -10,8 +10,15 @@ def content_write(file, content):
 	if not path.isdir(path.dirname(file)):
 		os.makedirs(path.dirname(file))
 	
+	if isinstance(content, bytes):
+		with open(file, "wb") as f:
+			f.write(content)
+			
+	if not isinstance(content, str):
+		content = pprint.pformat(content)
+		
 	with open(file, "w", encoding="utf-8") as f:
-		f.write(content)
+		f.write(content)	
 		
 def content_read(file):
 	file = path.expanduser(file)

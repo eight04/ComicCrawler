@@ -31,7 +31,7 @@ from collections import OrderedDict
 
 from .safeprint import safeprint
 from .config import setting, section
-from .core import Mission, Episode, download, analyze, createdir
+from .core import Mission, Episode, download, analyze
 from .io import content_read, content_write
 from .mods import list_domain, load_config
 
@@ -268,7 +268,7 @@ class DownloadManager(UserWorker):
 		config.load("~/comiccrawler/setting.ini")
 		
 		default = {
-			"savepath": "download",
+			"savepath": "~/comiccrawler/download",
 			"runafterdownload": "",
 			"libraryautocheck": "True"
 		}
@@ -346,11 +346,7 @@ def console_init():
 		
 	elif arguments["gui"]:
 		from .gui import MainWindow
-		MainWindow().start().join()
+		MainWindow().run()
 		
 	elif arguments["download"]:
 		console_download(arguments["URL"], arguments["savepath"])
-		
-if __name__ == "__main__":
-	console_init()
-	

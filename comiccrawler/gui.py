@@ -11,8 +11,8 @@ from functools import partial
 import sys, os, webbrowser, worker
 import tkinter.messagebox as messagebox
 
-from . import config, mods, safeprint as sp
-from .safeprint import safeprint
+from . import config, mods, DownloadManager
+from .safeprint import safeprint, addcallback as sp_addcallback, removecallback as sp_removecallback
 
 STATE = {
 	"INIT": "準備",
@@ -110,9 +110,9 @@ class MainWindow(worker.UserWorker):
 		
 	def init(self):
 		"""Create mission downloader"""
-		sp.addcallback(self.sp_callback)
+		sp_addcallback(self.sp_callback)
 		
-		self.downloader = DownloadManager().start()
+		self.downloader = self.create_child(DownloadManager).start()
 		self.cid_view = {}
 		self.cid_library = {}
 		
@@ -126,7 +126,7 @@ class MainWindow(worker.UserWorker):
 		
 	def uninit(self):
 		"""Remove safeprint callback"""
-		sp.removecallback(self.sp_callback)
+		sp_removecallback(self.sp_callback)
 		
 	def get_cid(self, cid_index, mission):
 		"""Get matched cid from cid index"""
@@ -318,8 +318,8 @@ class MainWindow(worker.UserWorker):
 	def tkloop(self):
 		"""get message from comiccrawler.messageBucket"""
 		
-		self.processMessage()
-		self.gRoot.after(100, self.tkloop)
+		self.cleanup()
+		self.root.after(100, self.tkloop)
 		
 	def remove(self, pool_name, *missions):
 		"""Wrap mission_manager.remove"""
@@ -399,7 +399,7 @@ class MainWindow(worker.UserWorker):
 			
 			# bind menu helper			
 			def bind_menu(label):
-				def bind_menu_inner(func)
+				def bind_menu_inner(func):
 					menu.add_command(label=label, command=func)
 					return func
 				return bind_menu_inner
@@ -480,9 +480,12 @@ class MainWindow(worker.UserWorker):
 		# interface for library menu
 		create_menu_set("library")
 		
+		def is_running(thread):
+			return thread and thread.is_running()
+		
 		# close window event
 		def beforequit():
-			if is_running(self.downloader.download_thread)
+			if is_running(self.downloader.download_thread):
 				if not messagebox.askokcancel(
 						"Comic Crawler",
 						"任務下載中，確定結束？"):
