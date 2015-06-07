@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 # To use a consistent encoding
 from codecs import open
 from os import path
-from build import find_version, read, write
+from build import find_version
 
 import re, pypandoc
 
@@ -21,7 +21,7 @@ settings = {
 	"version": find_version("comiccrawler/__init__.py"),
 	"description": 'An image crawler with extendible modules and gui',
 	# Get the long description from the relevant file
-	"long_description": pypandoc.convert(read("README.md"), "rst", format="md"),
+	"long_description": pypandoc.convert("README.md", "rst").replace("\r", ""),
 	"url": 'https://github.com/eight04/ComicCrawler',
 	"author": 'eight',
 	"author_email": 'eight04@gmail.com',
