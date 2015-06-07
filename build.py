@@ -6,7 +6,7 @@ here = path.abspath(path.dirname(__file__))
 
 def read(file):
 	with open(path.join(here, file), "r", encoding='utf-8') as f:
-		content = f.read().replace("\r\n", "\n")
+		content = f.read().replace("\r", "")
 	return content
 	
 def write(file, content):
