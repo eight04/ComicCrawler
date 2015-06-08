@@ -6,7 +6,17 @@ Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管�
 
 20150608 更新
 -------------
-* 
+* 放上 PyPI，改變安裝方式
+* 使用 json 儲存檔案，存檔結構改變。使用 migrate 指令可以將當下目錄的 save.dat,
+  library.dat 轉換成新格式。
+* 更新方法︰
+	- 開啟 cmd，輸入 `pip install comiccrawler`
+	- 用 cd 指令進入舊存檔的資料夾。例 `cd /d D:\ComicCrawler-master`
+	- 輸入 `comiccrawler migrate` 轉換存檔。
+	- 輸入 `comiccrawler gui` 啟動，啟動完再關閉。
+	- 開啟資料夾 `%USERPROFILE%\comiccrawler`，把 `setting.ini` 給覆蓋掉。
+	- 再次輸入 `comiccrawler gui`。
+		+ 以後只要輸入這個指令就能啟動了
 
 Features
 --------
@@ -37,11 +47,11 @@ Comic Crawler is on [PyPI][2]. 安裝完 python 後，可以直接用 pip 指令
 安裝時記得要選「Add python.exe to path」，才能使用 pip 指令。
 
 ### Comic Crawler ###
-在 cmd 底下輸入以下指令
+在 cmd 底下輸入以下指令︰
 
 	pip install comiccrawler
 	
-要更新時用
+更新時︰
 
 	pip install --update comiccrawler
 
@@ -58,12 +68,14 @@ Usage:
   comiccrawler domains
   comiccrawler download URL [--dest SAVE_FOLDER]
   comiccrawler gui
+  comiccrawler migrate
   comiccrawler (--help | --version)
   
 Commands:
   domains             列出支援的網址
   download URL        下載指定的 url
   gui                 啟動主視窗
+  migrate             轉換當前目錄底下的 save.dat, library.dat 成新格式
   
 Options:
   --dest SAVE_FOLDER  設定下載目錄（預設為 "."）
