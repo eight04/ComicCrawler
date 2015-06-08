@@ -12,7 +12,7 @@ from html import unescape
 from urllib.error import HTTPError
 
 from ..core import Episode, grabhtml
-from ..error import LastPageError, SkipEpisodeError, AccountError
+from ..error import LastPageError, SkipEpisodeError, PauseDownloadError
 from ..safeprint import safeprint
 
 header = {}
@@ -28,7 +28,7 @@ def loadconfig():
 
 def gettitle(html, url):
 	if "pixiv.user.loggedIn = true" not in html:
-		raise AccountError("you didn't login!")
+		raise PauseDownloadError("you didn't login!")
 	user = re.search("class=\"user\">(.+?)</h1>", html).group(1)
 	id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
 	return "{} - {}".format(id, user)
@@ -55,7 +55,7 @@ def getepisodelist(html, url):
 
 def getimgurls(html, url):
 	if "pixiv.user.loggedIn = true" not in html:
-		raise AccountError("you didn't login!")
+		raise PauseDownloadError("you didn't login!")
 		
 	base = re.search(r"https?://[^/]+", url).group()
 	

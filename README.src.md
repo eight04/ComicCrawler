@@ -4,6 +4,10 @@ Comic Crawler
 Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管理員、圖書館功能、
 與方便的擴充能力。
 
+Todos
+-----
+* Ignore module.rest in ImageExistsError.
+
 20150608 更新
 -------------
 * 放上 PyPI，改變安裝方式

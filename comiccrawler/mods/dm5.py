@@ -49,9 +49,11 @@ def getimgurls(html, url):
 	cid = search("DM5_CID=(\d+);", html).group(1)
 	s = []
 	for p in range(1, int(pages) + 1):
-		safeprint("Preloading page {}...".format(p))
-		currentUrl = "{}/chapterfun.ashx?cid={}&page={}&language=1&key={}".format(base, cid, p, key)
-		text = grabhtml(currentUrl, referer=url)
+		import urllib.parse
+		cp_url = urllib.parse.urljoin(url, "chapterfun.ashx?cid={}&page={}&language=1&key={}&gtk=6".format(cid, p, key))
+		safeprint(cp_url)
+		# text = grabhtml(cp_url, referer=url, errorlog="~/comiccrawler/dm5-{}-{}-{}/".format(cid, p, key))
+		text = grabhtml(cp_url, referer=url)
 		
 		d = compile(text).eval("(typeof (hd_c) != 'undefined' && hd_c.length > 0 && typeof (isrevtt) != 'undefined') ? hd_c : d")
 		

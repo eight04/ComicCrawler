@@ -12,7 +12,7 @@ from traceback import print_exc
 from html import unescape
 
 from .safeprint import safeprint
-from .error import LastPageError, SkipEpisodeError, ImageExistsError
+from .error import LastPageError, SkipEpisodeError, ImageExistsError, PauseDownloadError
 from .io import content_write, is_file
 from .config import setting
 
@@ -103,7 +103,7 @@ def quote_from_match(match):
 	return quote(match.group())
 	
 def quote_unicode(s):
-	return sub(r"[\u0080-\uffff \[\]]+", quote_from_match, s)
+	return sub(r"[\u0080-\uffff]+", quote_from_match, s)
 	
 def safeurl(url):
 	"""Return a safe url, quote the unicode characters."""
@@ -124,7 +124,7 @@ def safeheader(header):
 		header[key] = quote_unicode(value)
 	return header
 	
-def grabber(url, header=None, raw=False, referer=None):
+def grabber(url, header=None, raw=False, referer=None, errorlog=None):
 	"""Http works"""
 	
 	url = safeurl(url)
@@ -164,23 +164,25 @@ def grabber(url, header=None, raw=False, referer=None):
 	
 	content = parse_content(b)
 	
-	if setting.getboolean("errorlog"):
+	if errorlog or setting.getboolean("errorlog"):
+		if not errorlog:
+			errorlog = "~/comiccrawler"
 		from pprint import pformat
-		content_write("~/comiccrawler/grabber.file.log", content)
-		content_write("~/comiccrawler/grabber.header.log", "{}\n\n{}".format(
+		content_write(join(errorlog, "grabber.file.log"), content)
+		content_write(join(errorlog, "grabber.header.log"), "{}\n\n{}".format(
 			pformat(request.header_items()),
 			pformat(response.getheaders())
 		))
 	
 	return content
 
-def grabhtml(url, header=None, referer=None):
+def grabhtml(url, header=None, referer=None, errorlog=None):
 	"""Get html source of given url. Return String."""
-	return grabber(url, header, False, referer)
+	return grabber(url, header, False, referer, errorlog)
 
-def grabimg(url, header=None, referer=None):
+def grabimg(url, header=None, referer=None, errorlog=None):
 	"""Return byte stream."""	
-	return grabber(url, header, True, referer)
+	return grabber(url, header, True, referer, errorlog)
 	
 def download(mission, savepath, thread=None):
 	"""download worker"""
@@ -198,6 +200,9 @@ def download(mission, savepath, thread=None):
 		mission.set("state", "ERROR")
 		thread.bubble("DOWNLOAD_ERROR", mission)
 		raise
+	except PauseDownloadError:
+		mission.set("state", "ERROR")
+		thread.bubble("DOWNLOAD_INVALID", mission)
 	else:
 		mission.set("state", "FINISHED")
 		thread.bubble("DOWNLOAD_FINISHED", mission)
@@ -412,8 +417,11 @@ def analyze(mission, thread=None):
 		print_exc()
 		thread.bubble("ANALYZE_FAILED", (mission, er))
 		
+	except PauseDownloadError:
+		mission.set("state", "ERROR")
+		thread.bubble("ANALYZE_INVALID", mission)
+		
 	else:
-			
 		thread.bubble("ANALYZE_FINISHED", mission)
 
 def remove_duplicate_episode(mission):

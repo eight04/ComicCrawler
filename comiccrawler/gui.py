@@ -183,6 +183,20 @@ class MainWindow(worker.UserWorker):
 				"Comic Crawler",
 				"讀取存檔失敗！移至 {}\n{}".format(*param)
 			)
+			
+		@self.listen("DOWNLOAD_INVALID")
+		def dummy(mission):
+			messagebox.showerror(
+				mission.module.name,
+				"停止下載！未登入？"
+			)
+		
+		@self.listen("ANALYZE_INVALID")
+		def dummy(mission):
+			messagebox.showerror(
+				mission.module.name,
+				"停止分析！未登入？"
+			)
 				
 	def create_view(self):
 		"""Draw the window."""

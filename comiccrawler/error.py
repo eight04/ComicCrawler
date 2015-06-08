@@ -1,15 +1,9 @@
-class CrawlerError(BaseException): pass
+class ComicCrawlerError(BaseException): pass
 
-class MissionDuplicateError(CrawlerError): pass
+class LastPageError(ComicCrawlerError): pass
 
-class ImageExistsError(CrawlerError): pass
+class SkipEpisodeError(ComicCrawlerError): pass
 
-class LastPageError(CrawlerError): pass
+class PauseDownloadError(ComicCrawlerError): pass
 
-class TooManyRetryError(CrawlerError): pass
-
-class EmptyImageError(CrawlerError): pass
-
-class SkipEpisodeError(CrawlerError): pass
-
-class AccountError(CrawlerError): pass
+class ImageExistsError(ComicCrawlerError): pass

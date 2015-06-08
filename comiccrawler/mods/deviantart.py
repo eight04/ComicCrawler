@@ -11,7 +11,7 @@ from re import search, compile
 from html import unescape
 
 from ..safeprint import safeprint
-from ..error import AccountError
+from ..error import PauseDownloadError
 from ..core import Episode, grabhtml
 
 header = {}
@@ -34,7 +34,7 @@ def gettitle(html, url):
 	
 def getepisodelist(html, url):
 	if '"loggedIn":true' not in html:
-		raise AccountError("you didn't log in!")
+		raise PauseDownloadError("you didn't log in!")
 	base = search("(https?://[^/]+)", url).group(1)
 	s = []
 	while True:
@@ -66,7 +66,7 @@ def getepisodelist(html, url):
 
 def getimgurls(html, url):
 	if '"loggedIn":true' not in html:
-		raise AccountError("you didn't log in!")
+		raise PauseDownloadError("you didn't log in!")
 
 	html = html.replace("\n", "")
 	try:
