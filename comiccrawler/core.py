@@ -12,7 +12,7 @@ from traceback import print_exc
 from html import unescape
 
 from .safeprint import safeprint
-from .error import TooManyRetryError, LastPageError, SkipEpisodeError, ImageExistsError
+from .error import LastPageError, SkipEpisodeError, ImageExistsError
 from .io import content_write, is_file
 from .config import setting
 
@@ -38,7 +38,7 @@ class Mission(UserWorker):
 		self.module = get_module(url)
 		if not self.module:
 			raise Exception("Get module failed")
-		
+			
 	def set(self, key, value):
 		"""Set new attribute"""
 		
@@ -59,7 +59,7 @@ class Episode:
 		self.current_page = current_page
 		self.skip = skip
 		self.complete = complete
-	
+		
 def getext(byte):
 	"""Test the file type according byte stream with imghdr
 	
@@ -284,7 +284,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 				errorcount += 1
 				
 				if errorcount >= 10:
-					raise TooManyRetryError
+					raise Exception("Retry too many times!")
 					
 				if hasattr(downloader, "errorhandler"):
 					try:
@@ -366,7 +366,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 			errorcount += 1
 			
 			if errorcount >= 10:
-				raise TooManyRetryError
+				raise Exception("Retry too many times!")
 			
 			if hasattr(downloader, "errorhandler"):
 				try:

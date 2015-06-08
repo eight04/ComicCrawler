@@ -49,6 +49,7 @@ def getimgurls(html, url):
 	cid = search("DM5_CID=(\d+);", html).group(1)
 	s = []
 	for p in range(1, int(pages) + 1):
+		safeprint("Preloading page {}...".format(p))
 		currentUrl = "{}/chapterfun.ashx?cid={}&page={}&language=1&key={}".format(base, cid, p, key)
 		text = grabhtml(currentUrl, referer=url)
 		

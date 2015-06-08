@@ -292,7 +292,7 @@ class DownloadManager(UserWorker):
 				if mission:
 					worker = self.create_child(download)
 					worker.start(mission, setting["savepath"])
-					self.downloadWorker = worker
+					self.download_thread = worker
 				else:
 					safeprint("All download completed")
 				
