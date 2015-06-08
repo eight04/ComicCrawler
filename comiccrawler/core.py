@@ -16,6 +16,8 @@ from .error import TooManyRetryError, LastPageError, SkipEpisodeError, ImageExis
 from .io import content_write, is_file
 from .config import setting
 
+import pprint
+
 default_header = {
 	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0",
 	"Accept-Language": "zh-tw,zh;q=0.8,en-us;q=0.5,en;q=0.3",
@@ -116,7 +118,9 @@ def safeheader(header):
 	
 	for key, value in header.items():
 		if not isinstance(value, str):
-			raise Exception("header must be str! " + str(value))
+			raise Exception(
+				"header value must be str!\n" + pprint.pformat(header)
+			)
 		header[key] = quote_unicode(value)
 	return header
 	

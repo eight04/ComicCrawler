@@ -23,7 +23,7 @@ def migrate():
 			return super().find_class(module, name)
 			
 	def get_new_ep(ep):
-		return Episode(
+		new_ep = Episode(
 			title=ep.title,
 			url=ep.firstpageurl,
 			current_url=getattr(ep, "currentpageurl", None),
@@ -31,6 +31,9 @@ def migrate():
 			skip=getattr(ep, "skip", False),
 			complete=getattr(ep, "complete", False)
 		)
+		if new_ep.current_url is True:
+			new_ep.current_url = new_ep.url
+		return new_ep
 			
 	def put_missions(file, pool_name):
 	
