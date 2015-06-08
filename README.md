@@ -50,6 +50,12 @@ Comic Crawler is on [PyPI][2]. 安裝完 python 後，可以直接用 pip 指令
 
 安裝時記得要選「Add python.exe to path」，才能使用 pip 指令。
 
+### Node.js ###
+有些網站的 JavaScript 用 Windows 內建的 Windows Script Host 會解析失敗，建議安裝 
+[Node.js][3].
+
+[3]: https://nodejs.org/
+
 ### Comic Crawler ###
 在 cmd 底下輸入以下指令︰
 
