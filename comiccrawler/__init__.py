@@ -151,6 +151,9 @@ class MissionManager(UserWorker):
 			library = json.loads(content_read("~/comiccrawler/library.json"))
 		
 		for m_data in pool:
+			# reset state
+			if m_data["state"] in ("DOWNLOADING", "ANALYZING"):
+				m_data["state"] = "ERROR"
 			# build episodes
 			episodes = []
 			for ep_data in m_data["episodes"]:

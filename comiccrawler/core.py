@@ -101,7 +101,7 @@ def quote_from_match(match):
 	return quote(match.group())
 	
 def quote_unicode(s):
-	return sub("[\u0080-\uffff \[\]]+", quote_from_match, s)
+	return sub(r"[\u0080-\uffff \[\]]+", quote_from_match, s)
 	
 def safeurl(url):
 	"""Return a safe url, quote the unicode characters."""
@@ -114,8 +114,10 @@ def safeurl(url):
 def safeheader(header):
 	"""Return a safe header, quote the unicode characters."""
 	
-	for key in header:
-		header[key] = quote_unicode(header[key])
+	for key, value in header.items():
+		if not isinstance(value, str):
+			raise Exception("header must be str! " + str(value))
+		header[key] = quote_unicode(value)
 	return header
 	
 def grabber(url, header=None, raw=False, referer=None):
@@ -246,6 +248,13 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 	"""
 	import time, os, os.path
 	
+	# Check if the mission has been downloaded
+	page_exists = set()
+	if os.path.isdir(savepath):
+		for file in  os.listdir(savepath):
+			if os.path.isfile(os.path.join(savepath, file)):
+				page_exists.add(os.path.splitext(file)[0])
+	
 	if not ep.current_page:
 		ep.current_page = 1
 		
@@ -283,7 +292,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 				thread.wait(5)
 			
 		if len(imgurls) < ep.current_page:
-			raise LastPageError			
+			raise LastPageError
 
 	# crawl all pages
 	errorcount = 0
@@ -328,7 +337,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 			fn = fexp.format(ep.current_page)
 			
 			# file already exist
-			if is_file(fn):
+			if fn in page_exists:
 				raise ImageExistsError
 				
 			safeprint("Downloading {} page {}: {}".format(
@@ -380,8 +389,9 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 		
 		errorcount = 0
 		
-		# Rest after each page
-		thread.wait(getattr(downloader, "rest", 0))
+		if fn not in page_exists:
+			# Rest after each page
+			thread.wait(getattr(downloader, "rest", 0))
 		
 def analyze(mission, thread=None):	
 	"""Analyze mission.url"""

@@ -2,7 +2,7 @@
 
 """Simple io module depress exceptions"""
 
-import os, os.path as path, pprint
+import os, os.path as path, pprint, glob
 
 def is_file(file):
 	file = path.expanduser(file)
@@ -54,8 +54,6 @@ def prepare_file(file):
 	return file
 
 def move(src, dest):
-	import glob
-	
 	src = path.expanduser(src)
 	dest = path.expanduser(dest)
 	
