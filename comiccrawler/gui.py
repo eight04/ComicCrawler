@@ -448,7 +448,7 @@ class MainWindow(worker.UserWorker):
 				savepath = config.get("savepath")
 				for mission in missions:
 					folder = os.path.join(savepath, safefilepath(mission.title))
-					os.startfile(os.expanduser(folder))
+					os.startfile(os.path.expanduser(folder))
 
 			@bind_menu("開啟網頁")
 			def tvOpenBrowser():
