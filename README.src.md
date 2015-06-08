@@ -124,6 +124,7 @@ autosave = 5
 * 設定檔位於 `%USERPROFILE%\comiccrawler\setting.ini`
 * 執行一次 `comiccrawler gui` 後關閉，設定檔會自動產生
 
+
 Module example
 --------------
 ```python
