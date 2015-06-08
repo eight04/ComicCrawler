@@ -46,6 +46,8 @@ class Tasks:
 		
 	def bump(self):
 		import os
+		from setup import settings
+		version = settings["version"]
 		os.system("git add -A .")
 		os.system('git commit -m "Release v{}"'.format(version))
 		os.system('git tag -a v{} -m "Release v{}"'.format(version, version))

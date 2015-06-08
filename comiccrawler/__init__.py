@@ -23,7 +23,7 @@ Options:
 
 """
 
-__version__ = "2015.6.8"
+__version__ = "2015.6.9"
 
 import subprocess, traceback, json
 
