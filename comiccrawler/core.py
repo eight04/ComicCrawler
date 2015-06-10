@@ -12,7 +12,10 @@ from traceback import print_exc
 from html import unescape
 
 from .safeprint import safeprint
-from .error import LastPageError, SkipEpisodeError, ImageExistsError, PauseDownloadError
+from .error import (
+	LastPageError, SkipEpisodeError, ImageExistsError, PauseDownloadError,
+	ModuleError
+)
 from .io import content_write, is_file
 from .config import setting
 
@@ -37,7 +40,7 @@ class Mission(UserWorker):
 		self.state = state
 		self.module = get_module(url)
 		if not self.module:
-			raise Exception("Get module failed")
+			raise ModuleError("Get module failed!")
 			
 	def set(self, key, value):
 		"""Set new attribute"""

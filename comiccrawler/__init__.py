@@ -358,20 +358,15 @@ class DownloadManager(UserWorker):
 		
 		load_config()
 		
-	def add_url(self, url):
-		"""Create a mission from url."""
-		if not url:
-			return
-			
-		try:
-			mission = self.mission_manager.get_by_url(url, "library")
-			
-		except KeyError:
-			mission = Mission(url=url)
-			# Add to mission manager AFTER analyze
-			# self.mission_manager.add("view", mission)
-			
-		self.analyze_threads.add(self.create_child(analyze).start(mission))
+	def create_mission(self, url):
+		"""Create the mission from url."""
+		return Mission(url=url)
+		
+	def start_analyze(self, mission):
+		"""Analyze the mission."""
+		thread = self.create_child(analyze)
+		self.analyze_threads.add(thread)
+		thread.start(mission)
 		
 	def start_download(self):
 		"""Start downloading"""

@@ -1,9 +1,13 @@
-class ComicCrawlerError(BaseException): pass
+class ComicCrawlerSignal(BaseException): pass
 
-class LastPageError(ComicCrawlerError): pass
+class LastPageError(ComicCrawlerSignal): pass
 
-class SkipEpisodeError(ComicCrawlerError): pass
+class SkipEpisodeError(ComicCrawlerSignal): pass
 
-class PauseDownloadError(ComicCrawlerError): pass
+class PauseDownloadError(ComicCrawlerSignal): pass
 
-class ImageExistsError(ComicCrawlerError): pass
+class ImageExistsError(ComicCrawlerSignal): pass
+
+class ComicCrawlerError(Exception): pass
+
+class ModuleError(ComicCrawlerError): pass

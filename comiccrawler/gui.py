@@ -369,11 +369,11 @@ class MainWindow(worker.UserWorker):
 			addurl()
 		self.entry_url.bind("<Return>", entrykeypress)
 		
-		def ask_delete_mission(url):
+		def ask_analyze_update(mission):
 			return messagebox.askyesno(
-				"Comic Crawler",
-				"任務重覆，要刪除先前任務嗎？",
-				default="no"
+				mission.title,
+				"任務已存在，要檢查更新嗎？",
+				default="yes"
 			)
 		
 		# interface for download manager
@@ -381,15 +381,19 @@ class MainWindow(worker.UserWorker):
 			url = self.entry_url.get()
 			
 			try:
-				mission = self.downloader.mission_manager.get_by_url(url, "view")
-			except KeyError:
-				pass
-			else:
-				if not ask_delete_mission(url):
+				mission = self.downloader.mission_manager.get_by_url(url)
+				if not ask_analyze_update(mission):
 					return
-				self.remove("view", mission)				
-				
-			self.downloader.add_url(url)
+			except KeyError:
+				try:
+					mission = self.downloader.create_mission(url)
+				except ModuleError:
+					messagebox.showerror(
+						"Comic Crawler",
+						"建立任務失敗！不支援的網址！"
+					)
+					return
+			self.downloader.start_analyze(mission)
 			
 			self.entry_url.delete(0, "end")
 			self.pre_url = url
