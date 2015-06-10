@@ -28,8 +28,10 @@ default_header = {
 }
 
 class Mission(UserWorker):
-	"""Mission data class. Contains a mission's information."""
+	"""Create Mission object. Contains information of the mission."""
+	
 	def __init__(self, title=None, url=None, episodes=None, state="INIT"):
+		"""Construct."""
 		from .mods import get_module
 		
 		super().__init__()
@@ -43,7 +45,7 @@ class Mission(UserWorker):
 			raise ModuleError("Get module failed!")
 			
 	def set(self, key, value):
-		"""Set new attribute"""
+		"""Set new attribute."""
 		
 		if not hasattr(self, key):
 			return
@@ -52,10 +54,10 @@ class Mission(UserWorker):
 		self.bubble("MISSION_PROPERTY_CHANGED", self)
 
 class Episode:
-	"""Episode data class. Contains a book's information."""
+	"""Create Episode object. Contains information of an episode."""
 	
 	def __init__(self, title=None, url=None, current_url=None, current_page=0, skip=False, complete=False):
-	
+		"""Construct."""
 		self.title = title
 		self.url = url
 		self.current_url = current_url
@@ -64,11 +66,10 @@ class Episode:
 		self.complete = complete
 		
 def getext(byte):
-	"""Test the file type according byte stream with imghdr
+	"""Return extension by testing the byte stream.
 	
 	imghdr issue: http://bugs.python.org/issue16512
-	"""
-	
+	"""	
 	r = what("", byte)
 	if r:
 		if r.lower() == "jpeg":
@@ -97,20 +98,19 @@ def getext(byte):
 	return None
 			
 def safefilepath(s):
-	"""Return a safe directory name. Return string."""
-
+	"""Return a safe directory name."""
 	return sub("[/\\\?\|<>:\"\*]","_",s).strip()
 
 def quote_from_match(match):
-	"""Quote the match"""
+	"""Return quoted match.group."""
 	return quote(match.group())
 	
 def quote_unicode(s):
+	"""Quote unicode characters."""
 	return sub(r"[\u0080-\uffff]+", quote_from_match, s)
 	
 def safeurl(url):
 	"""Return a safe url, quote the unicode characters."""
-	
 	base = search("(https?://[^/]+)", url).group(1)
 	path = url.replace(base, "")
 	path = quote_unicode(path)
@@ -118,7 +118,6 @@ def safeurl(url):
 	
 def safeheader(header):
 	"""Return a safe header, quote the unicode characters."""
-	
 	for key, value in header.items():
 		if not isinstance(value, str):
 			raise Exception(
@@ -128,7 +127,7 @@ def safeheader(header):
 	return header
 	
 def grabber(url, header=None, raw=False, referer=None, errorlog=None):
-	"""Http works"""
+	"""Request url, return text or bytes of the content."""
 	
 	url = safeurl(url)
 	url = unescape(url)
@@ -149,23 +148,20 @@ def grabber(url, header=None, raw=False, referer=None, errorlog=None):
 	response = urlopen(request, timeout=20)
 	b = response.read()
 	
-	def parse_content(b):
-		if raw:
-			return b
-			
-		# decompress gziped data
-		if response.getheader("Content-Encoding") == "gzip":
-			b = decompress(b)
+	# decompress gziped data
+	if response.getheader("Content-Encoding") == "gzip":
+		b = decompress(b)
 		
+	if raw:
+		content = b
+		
+	else:
 		# find html defined encoding
 		s = b.decode("utf-8", "replace")
 		match = search(r"charset=[\"']?([^\"'>]+)", s)
 		if match:
-			s = b.decode(match.group(1), "replace")
-			
-		return s
-	
-	content = parse_content(b)
+			s = b.decode(match.group(1), "replace")	
+		content = s
 	
 	if errorlog or setting.getboolean("errorlog"):
 		if not errorlog:
@@ -188,7 +184,7 @@ def grabimg(url, header=None, referer=None, errorlog=None):
 	return grabber(url, header, True, referer, errorlog)
 	
 def download(mission, savepath, thread=None):
-	"""download worker"""
+	"""Download mission to savepath."""
 		
 	# warning there is a deadlock, 
 	# never do mission.lock.acquire in callback...
@@ -211,10 +207,7 @@ def download(mission, savepath, thread=None):
 		thread.bubble("DOWNLOAD_FINISHED", mission)
 			
 def crawl(mission, savepath, thread):
-	"""Start mission download. This method will call cls.crawlpage()
-	for each episode.
-	
-	"""
+	"""Crawl each episode."""
 	episodes = mission.episodes
 	module = mission.module
 	
@@ -251,12 +244,9 @@ def crawl(mission, savepath, thread):
 def crawlpage(ep, downloader, savepath, fexp, thread):
 	"""Crawl all pages of an episode.
 	
-	Grab image into savepath. To exit the method, raise LastPageError.
-	
-	Should define error handler for grabimg failed. Note the error by
-	setting episode.errorpages, episode.currentpagenumber, episode.
-	totalpages, episode.currentpageurl.
-	
+	To complete current episode, raise LastPageError.
+	To skip current episode, raise SkipEpisodeError.
+	To stop downloading (fatal error), raise PauseDownloadError.
 	"""
 	import time, os, os.path
 	
