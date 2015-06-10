@@ -100,10 +100,17 @@ class Dialog(Toplevel):
 		return self.result
 	
 class MainWindow(worker.UserWorker):
-	"""Main GUI window class."""
+	"""Create main window GUI."""
+	
+	def __init__(self):
+		"""Construct."""
+		self.downloader = self.create_child(DownloadManager)
+		self.cid_view = {}
+		self.cid_library = {}
+		self.pre_url = None
 	
 	def worker(self):
-		"""Main window worker"""
+		"""Main window worker."""
 		self.register_message()
 		self.init()
 		self.create_view()
@@ -112,38 +119,32 @@ class MainWindow(worker.UserWorker):
 		self.uninit()
 		
 	def init(self):
-		"""Create mission downloader"""
+		"""Init safeprint calback and start download manager."""
 		sp_addcallback(self.sp_callback)
-		
-		self.downloader = self.create_child(DownloadManager).start()
-		self.cid_view = {}
-		self.cid_library = {}
-		
-		# Work with clipboard
-		self.pre_url = None
+		self.downloader.start()
 		
 	def mainloop(self):
-		"""Main loop, including gtk and worker"""
+		"""Main loop, including gtk and worker."""
 		self.root.after(100, self.tkloop)
 		self.root.mainloop()
 		
 	def uninit(self):
-		"""Remove safeprint callback"""
+		"""Remove safeprint callback."""
 		sp_removecallback(self.sp_callback)
 		
 	def get_cid(self, cid_index, mission):
-		"""Get matched cid from cid index"""
+		"""Get matched cid from cid index."""
 		for cid, mission2 in cid_index.items():
 			if mission2 is mission:
 				return cid
 				
 	def update_mission_info(self, tv, cid, mission):
-		"""Update mission info on treeview"""
+		"""Update mission info on treeview."""
 		tv.set(cid, "state", STATE[mission.state])
 		tv.set(cid, "name", mission.title)
 	
 	def register_message(self):
-		"""Add listeners"""
+		"""Add listeners."""
 		@self.listen("LOG_MESSAGE")
 		def dummy(text):
 			text = text.splitlines()[-1]
@@ -335,22 +336,19 @@ class MainWindow(worker.UserWorker):
 		self.statusbar = statusbar
 		
 	def tkloop(self):
-		"""get message from comiccrawler.messageBucket"""
-		
+		"""Cleanup message every 100 milliseconds."""
 		self.cleanup()
 		self.root.after(100, self.tkloop)
 		
 	def remove(self, pool_name, *missions):
-		"""Wrap mission_manager.remove"""
+		"""Wrap mission_manager.remove."""
 		for mission in missions:
 			if mission.state in ("DOWNLOADING", "ANALYZING"):
 				messagebox.showerror("Comic Crawler", "刪除任務失敗！任務使用中")
 		self.downloader.mission_manager.remove(pool_name, *missions)
 
 	def bindevent(self):
-		"""Bind events"""
-		
-		# something about entry
+		"""Bind events."""
 		def trieveclipboard(event):
 			# Do nothing if there is something in the entry
 			if self.entry_url.get():
@@ -493,7 +491,7 @@ class MainWindow(worker.UserWorker):
 			
 		create_menu_set("view")
 		
-		# interface for library
+		# library buttons
 		def libCheckUpdate():
 			self.downloader.start_check_update()
 		self.btn_update["command"] = libCheckUpdate
@@ -504,7 +502,7 @@ class MainWindow(worker.UserWorker):
 			self.notebook.select(0)
 		self.btn_download_update["command"] = libDownloadUpdate
 		
-		# interface for library menu
+		# library menu
 		create_menu_set("library")
 		
 		def is_running(thread):
@@ -522,10 +520,11 @@ class MainWindow(worker.UserWorker):
 		self.root.protocol("WM_DELETE_WINDOW", beforequit)
 		
 	def sp_callback(self, text):
+		"""Transport text to LOG_MESSAGE event."""
 		self.message("LOG_MESSAGE", text)
 		
 	def tv_refresh(self, pool_name):
-		"""refresh treeview"""
+		"""Refresh treeview."""
 		
 		# cleanup
 		tv = getattr(self, "tv_" + pool_name)
