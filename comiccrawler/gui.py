@@ -1,8 +1,6 @@
 #! python3
 
-"""Comic Crawler GUI.
-
-"""
+"""Comic Crawler GUI."""
 
 from tkinter import *
 from tkinter.ttk import *
@@ -27,12 +25,13 @@ STATE = {
 	"ANALYZING": "分析中",
 	"ANALYZE_INIT": "準備分析"
 }
+"""Translate state code to readible text."""
 
 class Dialog(Toplevel):
-	"""Dialog class"""
+	"""Create dialog."""
 	
 	def __init__(self, parent, title=None):
-		"""Create some base method and elements"""
+		"""Construct."""
 		
 		super().__init__(parent)
 		

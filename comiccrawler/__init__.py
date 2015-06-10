@@ -369,7 +369,7 @@ class DownloadManager(UserWorker):
 		thread.start(mission)
 		
 	def start_download(self):
-		"""Start downloading"""
+		"""Start downloading."""
 		if self.download_thread and self.download_thread.is_running():
 			return
 			
@@ -382,13 +382,13 @@ class DownloadManager(UserWorker):
 		self.download_thread = self.create_child(download).start(mission, setting["savepath"])
 		
 	def stop_download(self):
-		"""Stop downloading"""
+		"""Stop downloading."""
 		if self.download_thread:
 			self.download_thread.stop()
 			safeprint("Stop downloading")
 		
 	def start_check_update(self):
-		"""Start check library update"""
+		"""Start checking library update."""
 		if self.library_thread and self.library_thread.is_running():
 			return
 			
@@ -400,7 +400,7 @@ class DownloadManager(UserWorker):
 			self.library_thread = self.create_child(analyze).start(mission)
 		
 	def add_mission_update(self):
-		"""Add updated mission to download list"""
+		"""Add updated mission to download list."""
 		missions = [mission for mission in self.mission_manager.library.values() if mission.state == "UPDATE"]
 		self.mission_manager.add("view", *missions)
 		
@@ -410,12 +410,13 @@ class DownloadManager(UserWorker):
 		self.mission_manager.remove("view", *missions)
 
 def console_download(url, savepath):
+	"""Download url to savepath."""
 	mission = Mission(url=url)
 	Worker.sync(analyze, mission, pass_instance=True).get()
 	Worker.sync(download, mission, savepath, pass_instance=True).get()
 		
 def console_init():
-	"""Console init"""
+	"""Console init."""
 	from docopt import docopt
 	
 	arguments = docopt(__doc__, version="Comic Crawler v" + __version__)
