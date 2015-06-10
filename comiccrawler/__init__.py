@@ -20,7 +20,11 @@ Options:
   --dest SAVE_FOLDER  Set download save path. [default: .]
   --help              Show help message.
   --version           Show current version.
-
+  
+Sub modules:
+  comiccrawler.core   Core functions of downloading, analyzing.
+  comiccrawler.error  Errors.
+  comiccrawler.mods   Import download modules.
 """
 
 __version__ = "2015.6.9"
@@ -40,6 +44,11 @@ from .mods import list_domain, load_config
 from . import config, io
 
 def shallow(dict, exclude=None):
+	"""Return a shallow copy of a dict.
+	
+	Arguments:
+	exclude - A list of key name which should not to copy. (default: None)
+	"""
 	new_dict = {}
 	for key in dict:
 		if not exclude or key not in exclude:
@@ -47,6 +56,8 @@ def shallow(dict, exclude=None):
 	return new_dict
 	
 class MissionPoolEncoder(json.JSONEncoder):
+	"""Encode Mission, Episode to json."""
+	
 	def default(self, object):
 		if isinstance(object, Mission):
 			return shallow(vars(object), exclude=["module", "thread"])
@@ -58,7 +69,9 @@ class MissionPoolEncoder(json.JSONEncoder):
 		
 class MissionManager(UserWorker):
 	"""Save, load missions from files"""
+	
 	def __init__(self):
+		"""Construct."""
 		super().__init__()
 		
 		self.pool = {}
@@ -67,15 +80,16 @@ class MissionManager(UserWorker):
 		self.edit = False
 		
 	def worker(self):
+		"""Override. The worker target."""
 		@self.listen("MISSION_PROPERTY_CHANGED")
 		@self.listen("DOWNLOAD_EP_COMPLETE")
 		def dummy():
-			"""Flag to save file"""
+			"""Set the edit flag after mission changed."""
 			self.edit = True
 	
 		@self.listen("WORKER_DONE")
 		def dummy():
-			"""Save missions after self.thread terminate"""
+			"""Save missions after the thread terminate."""
 			self.save()
 					
 		self.load()
@@ -85,6 +99,7 @@ class MissionManager(UserWorker):
 				self.save()
 		
 	def save(self):
+		"""Save missions to json."""
 		content_write(
 			"~/comiccrawler/pool.json",
 			json.dumps(
@@ -113,6 +128,11 @@ class MissionManager(UserWorker):
 		self.edit = False
 		
 	def load(self):
+		"""Load mission from json.
+		
+		If it fail to load missions, create json backup in
+		`~/comiccrawler/invalid-save`.
+		"""
 		try:
 			self._load()
 		except Exception:
@@ -137,6 +157,7 @@ class MissionManager(UserWorker):
 			self.bubble("MISSION_POOL_LOAD_FAILED", (dest, exc))
 		
 	def _load(self):
+		"""Load missions from json. Called by MissionManager.load."""
 		pool = []
 		view = []
 		library = []
@@ -166,11 +187,13 @@ class MissionManager(UserWorker):
 		self.add("library", *[self.pool[url] for url in library])
 		
 	def _add(self, mission):
+		"""Add mission to public pool."""
 		if mission.url not in self.pool:
 			self.add_child(mission)
 			self.pool[mission.url] = mission
 			
 	def add(self, pool_name, *missions):
+		"""Add missions to pool."""
 		pool = getattr(self, pool_name)
 		
 		for mission in missions:
@@ -181,6 +204,7 @@ class MissionManager(UserWorker):
 		self.edit = True
 			
 	def remove(self, pool_name, *missions):
+		"""Remove missions from pool."""
 		pool = getattr(self, pool_name)
 		
 		# check mission state
@@ -194,23 +218,8 @@ class MissionManager(UserWorker):
 		self.bubble("MISSION_LIST_REARRANGED", pool)
 		self.edit = True
 		
-	def contains(self, mission, pool_name=None):
-		"""Check if mission in pool"""
-		return self.contains_url(mission.url)
-	
-	def contains_url(self, url, pool_name=None):
-		if pool_name is None:
-			return url in self.pool
-			
-		return url in getattr(self, pool_name)
-		
-	def is_empty(self, pool_name=None):
-		if pool_name is None:
-			return len(self.pool)
-		return len(getattr(self, pool_name))
-		
 	def lift(self, pool_name, *missions):
-		"""Lift missions"""
+		"""Lift missions to the top."""
 		pool = getattr(self, pool_name)
 		for mission in reversed(missions):
 			pool.move_to_end(mission.url, last=False)
@@ -218,6 +227,7 @@ class MissionManager(UserWorker):
 		self.edit = True
 		
 	def drop(self, pool_name, *missions):
+		"""Drop missions to the bottom."""
 		pool = getattr(self, pool_name)
 		for mission in missions:
 			pool.move_to_end(mission.url)
@@ -225,16 +235,19 @@ class MissionManager(UserWorker):
 		self.edit = True
 		
 	def get_by_state(self, pool_name, states):
+		"""Get missions by states."""
 		for mission in getattr(self, pool_name).values():
 			if mission.state in states:
 				return mission
 				
 	def get_by_url(self, url, pool_name=None):
+		"""Get mission by url."""
 		if not pool_name:
 			return self.pool[url]
 		return getattr(self, pool_name)[url]
 		
 	def clean_finished(self):
+		"""Remove missions"""
 		s = []
 		for mission in self.view.values():
 			if mission.state == "FINISHED":
