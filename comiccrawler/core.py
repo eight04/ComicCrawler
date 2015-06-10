@@ -314,7 +314,7 @@ class Crawler:
 		
 	def handle_error(self, error):
 		"""Send error to error handler."""
-		hendler = getattr(self.downloader, "errorhandler", None)
+		handler = getattr(self.downloader, "errorhandler", None)
 		if not handler:
 			return
 			
@@ -450,7 +450,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 			crawler.iter_next()
 			crawler.rest()
 			
-		else:				
+		else:
 			safeprint("page {} already exist".format(
 					ep.current_page))
 			crawler.iter_next()
