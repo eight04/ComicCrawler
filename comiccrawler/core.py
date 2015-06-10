@@ -12,14 +12,11 @@ from traceback import print_exc
 from html import unescape
 
 from .safeprint import safeprint
-from .error import (
-	LastPageError, SkipEpisodeError, ImageExistsError, PauseDownloadError,
-	ModuleError
-)
+from .error import *
 from .io import content_write, is_file
 from .config import setting
 
-import pprint
+import pprint, traceback
 
 default_header = {
 	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0",
@@ -240,6 +237,190 @@ def crawl(mission, savepath, thread):
 			ep.skip = True
 	else:
 		safeprint("Mission complete!")
+		
+class Crawler:
+	"""Create Crawler object. Contains img url, next page url."""
+	
+	def __init__(self, ep, downloader, savepath, fexp, thread):
+		"""Construct."""
+		self.ep = ep
+		self.downloader = downloader
+		self.savepath = savepath
+		self.fexp = fexp
+		self.thread = thread
+		self.exist_pages = None
+		
+	def page_exists(self):
+		if self.exist_pages is None:
+			self.exist_pages = set()
+			if os.path.isdir(self.savepath):
+				for file in  os.listdir(self.savepath):
+					if os.path.isfile(os.path.join(self.savepath, file)):
+						self.exist_pages.add(os.path.splitext(file)[0])
+		return self.get_filename() in self.exist_pages
+		
+	def get_filename(self):
+		"""Get current page file name."""
+		return self.fexp.format(self.ep.current_page)
+		
+	def download_image(self):
+		"""Download image to savepath."""
+		byte = self.thread.sync(
+			grabimg,
+			self.get_img(),
+			self.get_header(),
+			self.ep.current_url
+		)
+		# check image type
+		ext = getext(byte)
+		if not ext:
+			raise TypeError("Invalid image type.")
+		# everything is ok, save image
+		full_filename = join(savepath, "{}.{}".format(self.get_filename(), ext))
+		content_write(full_filename, oi)
+		
+	def iter_next(self):
+		"""Iter to next page."""
+		nextpageurl = self.get_nextpage()
+		if not nextpageurl:
+			raise LastPageError
+			
+		self.ep.current_url = nextpageurl
+		self.ep.current_page += 1
+		
+	def rest(self):
+		"""Rest some time."""
+		self.thread.wait(self.get_rest())
+		
+	def get_img(self):
+		"""Override me. Return img url."""
+		pass
+		
+	def get_nextpage(self):
+		"""Override me. Return next page url."""
+		pass
+		
+	def flush(self):
+		"""Override me. Flush page info. Recreate the request."""
+		pass
+		
+	def get_header(self):
+		"""Return downloader header."""
+		return getattr(self.downloader, "header", None)
+		
+	def get_rest(self):
+		"""Return downloader rest."""
+		return getattr(self.downloader, "rest", 0)
+		
+	def handle_error(self, error):
+		"""Send error to error handler."""
+		hendler = getattr(self.downloader, "errorhandler", None)
+		if not handler:
+			return
+			
+		try:
+			handler(error, self.ep)
+		
+		except Exception:
+			safeprint("Failed to handle error!")
+			print_exc()
+		
+class PerPageCrawler(Crawler):
+	"""Iter over per pages."""
+	
+	def __init__(self, *args):
+		"""Extend. Add htmls."""
+		super().__init__(*args)
+		self.htmls = {}
+		
+	def get_html(self):
+		"""Return html."""
+		if not self.ep.current_url:
+			raise LastPageError
+			
+		if self.ep.current_page not in self.htmls:
+			self.htmls[self.ep.current_page] = self.thread.sync(
+				grabhtml,
+				self.ep.current_url,
+				self.get_header()
+			)
+		return self.htmls[self.ep.current_page]
+		
+	def get_img(self):
+		"""Override."""
+		return self.thread.sync(
+			self.downloader.getimgurl,
+			self.get_html(),
+			self.ep.current_url,
+			self.ep.current_page,
+		)
+		
+	def get_nextpage(self):
+		"""Override."""
+		return self.thread.sync(
+			self.downloader.getnextpageurl,
+			self.get_html(), 
+			self.ep.current_url,
+			self.ep.current_page, 
+		)
+		
+	def flush(self):
+		"""Override."""
+		if self.ep.current_page in self.htmls:
+			del self.htmls[self.ep.current_page]
+			
+class AllPageCrawler(Crawler):
+	"""Get all info in first page."""
+	
+	def __init__(self, *args):
+		"""Extend."""
+		super().__init__(*args)
+		self.imgurls = None
+		self.create_imgurls()
+		
+	def create_imgurls(self):
+		"""Create imgurls."""
+		def process():
+			html = self.thread.sync(
+				grabhtml,
+				self.ep.url,
+				self.get_header()
+			)
+			
+			imgurls = self.thread.sync(
+				self.downloader.getimgurls,
+				html,
+				self.ep.url
+			)
+			
+			if not imgurls:
+				raise Exception("imgurls is empty")
+				
+			self.imgurls = imgurls
+			raise ExitErrorLoop
+			
+		def handle_error(er):
+			self.handle_error(er)
+			self.thread.wait(5)
+			
+		error_loop(process, handle_error)
+				
+	def get_imurls(self):
+		"""Try to get imgurls."""
+		return self.imgurls
+		
+	def get_img(self):
+		"""Return img url."""
+		urls = self.get_imgurls()
+		if self.ep.current_page > len(urls):
+			raise LastPageError
+		return urls[self.ep.current_page - 1]
+		
+	def get_nextpage(self):
+		"""Return next page. Always use first page."""
+		urls = self.get_imgurls()
+		if self.ep.current_page < len(urls):
+			return self.ep.url
 
 def crawlpage(ep, downloader, savepath, fexp, thread):
 	"""Crawl all pages of an episode.
@@ -250,148 +431,60 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 	"""
 	import time, os, os.path
 	
-	# Check if the mission has been downloaded
-	page_exists = set()
-	if os.path.isdir(savepath):
-		for file in  os.listdir(savepath):
-			if os.path.isfile(os.path.join(savepath, file)):
-				page_exists.add(os.path.splitext(file)[0])
-	
 	if not ep.current_page:
 		ep.current_page = 1
 		
 	if not ep.current_url:
 		ep.current_url = ep.url
 		
-	imgurls = None
-	header = getattr(downloader, "header", None)
-	rest = getattr(downloader, "rest", 0)
-	# if we can get all img urls from the first page
 	if hasattr(downloader, "getimgurls"):
-		errorcount = 0
-		while not imgurls:
-			try:
-				html = thread.sync(grabhtml, ep.url, header)
-				imgurls = thread.sync(downloader.getimgurls, html, ep.url)
-				
-				if not imgurls:
-					raise Exception("imgurls is empty")
-					
-			except Exception as er:
-				safeprint("Get imgurls failed")
-				print_exc()
-				errorcount += 1
-				
-				if errorcount >= 10:
-					raise Exception("Retry too many times!")
-					
-				if hasattr(downloader, "errorhandler"):
-					try:
-						downloader.errorhandler(er, ep)
-					except Exception as er:
-						safeprint("Error handler error")
-						print_exc()
-						
-				thread.wait(5)
+		crawler = AllPageCrawler(ep, downloader, savepath, fexp, thread)
+	else:
+		crawler = PerPageCrawler(ep, downloader, savepath, fexp, thread)
+		
+	def download():
+		if not crawler.page_exists():
+			safeprint("Downloading {} page {}: {}".format(
+					ep.title, ep.current_page, imgurl))
+			crawler.download_image()
+			crawler.iter_next()
+			crawler.rest()
 			
-		if len(imgurls) < ep.current_page:
-			raise LastPageError
-
-	# crawl all pages
+		else:				
+			safeprint("page {} already exist".format(
+					ep.current_page))
+			crawler.iter_next()
+			
+	def download_error(er):
+		crawler.handle_error(er)
+		crawler.flush()
+		thread.wait(5)
+				
+	error_loop(download, download_error)
+	
+def error_loop(process, handle_error=None, limit=10):
+	"""Loop process until error. Has handle error limit."""
 	errorcount = 0
 	while True:
 		try:
-			if not imgurls:
-				safeprint("Crawling {} page {}...".format(ep.title,
-					ep.current_page))
-					
-				# getimgurl method
-				html = thread.sync(
-					grabhtml,
-					ep.current_url,
-					header
-				)
-				
-				imgurl = thread.sync(
-					downloader.getimgurl,
-					html,
-					ep.current_url,
-					ep.current_page,
-				)
-				
-				nextpageurl = thread.sync(
-					downloader.getnextpageurl,
-					html, 
-					ep.current_url,
-					ep.current_page, 
-				)
-				
-			else:
-				# getimgurls method
-				imgurl = imgurls[ep.current_page - 1]
-				if ep.current_page < len(imgurls):
-					nextpageurl = ep.current_url
-				else:
-					nextpageurl = None
-			
-			# generate file name
-			fn = fexp.format(ep.current_page)
-			
-			# file already exist
-			if fn not in page_exists:
-				safeprint("Downloading {} page {}: {}".format(
-						ep.title, ep.current_page, imgurl))
-						
-				oi = thread.sync(grabimg, imgurl, header, ep.current_url)
-				
-				# check image type
-				ext = getext(oi)
-				
-				if not ext:
-					raise TypeError("Invalid image type.")
-				# everything is ok, save image
-				content_write(join(savepath, "{}.{}".format(fn, ext)), oi)
-				
-			else:				
-				safeprint("page {} already exist".format(
-						ep.current_page))
-					
+			process()
 		except Exception as er:
-			safeprint("Crawl page error")
-			print_exc()
-			
-			errorcount += 1
-			
-			if errorcount >= 10:
-				raise Exception("Retry too many times!")
-			
-			if hasattr(downloader, "errorhandler"):
+			print("Error loop error!\n\n{}".format(traceback.format_exc()))
+			if handle_error:
 				try:
-					downloader.errorhandler(er, ep)
-					
-				except Exception as er:
-					safeprint("In error handler")
-					print_exc()
-			
-			thread.wait(5)
-			continue
-		# something have to rewrite, check currentpage url rather than
-		# nextpage. Cuz sometime currentpage doesn't exist either.
-		if not nextpageurl:
-			raise LastPageError
-			
-		ep.current_url = nextpageurl
-		ep.current_page += 1
-		
-		errorcount = 0
-		
-		if fn not in page_exists:
-			# Rest after each page
-			thread.wait(rest)
+					handle_error()
+				except Exception:
+					pass
+			errorcount += 1
+			if errorcount >= limit:
+				raise Exception("Exceed error loop limit!")
+		except ExitErrorLoop:
+			break
+		else:
+			errorcount = 0
 		
 def analyze(mission, thread=None):	
 	"""Analyze mission.url"""
-
 	try:
 		analyze_info(mission, mission.module, thread)
 		
