@@ -12,6 +12,7 @@ import tkinter.messagebox as messagebox
 from . import config, mods, DownloadManager
 from .safeprint import safeprint, addcallback as sp_addcallback, removecallback as sp_removecallback
 from .core import safefilepath
+from .error import ModuleError
 
 STATE = {
 	"INIT": "準備",
@@ -70,7 +71,7 @@ class Dialog(Toplevel):
 		# button bar
 		self.btn_bar = Frame(self)
 		self.provider.create_btn_bar(self.btn_bar)
-		self.btn_bar.pack
+		self.btn_bar.pack()
 		
 		# bind event
 		self.bind("<Return>", self.ok)
@@ -104,6 +105,8 @@ class MainWindow(worker.UserWorker):
 	
 	def __init__(self):
 		"""Construct."""
+		super().__init__()
+		
 		self.downloader = self.create_child(DownloadManager)
 		self.cid_view = {}
 		self.cid_library = {}
@@ -179,6 +182,7 @@ class MainWindow(worker.UserWorker):
 				mission.module.name,
 				"解析錯誤！\n{}".format(error)
 			)
+			safeprint("Analyzing failed!")
 			
 		@self.listen("MISSION_POOL_LOAD_FAILED")
 		def dummy(param):
@@ -379,6 +383,8 @@ class MainWindow(worker.UserWorker):
 		# interface for download manager
 		def addurl():
 			url = self.entry_url.get()
+			self.entry_url.delete(0, "end")
+			self.pre_url = url
 			
 			try:
 				mission = self.downloader.mission_manager.get_by_url(url)
@@ -393,10 +399,9 @@ class MainWindow(worker.UserWorker):
 						"建立任務失敗！不支援的網址！"
 					)
 					return
+					
 			self.downloader.start_analyze(mission)
 			
-			self.entry_url.delete(0, "end")
-			self.pre_url = url
 		self.btn_addurl["command"] = addurl
 		
 		def startdownload():
@@ -636,15 +641,15 @@ def select_episodes(parent, mission):
 	
 		def create_btn_bar(self, btn_bar):
 			Button(btn_bar, text="反相", command=self.toggle).pack(side="left")
-			super().__init__()
+			super().create_btn_bar(btn_bar)
 					
-		def apply():
+		def apply(self):
 			for v in self.vs:
 				ck, ep = v
 				ep.skip = not ck.instate(("selected",))
 			return len([ i for i in mission.episodes if not i.skip ])
 		
-		def toggle():
+		def toggle(self):
 			for v in self.vs:
 				ck, ep = v
 				if ck.instate(("selected", )):
