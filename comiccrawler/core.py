@@ -16,7 +16,7 @@ from .error import *
 from .io import content_write, is_file
 from .config import setting
 
-import pprint, traceback
+import pprint, traceback, os
 
 default_header = {
 	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0",
@@ -265,19 +265,22 @@ class Crawler:
 		
 	def download_image(self):
 		"""Download image to savepath."""
-		byte = self.thread.sync(
+		image = self.thread.sync(
 			grabimg,
 			self.get_img(),
 			self.get_header(),
 			self.ep.current_url
 		)
 		# check image type
-		ext = getext(byte)
+		ext = getext(image)
 		if not ext:
 			raise TypeError("Invalid image type.")
 		# everything is ok, save image
-		full_filename = join(savepath, "{}.{}".format(self.get_filename(), ext))
-		content_write(full_filename, oi)
+		full_filename = join(
+			self.savepath,
+			"{}.{}".format(self.get_filename(), ext)
+		)
+		content_write(full_filename, image)
 		
 	def iter_next(self):
 		"""Iter to next page."""
@@ -332,6 +335,7 @@ class PerPageCrawler(Crawler):
 		"""Extend. Add htmls."""
 		super().__init__(*args)
 		self.htmls = {}
+		self.imgs = {}
 		
 	def get_html(self):
 		"""Return html."""
@@ -348,12 +352,14 @@ class PerPageCrawler(Crawler):
 		
 	def get_img(self):
 		"""Override."""
-		return self.thread.sync(
-			self.downloader.getimgurl,
-			self.get_html(),
-			self.ep.current_url,
-			self.ep.current_page,
-		)
+		if self.ep.current_page not in self.imgs:
+			self.imgs[self.ep.current_page] = self.thread.sync(
+				self.downloader.getimgurl,
+				self.get_html(),
+				self.ep.current_url,
+				self.ep.current_page,
+			)
+		return self.imgs[self.ep.current_page]
 		
 	def get_nextpage(self):
 		"""Override."""
@@ -368,6 +374,8 @@ class PerPageCrawler(Crawler):
 		"""Override."""
 		if self.ep.current_page in self.htmls:
 			del self.htmls[self.ep.current_page]
+		if self.ep.current_page in self.imgs:
+			del self.imgs[self.ep.current_page]
 			
 class AllPageCrawler(Crawler):
 	"""Get all info in first page."""
@@ -405,7 +413,7 @@ class AllPageCrawler(Crawler):
 			
 		error_loop(process, handle_error)
 				
-	def get_imurls(self):
+	def get_imgurls(self):
 		"""Try to get imgurls."""
 		return self.imgurls
 		
@@ -429,8 +437,6 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 	To skip current episode, raise SkipEpisodeError.
 	To stop downloading (fatal error), raise PauseDownloadError.
 	"""
-	import time, os, os.path
-	
 	if not ep.current_page:
 		ep.current_page = 1
 		
@@ -445,7 +451,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 	def download():
 		if not crawler.page_exists():
 			safeprint("Downloading {} page {}: {}".format(
-					ep.title, ep.current_page, imgurl))
+					ep.title, ep.current_page, crawler.get_img()))
 			crawler.download_image()
 			crawler.iter_next()
 			crawler.rest()
