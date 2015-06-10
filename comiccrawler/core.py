@@ -264,12 +264,13 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 		ep.current_url = ep.url
 		
 	imgurls = None
+	header = getattr(downloader, "header", None)
+	rest = getattr(downloader, "rest", 0)
 	# if we can get all img urls from the first page
 	if hasattr(downloader, "getimgurls"):
 		errorcount = 0
 		while not imgurls:
 			try:
-				header = getattr(downloader, "header", None)
 				html = thread.sync(grabhtml, ep.url, header)
 				imgurls = thread.sync(downloader.getimgurls, html, ep.url)
 				
@@ -300,8 +301,6 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 	errorcount = 0
 	while True:
 		try:
-			header = getattr(downloader, "header", None)
-			
 			if not imgurls:
 				safeprint("Crawling {} page {}...".format(ep.title,
 					ep.current_page))
@@ -393,7 +392,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 		
 		if fn not in page_exists:
 			# Rest after each page
-			thread.wait(getattr(downloader, "rest", 0))
+			thread.wait(rest)
 		
 def analyze(mission, thread=None):	
 	"""Analyze mission.url"""
