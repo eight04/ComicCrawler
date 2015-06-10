@@ -246,14 +246,6 @@ class MissionManager(UserWorker):
 			return self.pool[url]
 		return getattr(self, pool_name)[url]
 		
-	def clean_finished(self):
-		"""Remove missions"""
-		s = []
-		for mission in self.view.values():
-			if mission.state == "FINISHED":
-				s.append(mission)
-		self.remove("view", *s)
-
 class DownloadManager(UserWorker):
 	"""DownloadManager class. Export common method."""
 	
@@ -416,6 +408,11 @@ class DownloadManager(UserWorker):
 		missions = [mission for mission in self.mission_manager.library.values() if mission.state == "UPDATE"]
 		self.mission_manager.add("view", *missions)
 		
+	def clean_finished(self):
+		"""Remove finished missions."""
+		missions = self.mission_manager.get_by_state("view", ("FINISHED", ))
+		self.mission_manager.remove("view", *missions)
+
 def console_download(url, savepath):
 	mission = Mission(url=url)
 	Worker.sync(analyze, mission, pass_instance=True).get()

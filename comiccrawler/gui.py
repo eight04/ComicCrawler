@@ -404,7 +404,7 @@ class MainWindow(worker.UserWorker):
 		self.btn_stop["command"] = stopdownload
 		
 		def cleanfinished():
-			self.downloader.mission_manager.clean_finished()
+			self.downloader.clean_finished()
 		self.btn_clean["command"] = cleanfinished
 		
 		def reloadconfig():
