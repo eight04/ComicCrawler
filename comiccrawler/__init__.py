@@ -247,10 +247,10 @@ class MissionManager(UserWorker):
 		return getattr(self, pool_name)[url]
 		
 class DownloadManager(UserWorker):
-	"""DownloadManager class. Export common method."""
+	"""Create a download manager used in GUI."""
 	
 	def __init__(self):
-		"""set controller"""
+		"""Construct."""
 		super().__init__()
 		
 		self.mission_manager = self.create_child(MissionManager)
@@ -260,8 +260,7 @@ class DownloadManager(UserWorker):
 		self.library_thread = None		
 		
 	def worker(self):
-	
-		# Message listeners
+		"""Override."""
 		@self.listen("DOWNLOAD_ERROR")
 		def dummy(mission):
 			self.mission_manager.drop("view", mission)
@@ -334,15 +333,17 @@ class DownloadManager(UserWorker):
 		self.message_loop()
 		
 	def get_mission_to_download(self):
+		"""Select those missions which available to download."""
 		states = ("ANALYZED", "PAUSE", "ERROR")
 		return self.mission_manager.get_by_state("view", states)
 		
 	def get_mission_to_check_update(self):
+		"""Select those missions which available to check update."""
 		states = ("ANALYZE_INIT",)
 		return self.mission_manager.get_by_state("library", states)
 			
 	def reload_config(self):
-		"""Load config from controller. Set default"""
+		"""Load config from setting.ini and call mods.load_config."""
 		config.load("~/comiccrawler/setting.ini")
 		
 		default = {
@@ -358,7 +359,7 @@ class DownloadManager(UserWorker):
 		load_config()
 		
 	def add_url(self, url):
-		"""add url"""
+		"""Create a mission from url."""
 		if not url:
 			return
 			
