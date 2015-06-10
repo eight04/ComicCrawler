@@ -338,23 +338,23 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 			fn = fexp.format(ep.current_page)
 			
 			# file already exist
-			if fn in page_exists:
-				raise ImageExistsError
+			if fn not in page_exists:
+				safeprint("Downloading {} page {}: {}".format(
+						ep.title, ep.current_page, imgurl))
+						
+				oi = thread.sync(grabimg, imgurl, header, ep.current_url)
 				
-			safeprint("Downloading {} page {}: {}".format(
-					ep.title, ep.current_page, imgurl))
-					
-			oi = thread.sync(grabimg, imgurl, header, ep.current_url)
-			
-			# check image type
-			ext = getext(oi)
-			
-			if not ext:
-				raise TypeError("Invalid image type.")
+				# check image type
+				ext = getext(oi)
 				
-		except ImageExistsError:
-			safeprint("page {} already exist".format(
-					ep.current_page))
+				if not ext:
+					raise TypeError("Invalid image type.")
+				# everything is ok, save image
+				content_write(join(savepath, "{}.{}".format(fn, ext)), oi)
+				
+			else:				
+				safeprint("page {} already exist".format(
+						ep.current_page))
 					
 		except Exception as er:
 			safeprint("Crawl page error")
@@ -375,11 +375,6 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 			
 			thread.wait(5)
 			continue
-			
-		else:
-			# everything is ok, save image
-			content_write(join(savepath, "{}.{}".format(fn, ext)), oi)
-			
 		# something have to rewrite, check currentpage url rather than
 		# nextpage. Cuz sometime currentpage doesn't exist either.
 		if not nextpageurl:
