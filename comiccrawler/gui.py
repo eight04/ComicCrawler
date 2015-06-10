@@ -27,30 +27,51 @@ STATE = {
 }
 """Translate state code to readible text."""
 
+class DialogProvider:
+	"""Create dialog elements."""
+	
+	def __init__(self, dialog):
+		"""Construct. Inject dialog instance."""
+		self.dialog = dialog
+	
+	def create_body(self, body):
+		"""Override me."""
+		pass
+		
+	def create_btn_bar(self, btn_bar):
+		"""Override me."""
+		Button(btn_bar, text="確定", command=self.dialog.ok, default=ACTIVE).pack(side="left")
+		Button(btn_bar, text="取消", command=self.dialog.cancel).pack(side="left")
+		
+	def apply(self):
+		"""Override me."""
+		return True
+		
 class Dialog(Toplevel):
 	"""Create dialog."""
 	
-	def __init__(self, parent, title=None):
+	def __init__(self, parent, title="Dialog", cls=DialogProvider):
 		"""Construct."""
 		
 		super().__init__(parent)
 		
-		# body
-		if title:
-			self.title(title)
 		self.parent = parent
 		self.result = None
+		self.provider = cls(self)
 		
+		# title
+		self.title(title)
+		
+		# body
 		self.body = Frame(self)
+		self.provider.create_body(self.body)
 		self.body.pack()
 		
 		# button bar
-		box = Frame(self)
-		Button(box, text="確定", command=self.ok, default=ACTIVE).pack(side="left")
-		Button(box, text="取消", command=self.cancel).pack(side="left")
-		box.pack()
-		self.buttonbox = box
-
+		self.btn_bar = Frame(self)
+		self.provider.create_btn_bar(self.btn_bar)
+		self.btn_bar.pack
+		
 		# bind event
 		self.bind("<Return>", self.ok)
 		self.bind("<Escape>", self.cancel)
@@ -61,38 +82,20 @@ class Dialog(Toplevel):
 		self.focus_set()
 
 	def ok(self, event=None):
-		"""When you press ok"""
-
-		if not self.validate():
-			self.initial_focus.focus_set() # put focus back
-			return
-
+		"""Apply and destroy dialog."""
 		self.withdraw()
 		self.update_idletasks()
-
-		self.apply()
-		self.cancel()
-
-	def cancel(self, event=None):
-		"""When you press cancel"""
-
-		# put focus back to the parent window
+		self.result = self.provider.apply()
 		self.parent.focus_set()
 		self.destroy()
 
-	def validate(self):
-		"""overwrite with your validate method here"""
-		
-		return 1
-
-	def apply(self):
-		"""overwrite with your post data method"""
-		
-		pass
+	def cancel(self, event=None):
+		"""Destroy dialog."""
+		self.parent.focus_set()
+		self.destroy()
 
 	def wait(self):
-		"""wait the dialog to close"""
-		
+		"""Wait the dialog to close."""
 		self.wait_window(self)
 		return self.result
 	
@@ -546,110 +549,109 @@ def reselect_episodes(parent, mission):
 		mission.set("state", "ANALYZED")
 		
 def select_title(parent, mission):
-	"""change mission title dialog"""
+	"""Create dialog to change mission title."""
 	
-	w = Dialog(parent)
+	class Provider(DialogProvider):
+		def create_body(self, body):
+			entry = Entry(body)
+			entry.insert(0, mission.title)
+			entry.selection_range(0, "end")
+			entry.pack()
+			entry.focus_set()
+			self.entry = entry
+			
+		def apply():
+			title = self.entry.get()
+			mission.set("title", title)
 	
-	entry = Entry(w.body)
-	entry.insert(0, mission.title)
-	entry.selection_range(0, "end")
-	entry.pack()
-	
-	entry.focus_set()
-	
-	def apply():
-		title = entry.get()
-		mission.set("title", title)
-		
-	w.apply = apply
-	
-	ret = w.wait()
-	return ret
+	return Dialog(parent, title="重命名", cls=Provider).wait()
 	
 def select_episodes(parent, mission):
-	"""select episode dialog"""
+	"""Create dialog to select episodes."""
 	
-	w = Dialog(parent)
+	class Provider(DialogProvider):
+		def create_body(self, body):
+			xscrollbar = Scrollbar(body, orient="horizontal")
+			canvas = Canvas(
+				body,
+				xscrollcommand=xscrollbar.set,
+				highlightthickness="0"
+			)
+			inner = Frame(canvas)
+			
+			# list of checkbutton
+			self.vs = vs = []
+			i = 0
+			
+			# make checkbutton into inner frame
+			for ep in mission.episodes:
+				ck = Checkbutton(inner, text=ep.title)
+				ck.state(("!alternate",))
+				if not ep.skip:
+					ck.state(("selected",))
+				ck.grid(column=i // 20, row=i % 20, sticky="w")
+				vs.append((ck, ep))
+				i += 1
+				
+			def colsel(gck, c):
+				def _():
+					for i in range(c*20, (c+1)*20):
+						if i >= len(vs):
+							break
+						ck, ep = vs[i]
+						if gck.instate(("selected", )):
+							ck.state(("selected", ))
+						else:
+							ck.state(("!selected", ))
+				return _
+				
+			from math import ceil
+			for i in range(ceil(len(mission.episodes) / 20)):
+				ck = Checkbutton(inner)
+				ck.state(("!alternate", "selected"))
+				ck.grid(column=i, row=20, sticky="w")
+				ck.config(command=colsel(ck, i))
+				
+			# caculates frame size after inner frame configured and resize canvas
+			def t(event):
+				canvas.config(scrollregion=inner.bbox("ALL"), 
+						height=inner.bbox("ALL")[3], 
+						width=inner.bbox("ALL")[2])
+				inner.unbind("<Configure>")
+			inner.bind("<Configure>", t)
+			
+			# caculates canvas's size then deside wether to show scrollbar
+			def t(event):
+				if canvas.winfo_width() >= canvas.winfo_reqwidth():
+					xscrollbar.pack_forget()
+				canvas.unbind("<Configure>")
+			canvas.bind("<Configure>", t)
+			
+			# draw innerframe on canvas then show
+			canvas.create_window((0,0),window=inner, anchor='nw')
+			canvas.pack()
+			
+			# link scrollbar to canvas then show
+			xscrollbar.config(command=canvas.xview)
+			xscrollbar.pack(fill="x")
 	
-	xscrollbar = Scrollbar(w.body, orient="horizontal")
-	canvas = Canvas(w.body, xscrollcommand=xscrollbar.set, highlightthickness="0")
-	inner = Frame(canvas)
-	
-	# list of checkbutton
-	vs = []
-	i = 0
-	
-	# make checkbutton into inner frame
-	for ep in mission.episodes:
-		ck = Checkbutton(inner, text=ep.title)
-		ck.state(("!alternate",))
-		if not ep.skip:
-			ck.state(("selected",))
-		ck.grid(column=i // 20, row=i % 20, sticky="w")
-		vs.append((ck, ep))
-		i += 1
+		def create_btn_bar(self, btn_bar):
+			Button(btn_bar, text="反相", command=self.toggle).pack(side="left")
+			super().__init__()
+					
+		def apply():
+			for v in self.vs:
+				ck, ep = v
+				ep.skip = not ck.instate(("selected",))
+			return len([ i for i in mission.episodes if not i.skip ])
 		
-	def colsel(gck, c):
-		def _():
-			for i in range(c*20, (c+1)*20):
-				if i >= len(vs):
-					break
-				ck, ep = vs[i]
-				if gck.instate(("selected", )):
-					ck.state(("selected", ))
-				else:
+		def toggle():
+			for v in self.vs:
+				ck, ep = v
+				if ck.instate(("selected", )):
 					ck.state(("!selected", ))
-		return _
-		
-	from math import ceil
-	for i in range(ceil(len(mission.episodes) / 20)):
-		ck = Checkbutton(inner)
-		ck.state(("!alternate", "selected"))
-		ck.grid(column=i, row=20, sticky="w")
-		ck.config(command=colsel(ck, i))
-		
-	# caculates frame size after inner frame configured and resize canvas
-	def t(event):
-		canvas.config(scrollregion=inner.bbox("ALL"), 
-				height=inner.bbox("ALL")[3], 
-				width=inner.bbox("ALL")[2])
-		inner.unbind("<Configure>")
-	inner.bind("<Configure>", t)
+				else:
+					ck.state(("selected", ))
+					
+	return Dialog(parent, title="選擇集數", cls=Provider).wait()
 	
-	# caculates canvas's size then deside wether to show scrollbar
-	def t(event):
-		if canvas.winfo_width() >= canvas.winfo_reqwidth():
-			xscrollbar.pack_forget()
-		canvas.unbind("<Configure>")
-	canvas.bind("<Configure>", t)
-	
-	# draw innerframe on canvas then show
-	canvas.create_window((0,0),window=inner, anchor='nw')
-	canvas.pack()
-	
-	# link scrollbar to canvas then show
-	xscrollbar.config(command=canvas.xview)
-	xscrollbar.pack(fill="x")
-	
-	def apply():
-		for v in vs:
-			ck, ep = v
-			ep.skip = not ck.instate(("selected",))
-		w.result = len([ i for i in mission.episodes if not i.skip ])
-	w.apply = apply
-	
-	def toggle():
-		for v in vs:
-			ck, ep = v
-			if ck.instate(("selected", )):
-				ck.state(("!selected", ))
-			else:
-				ck.state(("selected", ))
-	for i in w.buttonbox.winfo_children():
-		i.destroy()
-	Button(w.buttonbox, text="反相", command=toggle).pack(side="left")
-	Button(w.buttonbox, text="確定", command=w.ok, default=ACTIVE).pack(side="left")
-	Button(w.buttonbox, text="取消", command=w.cancel).pack(side="left")
-	
-	return w.wait()
-
