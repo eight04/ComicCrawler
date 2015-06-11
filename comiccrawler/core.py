@@ -177,7 +177,7 @@ def grabhtml(url, header=None, referer=None, errorlog=None):
 	return grabber(url, header, False, referer, errorlog)
 
 def grabimg(url, header=None, referer=None, errorlog=None):
-	"""Return byte stream."""	
+	"""Return byte array."""	
 	return grabber(url, header, True, referer, errorlog)
 	
 def download(mission, savepath, thread=None):
@@ -251,6 +251,7 @@ class Crawler:
 		self.exist_pages = None
 		
 	def page_exists(self):
+		"""Check if current page exists in savepath."""
 		if self.exist_pages is None:
 			self.exist_pages = set()
 			if os.path.isdir(self.savepath):
@@ -490,7 +491,7 @@ def error_loop(process, handle_error=None, limit=10):
 			errorcount = 0
 		
 def analyze(mission, thread=None):	
-	"""Analyze mission.url"""
+	"""Analyze mission."""
 	try:
 		analyze_info(mission, mission.module, thread)
 		
@@ -511,8 +512,7 @@ def analyze(mission, thread=None):
 		thread.bubble("ANALYZE_FINISHED", mission)
 
 def remove_duplicate_episode(mission):
-	"""remove duplicate episode"""
-	
+	"""Remove duplicate episodes."""
 	s = set()
 	cleanList = []
 	for ep in mission.episodes:
@@ -522,7 +522,7 @@ def remove_duplicate_episode(mission):
 	mission.episodes = cleanList
 			
 def analyze_info(mission, downloader, thread):
-	"""Analyze mission url."""		
+	"""Analyze mission."""		
 	safeprint("Start analyzing {}".format(mission.url))
 	
 	complete = mission.state == "FINISHED"

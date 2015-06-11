@@ -5,11 +5,13 @@
 import os, os.path as path, pprint, glob
 
 def is_file(file):
+	"""Check if the file is file."""
 	file = path.expanduser(file)
 	
 	return path.isfile(file)
 
 def content_write(file, content):
+	"""Write content to file. Content may be str or bytes."""
 	file = path.expanduser(file)
 	
 	if not path.isdir(path.dirname(file)):
@@ -27,6 +29,7 @@ def content_write(file, content):
 			f.write(content)	
 		
 def content_read(file):
+	"""Read content from file. Return str."""
 	file = path.expanduser(file)
 	
 	if not path.isfile(file):
