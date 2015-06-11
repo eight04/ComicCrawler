@@ -41,13 +41,13 @@ def getimgurls(html, url):
 	
 	env = """
 	window = {
-		eval: eval,
-		parseInt: parseInt,
-		String: String,
-		RegExp: RegExp
+		"eval": eval,
+		"parseInt": parseInt,
+		"String": String,
+		"RegExp": RegExp
 	};
 	location = {
-		hostname: "www.iibq.com"
+		"hostname": "www.iibq.com"
 	};
 	"""
 	
