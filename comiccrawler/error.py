@@ -1,13 +1,27 @@
-class ComicCrawlerSignal(BaseException): pass
+class ComicCrawlerSignal(BaseException):
+	"""Extend BaseException."""
+	pass
 
-class LastPageError(ComicCrawlerSignal): pass
+class LastPageError(ComicCrawlerSignal):
+	"""Raise LastPageError to exit crawl pages loop."""
+	pass
 
-class SkipEpisodeError(ComicCrawlerSignal): pass
+class SkipEpisodeError(ComicCrawlerSignal):
+	"""Raise SkipEpisodeError to exit crawl episodes loop."""
+	pass
 
-class PauseDownloadError(ComicCrawlerSignal): pass
+class PauseDownloadError(ComicCrawlerSignal):
+	"""Raise PauseDownloadError to exit crawl mission loop."""
+	pass
 
-class ExitErrorLoop(ComicCrawlerSignal): pass
+class ExitErrorLoop(ComicCrawlerSignal):
+	"""Raise ExitErrorLoop to exit error loop."""
+	pass
 
-class ComicCrawlerError(Exception): pass
+class ComicCrawlerError(Exception): 
+	"""Extend Exception."""
+	pass
 
-class ModuleError(ComicCrawlerError): pass
+class ModuleError(ComicCrawlerError):
+	"""Can't find module."""
+	pass
