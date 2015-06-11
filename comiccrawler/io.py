@@ -1,6 +1,6 @@
 #! python3
 
-"""Simple io module depress exceptions"""
+"""Simple io module depressing exceptions"""
 
 import os, os.path as path, pprint, glob
 
@@ -28,17 +28,22 @@ def content_write(file, content):
 		with open(file, "w", encoding="utf-8") as f:
 			f.write(content)	
 		
-def content_read(file):
+def content_read(file, raw=False):
 	"""Read content from file. Return str."""
 	file = path.expanduser(file)
 	
 	if not path.isfile(file):
 		return ""
 	
-	with open(file, "r", encoding="utf-8-sig") as f:
-		return f.read()
+	if raw:
+		with open(file, "rb") as f:
+			return f.read()
+	else:
+		with open(file, "r", encoding="utf-8-sig") as f:
+			return f.read()
 		
 def prepare_folder(folder):
+	"""If the folder does not exist, create it."""
 	folder = path.expanduser(folder)
 	
 	if not path.isdir(folder):
@@ -47,6 +52,7 @@ def prepare_folder(folder):
 	return folder
 
 def prepare_file(file):
+	"""If the file does not exist, create it."""
 	file = path.expanduser(file)
 	
 	prepare_folder(path.dirname(file))
@@ -57,6 +63,7 @@ def prepare_file(file):
 	return file
 
 def move(src, dest):
+	"""Move src files to dest. Should support wildcard."""
 	src = path.expanduser(src)
 	dest = path.expanduser(dest)
 	
