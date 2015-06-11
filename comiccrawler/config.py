@@ -19,9 +19,8 @@ Usage:
     "key1": "value1",
 	"key2": "value2"
   }
-  sec2 = config.section("label2", default)
+  sec2 = config.section("label2", default=default)
   print(sec2["key1"])
-  # -> "value1"
 """
 
 import configparser, atexit
@@ -29,6 +28,7 @@ import configparser, atexit
 from .io import prepare_file
 
 def section(name, default = None):
+	"""Return the section of the config."""
 	if name not in config:
 		config[name] = {}
 
@@ -39,12 +39,8 @@ def section(name, default = None):
 				
 	return config[name]
 	
-def get(key, default = None):
-	if key not in setting and default is not None:
-		setting[key] = default
-	return setting[key]
-	
 def load(new_path=None):
+	"""Load config from file."""
 	global path
 	if new_path:
 		path = new_path
@@ -52,6 +48,7 @@ def load(new_path=None):
 	config.read(path, "utf-8-sig")
 	
 def save(new_path=None):
+	"""Save config to file."""
 	global path
 	if new_path:
 		path = new_path

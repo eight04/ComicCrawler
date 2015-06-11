@@ -468,7 +468,7 @@ class MainWindow(worker.UserWorker):
 			def tvOpen():
 				s = tv.selection()
 				missions = [ cid_index[i] for i in s ]
-				savepath = config.get("savepath")
+				savepath = config.setting["savepath"]
 				for mission in missions:
 					folder = os.path.join(savepath, safefilepath(mission.title))
 					os.startfile(os.path.expanduser(folder))
