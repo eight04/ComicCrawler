@@ -4,7 +4,7 @@ from imghdr import what
 from os import mkdir, listdir
 from os.path import normpath, split, join
 from re import sub, search
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
 from gzip import decompress
 from worker import WorkerExit, UserWorker
@@ -108,10 +108,8 @@ def quote_unicode(s):
 
 def safeurl(url):
 	"""Return a safe url, quote the unicode characters."""
-	base = search("(https?://[^/]+)", url).group(1)
-	path = url.replace(base, "")
-	path = quote_unicode(path)
-	return base + path
+	scheme, netloc, path, query, fragment = urlsplit(url)
+	return urlunsplit((scheme, netloc, quote(path), query, ""))
 
 def safeheader(header):
 	"""Return a safe header, quote the unicode characters."""
@@ -474,14 +472,14 @@ def error_loop(process, handle_error=None, limit=10):
 			process()
 		except Exception as er:
 			print("Error loop error!\n\n{}".format(traceback.format_exc()))
+			errorcount += 1
+			if errorcount >= limit:
+				raise Exception("Exceed error loop limit!")
 			if handle_error:
 				try:
 					handle_error()
 				except Exception:
 					pass
-			errorcount += 1
-			if errorcount >= limit:
-				raise Exception("Exceed error loop limit!")
 		except ExitErrorLoop:
 			break
 		else:
