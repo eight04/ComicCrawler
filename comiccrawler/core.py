@@ -122,7 +122,7 @@ def safeheader(header):
 	return header
 
 cookiejar = {}
-def grabber(url, header=None, raw=False, referer=None, errorlog=None, cookie=None):
+def grabber(url, header=None, *, referer=None, cookie=None, raw=False, errorlog=None):
 	"""Request url, return text or bytes of the content."""
 
 	url = safeurl(url)
@@ -301,7 +301,7 @@ class Crawler:
 			grabimg,
 			self.get_img(),
 			self.get_header(),
-			self.ep.current_url
+			referer=self.ep.current_url
 		)
 		# check image type
 		ext = getext(image)
