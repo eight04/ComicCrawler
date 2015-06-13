@@ -158,7 +158,7 @@ def grabber(url, header=None, raw=False, referer=None, errorlog=None):
 		header["Cookie"] = "; ".join([key + "=" + c.value for key, c in jar.items()])
 
 	header = safeheader(header)
-	for key, value in header:
+	for key, value in header.items():
 		request.add_header(key, value)
 
 	response = urlopen(request, timeout=20)
