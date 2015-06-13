@@ -41,7 +41,7 @@ Development Dependencies
 ------------------
 Comic Crawler is on [PyPI][2]. 安裝完 python 後，可以直接用 pip 指令自動安裝。
 
-[2]: https://pypi.python.org/pypi/comiccrawler/2015.6.11
+[2]: https://pypi.python.org/pypi/comiccrawler/2015.6.13
 
 ### Python ###
 你需要 Python 3.4 以上。安裝檔可以從它的 [官方網站][1] 下載。
@@ -51,7 +51,7 @@ Comic Crawler is on [PyPI][2]. 安裝完 python 後，可以直接用 pip 指令
 安裝時記得要選「Add python.exe to path」，才能使用 pip 指令。
 
 ### Node.js ###
-有些網站的 JavaScript 用 Windows 內建的 Windows Script Host 會解析失敗，建議安裝 
+有些網站的 JavaScript 用 Windows 內建的 Windows Script Host 會解析失敗，建議安裝
 [Node.js][3].
 
 [3]: https://nodejs.org/
@@ -60,12 +60,12 @@ Comic Crawler is on [PyPI][2]. 安裝完 python 後，可以直接用 pip 指令
 在 cmd 底下輸入以下指令︰
 
 	pip install comiccrawler
-	
+
 更新時︰
 
 	pip install --update comiccrawler
 
-	
+
 Supported domains
 -----------------
 > chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org g.e-hentai.org konachan.com manhua.dmzj.com tel.dm5.com www.8comic.com www.99comic.com www.comicvip.com www.dm5.com www.iibq.com www.manhuadao.com www.pixiv.net yande.re
@@ -80,13 +80,13 @@ Usage:
   comiccrawler gui
   comiccrawler migrate
   comiccrawler (--help | --version)
-  
+
 Commands:
   domains             列出支援的網址
   download URL        下載指定的 url
   gui                 啟動主視窗
   migrate             轉換當前目錄底下的 save.dat, library.dat 成新格式
-  
+
 Options:
   --dest SAVE_FOLDER  設定下載目錄（預設為 "."）
   --help              顯示幫助訊息
@@ -106,7 +106,7 @@ Options:
 ```
 [DEFAULT]
 ; 設定下載完成後要執行的程式，會傳入下載資料夾的位置
-runafterdownload = 
+runafterdownload =
 
 ; 啟動時自動檢查圖書館更新
 libraryautocheck = true
@@ -165,15 +165,15 @@ def loadconfig():
 
 def gettitle(html, url):
 	"""Return mission title.
-	
+
 	Title will be used in saving filepath, so be sure to avoid duplicate title.
 	"""
 	return re.search("<h1 id='title'>(.+?)</h1>", html).group(1)
-	
+
 def getepisodelist(html, url):
 	"""Return episode list.
-	
-	The episode list should be sorted by date, latest at last, so the 
+
+	The episode list should be sorted by date, latest at last, so the
 	downloader will download the oldest first.
 	"""
 	base = re.search("(https?://[^/]+)", url).group(1)
@@ -185,7 +185,7 @@ def getepisodelist(html, url):
 	return episodes
 
 """
-There are two methods to get images url. If you can get all urls from the 
+There are two methods to get images url. If you can get all urls from the
 first page, then use getimgurls. If you have to download each pages to get
 image url, use getimgurl and nextpage functions.
 
@@ -195,28 +195,35 @@ both.
 
 def getimgurls(html, url):
 	"""Return the list of all images"""
-	
+
 	match_iter = re.finditer("<img src='(.+?)'>", html)
 	return [match.group(1) for match in match_iter]
-	
+
 def getimgurl(html, page, url):
 	"""Return the url of the image"""
-	
+
 	return re.search("<img id='showimage' src='(.+?)'>", html).group(1)
-	
+
 def getnextpageurl(page, html, url):
 	"""Return the url of the next page. Return None if this is the last page.
 	"""
-	
+
 	match = re.search("<a id='nextpage' href='(.+?)'>next</a>", html)
 	return match and match.group(1)
-		
+
 def errorhandler(er, ep):
 	"""Downloader will call errorhandler if there is an error happened when
 	downloading image. Normally you can just ignore this function.
 	"""
 	pass
 ```
+
+Changelog
+---------
+* 2015.6.13
+	- Fix `clean_finished`
+	- Fix `console_download`
+	- Enhance `get_by_state`
 
 Author
 ------

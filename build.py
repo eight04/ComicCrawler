@@ -8,42 +8,42 @@ def read(file):
 	with open(path.join(here, file), "r", encoding='utf-8') as f:
 		content = f.read()
 	return content
-	
+
 def write(file, content):
 	with open(path.join(here, file), "w", encoding="utf-8") as f:
 		f.write(content)
-	
+
 def find_version(file):
 	return re.search(r"__version__ = (\S*)", read(file)).group(1).strip("\"'")
-	
+
 class Tasker:
 	def __init__(self, task_cls):
 		tasks = task_cls()
 		argv = sys.argv[1:]
-		
+
 		if not argv:
 			argv = ["default"]
-			
+
 		for command in argv:
 			command, sep, param = command.partition(":")
-			
+
 			if sep:
 				getattr(tasks, command)(param)
 			else:
 				getattr(tasks, command)()
-				
+
 class Tasks:
 	def default(self):
 		self.readme()
 		self.dist()
 		self.bump()
-	
+
 	def dist(self):
 		import os
 		os.system("py setup.py sdist bdist_wheel")
 		os.system("twine upload dist/*")
 		os.system("rm -R dist")
-		
+
 	def bump(self):
 		import os
 		from setup import settings
@@ -52,12 +52,12 @@ class Tasks:
 		os.system('git commit -m "Release v{}"'.format(version))
 		os.system('git tag -a v{} -m "Release v{}"'.format(version, version))
 		os.system("git push --follow-tags")
-	
+
 	def readme(self):
 		from comiccrawler.mods import list_domain
 		from setup import settings
 		version = settings["version"]
-		
+
 		# Create readme
 		write(
 			"README.md",
@@ -66,6 +66,6 @@ class Tasks:
 				" ".join(list_domain())
 			).replace("@@VERSION", version)
 		)
-		
+
 if __name__ == "__main__":
 	Tasker(Tasks)
