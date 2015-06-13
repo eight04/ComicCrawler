@@ -3,7 +3,7 @@
 """This is safeprint module.
 
 """
-import os, re
+import os, re, subprocess
 
 def match_escape_echo(match):
 	"""Return escaped echo str."""
@@ -24,12 +24,19 @@ def printer_try(s):
 			print("?", end="")
 	print("")
 
+def printer_file(s):
+	"""Use type."""
+	pass
+
 def safeprint(*ss):
 	"""Safe print, skip error decode."""
 	ss = [s if type(s) is str else str(s) or str(type(s)) for s in ss]
 	s = " ".join(ss)
 
+	# Rapidly use os.system cause WinError 5?
 	printer_echo(s)
+	# printer_try(s)
+	# printer_file(s)
 
 	for f in _callbacklist:
 		f(s)
