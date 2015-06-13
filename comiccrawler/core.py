@@ -9,7 +9,6 @@ from urllib.request import Request, urlopen
 from gzip import decompress
 from worker import WorkerExit, UserWorker
 from traceback import print_exc
-from html import unescape
 
 from .safeprint import safeprint
 from .error import *
@@ -124,7 +123,9 @@ def safeheader(header):
 def grabber(url, header=None, raw=False, referer=None, errorlog=None):
 	"""Request url, return text or bytes of the content."""
 
-	url = safeurl(unescape(url))
+	url = safeurl(url)
+
+	print("[grabber]", url, "\n")
 
 	if header is None:
 		header = {}
@@ -322,9 +323,8 @@ class Crawler:
 		try:
 			handler(error, self.ep)
 
-		except Exception:
-			safeprint("Failed to handle error!")
-			print_exc()
+		except Exception as er:
+			print("[Crawler] Failed to handle error: {}".format(er))
 
 class PerPageCrawler(Crawler):
 	"""Iter over per pages."""
@@ -470,15 +470,15 @@ def error_loop(process, handle_error=None, limit=10):
 		try:
 			process()
 		except Exception as er:
-			print("Error loop error!\n\n{}".format(traceback.format_exc()))
+			print("[error_loop] Process error: ", er)
 			errorcount += 1
 			if errorcount >= limit:
 				raise Exception("Exceed error loop limit!")
 			if handle_error:
 				try:
-					handle_error()
-				except Exception:
-					pass
+					handle_error(er)
+				except Exception as er:
+					print("[error_loop] Error handler error: ", er)
 		except ExitErrorLoop:
 			break
 		else:
