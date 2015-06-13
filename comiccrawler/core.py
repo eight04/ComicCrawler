@@ -333,10 +333,9 @@ class PerPageCrawler(Crawler):
 	"""Iter over per pages."""
 
 	def __init__(self, *args):
-		"""Extend. Add htmls."""
+		"""Extend. Add cache."""
 		super().__init__(*args)
-		self.htmls = {}
-		self.imgs = {}
+		self.cache = {}
 
 	def get_html(self):
 		"""Return html."""
@@ -345,25 +344,22 @@ class PerPageCrawler(Crawler):
 		if not url:
 			raise LastPageError
 
-		if url not in self.htmls:
-			self.htmls[url] = self.thread.sync(
+		if url not in self.cache:
+			self.cache[url] = self.thread.sync(
 				grabhtml,
 				self.ep.current_url,
 				self.get_header()
 			)
-		return self.htmls[url]
+		return self.cache[url]
 
 	def get_img(self):
 		"""Override."""
-		page = self.ep.current_page
-		if page not in self.imgs:
-			self.imgs[page] = self.thread.sync(
-				self.downloader.getimgurl,
-				self.get_html(),
-				self.ep.current_url,
-				self.ep.current_page,
-			)
-		return self.imgs[page]
+		return self.thread.sync(
+			self.downloader.getimgurl,
+			self.get_html(),
+			self.ep.current_url,
+			self.ep.current_page,
+		)
 
 	def get_nextpage(self):
 		"""Override."""
@@ -376,10 +372,8 @@ class PerPageCrawler(Crawler):
 
 	def flush(self):
 		"""Override."""
-		if self.htmls:
-			self.htmls = {}
-		if self.imgs:
-			self.imgs = {}
+		if self.cache:
+			self.cache = {}
 
 class AllPageCrawler(Crawler):
 	"""Get all info in first page."""
