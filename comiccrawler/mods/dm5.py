@@ -53,7 +53,7 @@ def getimgurl(html, url, page):
 		funs = []
 		for p in range(1, int(length) + 1):
 			fun_url = urljoin(url, "chapterfun.ashx?cid={}&page={}&language=1&key={}&gtk=6".format(cid, p, key))
-			funs.append(fun)
+			funs.append(fun_url)
 		cache[url] = funs
 
 	if page - 1 >= len(cache[url]):
