@@ -183,14 +183,15 @@ def grabber(url, header=None, raw=False, referer=None, errorlog=None):
 		content = s
 
 	if errorlog or setting.getboolean("errorlog"):
+		log_object = (
+			url,
+			request.header_items(),
+			response.getheaders()
+		)
 		if not errorlog:
-			errorlog = "~/comiccrawler"
+			errorlog = ""
 		from pprint import pformat
-		content_write(join(errorlog, "grabber.file.log"), content)
-		content_write(join(errorlog, "grabber.header.log"), "{}\n\n{}".format(
-			pformat(request.header_items()),
-			pformat(response.getheaders())
-		))
+		content_write("~/comiccrawler/grabber.log", pformat(log_object) + "\n\n", append=True)
 
 	return content
 
