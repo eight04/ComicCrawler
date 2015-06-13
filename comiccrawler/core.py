@@ -9,6 +9,7 @@ from urllib.request import Request, urlopen
 from gzip import decompress
 from worker import WorkerExit, UserWorker
 from traceback import print_exc
+from http.cookies import SimpleCookie
 
 from .safeprint import safeprint
 from .error import *
@@ -120,6 +121,7 @@ def safeheader(header):
 		header[key] = quote_unicode(value)
 	return header
 
+cookiejar = {}
 def grabber(url, header=None, raw=False, referer=None, errorlog=None):
 	"""Request url, return text or bytes of the content."""
 
@@ -127,20 +129,42 @@ def grabber(url, header=None, raw=False, referer=None, errorlog=None):
 
 	print("[grabber]", url, "\n")
 
+	# Build request
+	request = Request(url)
+
+	# Build header
 	if header is None:
 		header = {}
 
+	# Build default header
 	for key in default_header:
 		if key not in header:
 			header[key] = default_header[key]
 
+	# Referer
 	if referer:
 		header["Referer"] = referer
 
-	header = safeheader(header)
+	# Handle cookie
+	if request.host not in cookiejar:
+		cookiejar[request.host] = SimpleCookie()
 
-	request = Request(url, headers=header)
+	jar = cookiejar[request.host]
+
+	if "Cookie" in header:
+		jar.load(header["Cookie"])
+
+	if jar:
+		header["Cookie"] = "; ".join([key + "=" + c.value for key, c in jar.items()])
+
+	header = safeheader(header)
+	for key, value in header:
+		request.add_header(key, value)
+
 	response = urlopen(request, timeout=20)
+
+	jar.load(response.getheader("Set-Cookie", ""))
+
 	b = response.read()
 
 	# decompress gziped data
