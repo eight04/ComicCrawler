@@ -150,7 +150,7 @@ class MainWindow(worker.UserWorker):
 		"""Add listeners."""
 		@self.listen("LOG_MESSAGE")
 		def dummy(text):
-			text = text.splitlines()[-1]
+			text = text.splitlines()[0]
 			self.statusbar["text"] = text
 
 		@self.listen("MISSION_PROPERTY_CHANGED")

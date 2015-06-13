@@ -445,7 +445,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 
 	def download():
 		if not crawler.page_exists():
-			safeprint("Downloading {} page {}: {}".format(
+			safeprint("Downloading {} page {}: {}\n".format(
 					ep.title, ep.current_page, crawler.get_img()))
 			crawler.download_image()
 			crawler.iter_next()
