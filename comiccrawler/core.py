@@ -124,8 +124,7 @@ def safeheader(header):
 def grabber(url, header=None, raw=False, referer=None, errorlog=None):
 	"""Request url, return text or bytes of the content."""
 
-	url = safeurl(url)
-	url = unescape(url)
+	url = safeurl(unescape(url))
 
 	if header is None:
 		header = {}
