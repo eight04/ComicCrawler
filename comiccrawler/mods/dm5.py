@@ -17,7 +17,7 @@ from ..safeprint import safeprint
 from ..error import LastPageError
 
 header = {
-	"Cookie": "isAdult=1"
+	"Cookie": "isAdult=1; fastshow=true"
 }
 domain = ["www.dm5.com", "tel.dm5.com"]
 name = "動漫屋"
@@ -40,6 +40,7 @@ def getepisodelist(html, url):
 
 cache = {}
 def getimgurl(html, url, page):
+
 	if url not in cache:
 		key = search(r'id="dm5_key".+?<script[^>]+?>\s*eval(.+?)</script>', html, DOTALL)
 		if key:
@@ -56,6 +57,9 @@ def getimgurl(html, url, page):
 			funs.append(fun_url)
 		cache[url] = funs
 
+		# Grab cookies?
+		grabhtml(funs[0], referer=url)
+
 	if page - 1 >= len(cache[url]):
 		del cache[url]
 		raise LastPageError
@@ -66,4 +70,5 @@ def getimgurl(html, url, page):
 	return d[0]
 
 def getnextpageurl(html, url, page):
+	# Simulate ajax load
 	return url
