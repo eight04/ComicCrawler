@@ -45,7 +45,7 @@ def getimgurl(html, url, page):
 	global nl
 	i = re.search("<img id=\"img\" src=\"(.+?)\"", html)
 	i = unescape(i.group(1))
-	nl = re.search("nl\(([^)]+)\)", html).group(1)
+	nl = re.search("nl\('([^)]+)'\)", html).group(1)
 
 	# bandwith limit
 	if re.search("509s?\.gif", i) or re.search("403s?\.gif", i):
