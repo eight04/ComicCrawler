@@ -6,6 +6,7 @@
 
 import re
 from html import unescape
+from urllib.parse import urljoin
 
 from ..core import Episode
 
@@ -30,35 +31,35 @@ def loadconfig():
 def gettitle(html, url):
 	t = re.findall("<h1 id=\"g(j|n)\">(.+?)</h1>", html)
 	t = t[-1][1]
-	
+
 	return unescape(t)
-	
+
 def getepisodelist(html, url):
 	title = "image"
 	url = re.search("href=\"([^\"]+?-1)\"", html).group(1)
 	e = Episode(title, url)
 	return [e]
 
-nl = 0
+nl = ""
 def getimgurl(html, url, page):
 	global nl
-	
 	i = re.search("<img id=\"img\" src=\"(.+?)\"", html)
 	i = unescape(i.group(1))
-	nl = re.search("nl\((\d+)\)", html).group(1)
-	
+	nl = re.search("nl\(([^)]+)\)", html).group(1)
+
 	# bandwith limit
 	if re.search("509s?\.gif", i) or re.search("403s?\.gif", i):
 		raise Exception("Bandwidth limit exceeded!")
-		
+
 	return i
 
 def errorhandler(er, ep):
-	np = ep.current_url.split("?")[0] + "?nl={}".format(nl)
-	if ep.current_url == np:
-		ep.current_url = np.split("?")[0]
+	global nl
+	url = urljoin(ep.current_url, "?nl=" + nl)
+	if ep.current_url == url:
+		ep.current_url = url.split("?")[0]
 	else:
-		ep.current_url = np
+		ep.current_url = url
 
 def getnextpageurl(html, url, pagenumber):
 	r = re.search("href=\"([^\"]+?-{})\"".format(pagenumber+1), html)
@@ -66,4 +67,3 @@ def getnextpageurl(html, url, pagenumber):
 		return ""
 	else:
 		return r.group(1)
-		
