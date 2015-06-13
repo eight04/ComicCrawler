@@ -122,7 +122,7 @@ def safeheader(header):
 	return header
 
 cookiejar = {}
-def grabber(url, header=None, raw=False, referer=None, errorlog=None):
+def grabber(url, header=None, raw=False, referer=None, errorlog=None, cookie=None):
 	"""Request url, return text or bytes of the content."""
 
 	url = safeurl(url)
@@ -151,6 +151,9 @@ def grabber(url, header=None, raw=False, referer=None, errorlog=None):
 
 	jar = cookiejar[request.host]
 
+	if cookie:
+		jar.load(cookie)
+
 	if "Cookie" in header:
 		jar.load(header["Cookie"])
 
@@ -164,6 +167,9 @@ def grabber(url, header=None, raw=False, referer=None, errorlog=None):
 	response = urlopen(request, timeout=20)
 
 	jar.load(response.getheader("Set-Cookie", ""))
+	if cookie is not None:
+		for key, c in jar:
+			cookie[key] = c.value
 
 	b = response.read()
 
@@ -195,13 +201,15 @@ def grabber(url, header=None, raw=False, referer=None, errorlog=None):
 
 	return content
 
-def grabhtml(url, header=None, referer=None, errorlog=None):
+def grabhtml(*args, **kwargs):
 	"""Get html source of given url. Return String."""
-	return grabber(url, header, False, referer, errorlog)
+	kwargs["raw"] = False
+	return grabber(*args, **kwargs)
 
-def grabimg(url, header=None, referer=None, errorlog=None):
+def grabimg(*args, **kwargs):
 	"""Return byte array."""
-	return grabber(url, header, True, referer, errorlog)
+	kwargs["raw"] = True
+	return grabber(*args, **kwargs)
 
 def download(mission, savepath, thread=None):
 	"""Download mission to savepath."""
