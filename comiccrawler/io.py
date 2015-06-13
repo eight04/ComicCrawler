@@ -14,10 +14,10 @@ def content_write(file, content, append=False):
 	"""Write content to file. Content may be str or bytes."""
 	file = path.expanduser(file)
 
-	mode = "w"
-
 	if append:
-		mode += "a"
+		mode = "a"
+	else:
+		mode = "w"
 
 	if not path.isdir(path.dirname(file)):
 		os.makedirs(path.dirname(file))
