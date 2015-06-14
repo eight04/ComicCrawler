@@ -347,6 +347,10 @@ class Crawler:
 		"""Return downloader rest."""
 		return getattr(self.downloader, "rest", 0)
 
+	def get_cookie(self):
+		"""Return downloader cookie."""
+		return getattr(self.downloader, "cookie", None)
+
 	def handle_error(self, error):
 		"""Send error to error handler."""
 		handler = getattr(self.downloader, "errorhandler", None)
@@ -378,7 +382,8 @@ class PerPageCrawler(Crawler):
 			self.cache[url] = self.thread.sync(
 				grabhtml,
 				self.ep.current_url,
-				self.get_header()
+				self.get_header(),
+				cookie=self.get_cookie()
 			)
 		return self.cache[url]
 
@@ -420,7 +425,8 @@ class AllPageCrawler(Crawler):
 			html = self.thread.sync(
 				grabhtml,
 				self.ep.url,
-				self.get_header()
+				self.get_header(),
+				cookie=self.get_cookie()
 			)
 
 			imgurls = self.thread.sync(
@@ -556,8 +562,9 @@ def analyze_info(mission, downloader, thread):
 	mission.set("state", "ANALYZING")
 
 	header = getattr(downloader, "header", None)
+	cookie = getattr(downloader, "cookie", None)
 
-	html = thread.sync(grabhtml, mission.url, header)
+	html = thread.sync(grabhtml, mission.url, header, cookie=cookie)
 
 	if not mission.title:
 		mission.title = downloader.gettitle(html, mission.url)

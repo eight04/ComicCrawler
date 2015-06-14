@@ -16,8 +16,9 @@ from ..core import Episode, grabhtml
 from ..safeprint import safeprint
 from ..error import LastPageError
 
-header = {
-	"Cookie": "isAdult=1; fastshow=true"
+cookie = {
+	"isAdult": "1",
+	"fastshow": "true"
 }
 domain = ["www.dm5.com", "tel.dm5.com"]
 name = "動漫屋"

@@ -10,7 +10,7 @@ from urllib.parse import urljoin
 
 from ..core import Episode
 
-header = {}
+cookie = {}
 domain = ["exhentai.org", "g.e-hentai.org"]
 name = "e紳士"
 noepfolder = True
@@ -23,10 +23,7 @@ config = {
 class BandwidthLimitError(Exception): pass
 
 def loadconfig():
-	cookie = []
-	cookie.append("ipb_member_id=" + config["ipb_member_id"])
-	cookie.append("ipb_pass_hash=" + config["ipb_pass_hash"])
-	header["Cookie"] = ";".join(cookie)
+	cookie.update(config)
 
 def gettitle(html, url):
 	t = re.findall("<h1 id=\"g(j|n)\">(.+?)</h1>", html)

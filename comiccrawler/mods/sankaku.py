@@ -6,7 +6,7 @@ from html import unescape
 from ..core import Episode, grabhtml
 from ..safeprint import safeprint
 
-header = {}
+cookie = {}
 domain = ["chan.sankakucomplex.com"]
 name = "Sankaku"
 noepfolder = True
@@ -15,21 +15,21 @@ config = {
 }
 
 def loadconfig():
-	header["Cookie"] = "cf_clearance=" + config["cf_clearance"]
+	cookie.update(config)
 
 def gettitle(html, url):
 	title = re.search(r"<title>/?(.+?) \|", html).group(1)
 	return "[sankaku] " + title
-	
+
 def getepisodelist(html, url):
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
 	while True:
 		ms = re.findall(r'href="(/(?:[^/]*/)?post/show/(\d+))"', html)
-		
+
 		for m in ms:
 			url, pid = m
-			
+
 			e = Episode()
 			e.title = pid
 			e.firstpageurl = base + url
@@ -40,7 +40,7 @@ def getepisodelist(html, url):
 			break
 		u = unescape(m.group(1))
 		safeprint(base + u)
-		html = grabhtml(base + u, header)
+		html = grabhtml(base + u)
 	return s[::-1]
 
 def getimgurls(html, url):
@@ -48,4 +48,3 @@ def getimgurls(html, url):
 	if not u:
 		u = re.search('embed src="([^"]+)"', html)
 	return ["https:" + u.group(1)]
-	

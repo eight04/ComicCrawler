@@ -14,7 +14,7 @@ from ..safeprint import safeprint
 from ..error import PauseDownloadError
 from ..core import Episode, grabhtml
 
-header = {}
+cookie = {}
 domain = ["deviantart.com"]
 name = "dA"
 noepfolder = True
@@ -24,14 +24,11 @@ config = {
 }
 
 def loadconfig():
-	cookie = []
-	cookie.append("auth=" + unescape(config["auth"]))
-	cookie.append("userinfo=" + unescape(config["userinfo"]))
-	header["Cookie"] = ";".join(cookie)
+	cookie.update(config)
 
 def gettitle(html, url):
 	return unescape(search("<title>(.+?)</title>", html).group(1))
-	
+
 def getepisodelist(html, url):
 	if '"loggedIn":true' not in html:
 		raise PauseDownloadError("you didn't log in!")
@@ -47,20 +44,20 @@ def getepisodelist(html, url):
 			title = match.group(2).rpartition(" by ")[0]
 			# WTF r u doing deviantArt?
 			title = unescape(unescape(title))
-			
+
 			s.append(
 				Episode(
 					"{} - {}".format(id, title),
 					match.group(1)
 				)
 			)
-			
+
 		next = search('id="gmi-GPageButton"[^>]+?href="([^"]+?)"><span>Next</span>', html)
 		if not next:
 			break
 		url = base + unescape(next.group(1))
-		html = grabhtml(url, header)
-		
+		html = grabhtml(url)
+
 	return s[::-1]
 
 
