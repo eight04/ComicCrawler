@@ -168,7 +168,7 @@ def grabber(url, header=None, *, referer=None, cookie=None, raw=False, errorlog=
 
 	jar.load(response.getheader("Set-Cookie", ""))
 	if cookie is not None:
-		for key, c in jar:
+		for key, c in jar.items():
 			cookie[key] = c.value
 
 	b = response.read()
