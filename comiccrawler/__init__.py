@@ -27,7 +27,7 @@ Sub modules:
   comiccrawler.mods   Import download modules.
 """
 
-__version__ = "2015.6.14"
+__version__ = "2015.6.14.1"
 
 import subprocess, traceback, json
 
