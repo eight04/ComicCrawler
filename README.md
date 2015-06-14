@@ -41,7 +41,7 @@ Development Dependencies
 ------------------
 Comic Crawler is on [PyPI][2]. 安裝完 python 後，可以直接用 pip 指令自動安裝。
 
-[2]: https://pypi.python.org/pypi/comiccrawler/2015.6.13
+[2]: https://pypi.python.org/pypi/comiccrawler/2015.6.14
 
 ### Python ###
 你需要 Python 3.4 以上。安裝檔可以從它的 [官方網站][1] 下載。
@@ -220,6 +220,13 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.6.14
+	- Enhance `safeprint`. Use `echo` command.
+	- Enhance `content_write`. Add `append=False` option.
+	- Enhance `Crawler`. Cache imgurl.
+	- Enhance `grabber`. Add `cookie=None` option. Change errorlog behavior.
+	- Fix `grabber` unicode encoding issue.
+	- Some module update.
 * 2015.6.13
 	- Fix `clean_finished`
 	- Fix `console_download`
