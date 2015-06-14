@@ -328,7 +328,7 @@ class Crawler:
 		self.thread.wait(self.get_rest())
 
 	def get_img(self):
-		"""Override me. Return img url."""
+		"""Override me. Return img url. It should cahe each page."""
 		pass
 
 	def get_nextpage(self):
@@ -336,7 +336,7 @@ class Crawler:
 		pass
 
 	def flush(self):
-		"""Override me. Flush page info. Recreate the request."""
+		"""Override me. Cleanup url cache."""
 		pass
 
 	def get_header(self):
