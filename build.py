@@ -37,6 +37,7 @@ class Tasks:
 		self.readme()
 		self.dist()
 		self.bump()
+		self.install()
 
 	def dist(self):
 		import os
@@ -66,6 +67,10 @@ class Tasks:
 				" ".join(list_domain())
 			).replace("@@VERSION", version)
 		)
+
+	def install(self):
+		import os
+		os.system("pip install -e .")
 
 if __name__ == "__main__":
 	Tasker(Tasks)
