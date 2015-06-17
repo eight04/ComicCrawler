@@ -103,13 +103,26 @@ def quote_from_match(match):
 	return quote(match.group())
 
 def quote_unicode(s):
-	"""Quote unicode characters."""
-	return sub(r"[\u0080-\uffff]+", quote_from_match, s)
+	"""Quote unicode characters only."""
+	# return sub(r"[\u0080-\uffff]+", quote_from_match, s)
+	return quote(s, safe=r"/ !\"#$%&'()*+,:;<=>?@[\\]^`{|}~")
+
+def quote_loosely(s):
+	"""Quote space and others in path part.
+
+	Reference:
+	  http://stackoverflow.com/questions/120951/how-can-i-normalize-a-url-in-python
+	"""
+	return quote(s, safe="%/:=&?~#+!$,;'@()*[]")
 
 def safeurl(url):
-	"""Return a safe url, quote the unicode characters."""
+	"""Return a safe url, quote the unicode characters.
+
+	This function should follow this rule:
+	  safeurl(safeurl(url)) == safe(url)
+	"""
 	scheme, netloc, path, query, fragment = urlsplit(url)
-	return urlunsplit((scheme, netloc, quote(path), query, ""))
+	return urlunsplit((scheme, netloc, quote_loosely(path), query, ""))
 
 def safeheader(header):
 	"""Return a safe header, quote the unicode characters."""
