@@ -98,13 +98,8 @@ def safefilepath(s):
 	"""Return a safe directory name."""
 	return sub("[/\\\?\|<>:\"\*]","_",s).strip()
 
-def quote_from_match(match):
-	"""Return quoted match.group."""
-	return quote(match.group())
-
 def quote_unicode(s):
 	"""Quote unicode characters only."""
-	# return sub(r"[\u0080-\uffff]+", quote_from_match, s)
 	return quote(s, safe=r"/ !\"#$%&'()*+,:;<=>?@[\\]^`{|}~")
 
 def quote_loosely(s):

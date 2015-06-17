@@ -220,6 +220,8 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.6.18
+	- Fix url quoting issue.
 * 2015.6.14
 	- Enhance `safeprint`. Use `echo` command.
 	- Enhance `content_write`. Add `append=False` option.
