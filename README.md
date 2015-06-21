@@ -41,7 +41,7 @@ Development Dependencies
 ------------------
 Comic Crawler is on [PyPI][2]. 安裝完 python 後，可以直接用 pip 指令自動安裝。
 
-[2]: https://pypi.python.org/pypi/comiccrawler/2015.6.18
+[2]: https://pypi.python.org/pypi/comiccrawler/2015.6.22
 
 ### Python ###
 你需要 Python 3.4 以上。安裝檔可以從它的 [官方網站][1] 下載。
@@ -68,7 +68,7 @@ Comic Crawler is on [PyPI][2]. 安裝完 python 後，可以直接用 pip 指令
 
 Supported domains
 -----------------
-> chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org g.e-hentai.org konachan.com manhua.dmzj.com tel.dm5.com www.8comic.com www.99comic.com www.comicvip.com www.dm5.com www.iibq.com www.manhuadao.com www.pixiv.net yande.re
+> chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org g.e-hentai.org konachan.com manhua.dmzj.com tel.dm5.com tsundora.com www.8comic.com www.99comic.com www.comicvip.com www.dm5.com www.iibq.com www.manhuadao.com www.pixiv.net yande.re
 
 
 使用說明
@@ -220,6 +220,8 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.6.22
+	- Support tsundora.
 * 2015.6.18
 	- Fix url quoting issue.
 * 2015.6.14
