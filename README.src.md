@@ -220,6 +220,8 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.7.4
+	- Support imgbox.
 * 2015.6.22
 	- Support tsundora.
 * 2015.6.18
