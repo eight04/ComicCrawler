@@ -36,6 +36,8 @@ Dependencies
 Development Dependencies
 ------------------------
 * pypandoc - to convert markdown to rst.
+* wheel - create python wheel.
+* twine - upload package.
 
 下載和安裝（Windows）
 ------------------
