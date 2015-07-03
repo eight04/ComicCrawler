@@ -21,7 +21,7 @@ def getepisodelist(html, url):
 	for match in re.finditer(r'href="(/(\w+))"><img', html):
 		ep_url, id = match.groups()
 		s.append(Episode(id, urljoin(url, ep_url)))
-	return s[::-1]
+	return s
 
 def getimgurls(html, url):
 	img = re.search(r'href="([^?"]+\?download=true)"', html).group(1)
