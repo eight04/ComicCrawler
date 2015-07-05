@@ -1,6 +1,6 @@
 #! python3
 
-import os, os.path as path, re, sys
+import os.path as path, re, sys
 
 here = path.abspath(path.dirname(__file__))
 
@@ -40,19 +40,19 @@ class Tasks:
 		self.install()
 
 	def dist(self):
-		import os
-		os.system("py setup.py sdist bdist_wheel")
-		os.system("twine upload dist/*")
-		os.system("rm -R dist")
+		import shutil, subprocess
+		subprocess.call(["setup.py", "sdist", "bdist_wheel"])
+		subprocess.call(["twine", "upload", "dist/*"])
+		shutil.rmtree("dist")
 
 	def bump(self):
-		import os
+		import subprocess
 		from setup import settings
 		version = settings["version"]
-		os.system("git add -A .")
-		os.system('git commit -m "Release v{}"'.format(version))
-		os.system('git tag -a v{} -m "Release v{}"'.format(version, version))
-		os.system("git push --follow-tags")
+		subprocess.call(["git", "add", "-A", "."])
+		subprocess.call(["git", "commit", "-m", "Release v" + version])
+		subprocess.call(["git", "tag", "-a", "v" + version, "-m", "Release v" + version])
+		subprocess.call(["git", "push", "--follow-tags"])
 
 	def readme(self):
 		from comiccrawler.mods import list_domain
@@ -69,8 +69,8 @@ class Tasks:
 		)
 
 	def install(self):
-		import os
-		os.system("pip install -e .")
+		import subprocess
+		subprocess.call(["pip", "install", "-e", "."])
 
 if __name__ == "__main__":
 	Tasker(Tasks)
