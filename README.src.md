@@ -222,6 +222,9 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.7.5
+	- Add error handler to dm5.
+	- Add error handler to acgn.
 * 2015.7.4
 	- Support imgbox.
 * 2015.6.22
