@@ -73,3 +73,7 @@ def getimgurl(html, url, page):
 def getnextpageurl(html, url, page):
 	# Simulate ajax load
 	return url
+
+def errorhandler(err, ep):
+	fun_url = cache[ep.current_url][0]
+	grabhtml(fun_url, referer=ep.current_url)
