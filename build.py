@@ -40,8 +40,8 @@ class Tasks:
 		self.install()
 
 	def dist(self):
-		import shutil, subprocess
-		subprocess.call(["setup.py", "sdist", "bdist_wheel"])
+		import shutil, subprocess, sys
+		subprocess.call([sys.executable, "setup.py", "sdist", "bdist_wheel"])
 		subprocess.call(["twine", "upload", "dist/*"])
 		shutil.rmtree("dist")
 

@@ -222,6 +222,8 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.7.6
+	- Fix getepisodes regex in exh.
 * 2015.7.5
 	- Add error handler to dm5.
 	- Add error handler to acgn.
