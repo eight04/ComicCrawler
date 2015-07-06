@@ -32,9 +32,8 @@ def gettitle(html, url):
 	return unescape(t)
 
 def getepisodelist(html, url):
-	title = "image"
-	url = re.search("href=\"([^\"]+?-1)\"", html).group(1)
-	e = Episode(title, url)
+	url = re.search(r'href="([^\"]+?/s/\w+/\w+-1)"', html).group(1)
+	e = Episode("image", url)
 	return [e]
 
 nl = ""
