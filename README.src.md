@@ -222,6 +222,9 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.7.7
+	- Fix danbooru bug.
+	- Fix dmzj bug.
 * 2015.7.6
 	- Fix getepisodes regex in exh.
 * 2015.7.5
