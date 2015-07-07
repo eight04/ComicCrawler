@@ -20,7 +20,7 @@ noepfolder = True
 def gettitle(html, url):
 	title = re.search(r"<title>(.+?)</title>", html, re.DOTALL).group(1)
 	return title.strip()
-	
+
 def getepisodelist(html, url):
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
@@ -30,14 +30,14 @@ def getepisodelist(html, url):
 			title = match.group(2)
 			e = Episode(title, base + u)
 			s.append(e)
-			
+
 		u = re.search(r'"([^"]+)" rel="next"', html)
 		if not u:
 			break
 		u = base + unescape(u.group(1))
 		safeprint(u)
-		html = cc.grabhtml(u)
-			
+		html = grabhtml(u)
+
 	return s[::-1]
 
 def getimgurls(html, url):
