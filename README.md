@@ -65,7 +65,7 @@ Comic Crawler is on [PyPI][2]. 安裝完 python 後，可以直接用 pip 指令
 
 更新時︰
 
-	pip install --update comiccrawler
+	pip install --upgrade comiccrawler
 
 
 Supported domains
