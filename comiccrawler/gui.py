@@ -9,10 +9,11 @@ from functools import partial
 import sys, os, webbrowser, worker
 import tkinter.messagebox as messagebox
 
-from . import config, mods, DownloadManager
+from . import config, mods
 from .safeprint import safeprint, addcallback as sp_addcallback, removecallback as sp_removecallback
 from .core import safefilepath
 from .error import ModuleError
+from .download_manager import DownloadManager
 
 STATE = {
 	"INIT": "準備",
