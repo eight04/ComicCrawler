@@ -9,7 +9,8 @@ from functools import partial
 import sys, os, webbrowser, worker
 import tkinter.messagebox as messagebox
 
-from . import config, mods
+from .mods import list_domain, get_module
+from .config import setting
 from .safeprint import safeprint, addcallback as sp_addcallback, removecallback as sp_removecallback
 from .core import safefilepath
 from .error import ModuleError
@@ -330,7 +331,7 @@ class MainWindow(worker.UserWorker):
 
 		# domains
 		text = Text(frame, height=10, yscrollcommand=scrollbar.set)
-		text.insert("insert", "\n".join(mods.list_domain()))
+		text.insert("insert", "\n".join(list_domain()))
 		text.pack(side="left", fill="y")
 
 		scrollbar.config(command=text.yview)
@@ -364,7 +365,7 @@ class MainWindow(worker.UserWorker):
 			except Exception:
 				return
 
-			if mods.get_module(url) and url != self.pre_url:
+			if get_module(url) and url != self.pre_url:
 				self.entry_url.insert(0, url)
 				self.entry_url.selection_range(0, "end")
 				self.entry_url.focus_set()
@@ -469,7 +470,7 @@ class MainWindow(worker.UserWorker):
 			def tvOpen():
 				s = tv.selection()
 				missions = [ cid_index[i] for i in s ]
-				savepath = config.setting["savepath"]
+				savepath = setting["savepath"]
 				for mission in missions:
 					folder = os.path.join(savepath, safefilepath(mission.title))
 					os.startfile(os.path.expanduser(folder))

@@ -29,24 +29,11 @@ Sub modules:
 
 __version__ = "2015.7.7"
 
-import subprocess, traceback, json
-
-from worker import Worker, UserWorker, WorkerExit
-from os import path
-from collections import OrderedDict
-
-from .safeprint import safeprint
-from .config import setting, section
-from .core import Mission, Episode, download, analyze, safefilepath
-from .io import content_read, content_write, is_file
-from .mods import list_domain, load_config
-
-from . import config, io
-
-from .mission_manager import MissionManager
-
 def console_download(url, savepath):
 	"""Download url to savepath."""
+	from worker import Worker
+	from .core import Mission, download, analyze
+
 	mission = Mission(url=url)
 	Worker.sync(analyze, mission, pass_instance=True)
 	Worker.sync(download, mission, savepath, pass_instance=True)
@@ -58,6 +45,7 @@ def console_init():
 	arguments = docopt(__doc__, version="Comic Crawler v" + __version__)
 
 	if arguments["domains"]:
+		from .mods import list_domain
 		print("Supported domains:\n" + ", ".join(list_domain()))
 
 	elif arguments["gui"]:
