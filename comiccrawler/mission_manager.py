@@ -62,7 +62,7 @@ class MissionManager(worker.UserWorker):
 
 		self.load()
 		while True:
-			self.wait(setting.getint("autosave", 5))
+			self.wait(setting.getint("autosave", 5) * 60)
 			if self.edit:
 				self.save()
 
@@ -94,6 +94,7 @@ class MissionManager(worker.UserWorker):
 			)
 		)
 		self.edit = False
+		safeprint("Session saved")
 
 	def load(self):
 		"""Load mission from json.
