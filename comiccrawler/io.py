@@ -4,6 +4,8 @@
 
 import os, os.path as path, pprint, glob
 
+from datetime import datetime
+
 def is_file(file):
 	"""Check if the file is file."""
 	file = path.expanduser(file)
@@ -14,13 +16,16 @@ def content_write(file, content, append=False):
 	"""Write content to file. Content may be str or bytes."""
 	file = path.expanduser(file)
 
+	prepare_folder(path.dirname(file))
+
+	original = file
+
 	if append:
 		mode = "a"
 	else:
 		mode = "w"
-
-	if not path.isdir(path.dirname(file)):
-		os.makedirs(path.dirname(file))
+		if is_file(file):
+			file = file + datetime.now().strftime("@%Y-%m-%d_%H%M%S")
 
 	if isinstance(content, bytes):
 		mode += "b"
@@ -33,6 +38,9 @@ def content_write(file, content, append=False):
 
 		with open(file, mode, encoding="utf-8") as f:
 			f.write(content)
+
+	if file != original:
+		os.replace(file, original)
 
 def content_read(file, raw=False):
 	"""Read content from file. Return str."""
