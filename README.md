@@ -43,7 +43,7 @@ Development Dependencies
 ------------------
 Comic Crawler is on [PyPI][2]. 安裝完 python 後，可以直接用 pip 指令自動安裝。
 
-[2]: https://pypi.python.org/pypi/comiccrawler/2015.7.7
+[2]: https://pypi.python.org/pypi/comiccrawler/2015.7.14
 
 ### Python ###
 你需要 Python 3.4 以上。安裝檔可以從它的 [官方網站][1] 下載。
@@ -222,6 +222,10 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.7.14
+	- Refactor: pull out download_manager, mission_manager.
+	- Enhance content_write: use os.replace.
+	- Fix mission_manager save loop interval.
 * 2015.7.7
 	- Fix danbooru bug.
 	- Fix dmzj bug.

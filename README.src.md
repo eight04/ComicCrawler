@@ -222,6 +222,10 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.7.14
+	- Refactor: pull out download_manager, mission_manager.
+	- Enhance content_write: use os.replace.
+	- Fix mission_manager save loop interval.
 * 2015.7.7
 	- Fix danbooru bug.
 	- Fix dmzj bug.
