@@ -30,9 +30,7 @@ def getepisodelist(html, url):
 		for m in ms:
 			url, pid = m
 
-			e = Episode()
-			e.title = pid
-			e.firstpageurl = base + url
+			e = Episode(pid, base + url)
 			s.append(e)
 
 		m = re.search('next-page-url="([^"]+)"', html)
