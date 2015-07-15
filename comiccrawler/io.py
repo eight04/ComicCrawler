@@ -2,9 +2,7 @@
 
 """Simple io module depressing exceptions"""
 
-import os, os.path as path, pprint, glob
-
-from datetime import datetime
+import os, os.path as path, pprint, glob, time, shutil
 
 def is_file(file):
 	"""Check if the file is file."""
@@ -25,7 +23,7 @@ def content_write(file, content, append=False):
 	else:
 		mode = "w"
 		if is_file(file):
-			file = file + datetime.now().strftime("@%Y-%m-%d_%H%M%S")
+			file = file + time.strftime("@%Y-%m-%d_%H%M%S")
 
 	if isinstance(content, bytes):
 		mode += "b"
@@ -94,3 +92,15 @@ def move(src, dest):
 
 		prepare_folder(path.dirname(dest))
 		os.rename(src, dest)
+
+def backup(file):
+	"""Create backup file."""
+	file = path.expanduser(file)
+	if "*" in src:
+		# Wildcard multiple copy
+		for file in glob.iglob(file):
+			shutil.copyfile(file, file + time.strftime("@%Y-%m-%d_%H%M%S"))
+	else:
+		if not is_file(file):
+			return
+		shutil.copyfile(file, file + time.strftime("@%Y-%m-%d_%H%M%S"))
