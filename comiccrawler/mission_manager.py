@@ -9,7 +9,7 @@ from collections import OrderedDict
 from .safeprint import safeprint
 from .config import setting
 from .core import Mission, Episode
-from .io import content_read, content_write, is_file
+from .io import content_read, content_write, is_file, move
 
 def shallow(dict, exclude=None):
 	"""Return a shallow copy of a dict.
@@ -118,7 +118,7 @@ class MissionManager(worker.UserWorker):
 				exc
 			))
 
-			io.move(
+			move(
 				"~/comiccrawler/*.json",
 				dest
 			)
