@@ -504,7 +504,9 @@ class MainWindow(worker.UserWorker):
 		self.btn_update["command"] = libCheckUpdate
 
 		def libDownloadUpdate():
-			self.downloader.add_mission_update()
+			if not self.downloader.add_mission_update():
+				messagebox.showerror("Comic Crawler", "沒有新更新的任務")
+				return
 			self.downloader.start_download()
 			self.notebook.select(0)
 		self.btn_download_update["command"] = libDownloadUpdate

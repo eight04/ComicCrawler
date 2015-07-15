@@ -174,6 +174,7 @@ class DownloadManager(worker.UserWorker):
 			"library", ("UPDATE",), all=True
 		)
 		self.mission_manager.add("view", *missions)
+		return missions
 
 	def clean_finished(self):
 		"""Remove finished missions."""
