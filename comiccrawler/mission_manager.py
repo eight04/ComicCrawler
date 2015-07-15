@@ -9,7 +9,7 @@ from collections import OrderedDict
 from .safeprint import safeprint
 from .config import setting
 from .core import Mission, Episode
-from .io import content_read, content_write, is_file, move
+from .io import content_read, content_write, is_file, backup
 
 def shallow(dict, exclude=None):
 	"""Return a shallow copy of a dict.
@@ -107,25 +107,8 @@ class MissionManager(worker.UserWorker):
 		try:
 			self._load()
 		except Exception:
-			import time
-			dest = path.join(
-				"~/comiccrawler/invalid-save",
-				time.strftime("%Y-%m-%d %H.%M.%S")
-			)
-
-			exc = traceback.format_exc()
-
-			safeprint("Can't read save files! Move files to {}\n\n{}".format(
-				dest,
-				exc
-			))
-
-			move(
-				"~/comiccrawler/*.json",
-				dest
-			)
-
 			self.bubble("MISSION_POOL_LOAD_FAILED", (dest, exc))
+			backup("~/comiccrawler/*.json")
 
 	def _load(self):
 		"""Load missions from json. Called by MissionManager.load."""
