@@ -96,7 +96,7 @@ def move(src, dest):
 def backup(file):
 	"""Create backup file."""
 	file = path.expanduser(file)
-	if "*" in src:
+	if "*" in file:
 		# Wildcard multiple copy
 		for file in glob.iglob(file):
 			shutil.copyfile(file, file + time.strftime("@%Y-%m-%d_%H%M%S"))
