@@ -222,6 +222,8 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.7.15
+	- Add module seemh.
 * 2015.7.14
 	- Refactor: pull out download_manager, mission_manager.
 	- Enhance content_write: use os.replace.
