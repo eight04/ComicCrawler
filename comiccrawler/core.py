@@ -570,7 +570,6 @@ def analyze_info(mission, downloader, thread):
 	"""Analyze mission."""
 	safeprint("Start analyzing {}".format(mission.url))
 
-	complete = mission.state == "FINISHED"
 	mission.set("state", "ANALYZING")
 
 	header = getattr(downloader, "header", None)
@@ -584,29 +583,23 @@ def analyze_info(mission, downloader, thread):
 	episodes = thread.sync(downloader.getepisodelist, html, mission.url)
 
 	if not episodes:
-		raise Exception("episodes are empty")
+		raise Exception("Episode list is empty")
 
 	# Check if re-analyze
 	if mission.episodes:
-		old_ep = set()
-		for ep in mission.episodes:
-			old_ep.add(ep.url)
-
-		update = False
-
+		# Insert new episodes
+		old_eps = set([ep.url for ep in mission.episodes])
 		for ep in episodes:
-			if ep.url not in old_ep:
+			if ep.url not in old_eps:
 				mission.episodes.append(ep)
-				update = True
 
-		if update:
-			mission.set("state", "UPDATE")
-
-		elif complete:
-			mission.set("state", "FINISHED")
-
+		# Check update
+		for ep in mission.episodes:
+			if not ep.skip and not ep.complete:
+				mission.set("state", "UPDATE")
+				break
 		else:
-			mission.set("state", "ANALYZED")
+			mission.set("state", "FINISHED")
 
 	else:
 		mission.episodes = episodes
