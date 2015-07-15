@@ -190,7 +190,7 @@ class MainWindow(worker.UserWorker):
 		def dummy(param):
 			messagebox.showerror(
 				"Comic Crawler",
-				"讀取存檔失敗！移至 {}\n{}".format(*param)
+				"讀取存檔失敗！\n{}".format(param)
 			)
 
 		@self.listen("DOWNLOAD_INVALID")

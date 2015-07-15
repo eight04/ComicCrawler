@@ -106,9 +106,11 @@ class MissionManager(worker.UserWorker):
 		"""
 		try:
 			self._load()
-		except Exception:
-			self.bubble("MISSION_POOL_LOAD_FAILED", (dest, exc))
+		except Exception as err:
+			safeprint("Failed to load session!")
+			traceback.print_exc()
 			backup("~/comiccrawler/*.json")
+			self.bubble("MISSION_POOL_LOAD_FAILED", err)
 
 	def _load(self):
 		"""Load missions from json. Called by MissionManager.load."""
