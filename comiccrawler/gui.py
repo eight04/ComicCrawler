@@ -505,7 +505,7 @@ class MainWindow(worker.UserWorker):
 
 		def libDownloadUpdate():
 			self.downloader.add_mission_update()
-			self.downloadManager.start_download()
+			self.downloader.start_download()
 			self.notebook.select(0)
 		self.btn_download_update["command"] = libDownloadUpdate
 
