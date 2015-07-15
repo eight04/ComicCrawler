@@ -20,17 +20,32 @@ name = "看漫畫"
 def gettitle(html, url):
 	return re.search(r'<h1>([^<]*)', html).group(1)
 
-def getepisodelist(html, url):
-	cid = re.search(r"comic/(\d+)", url).group(1)
+def get_list(html, cid):
 	ep_re = r'href="(/comic/{}/\d+\.html)" title="([^"]+)"'.format(cid)
 	arr = []
-	comment_pos = html.index('class="comment-bar"')
+	try:
+		comment_pos = html.index('class="comment-bar"')
+	except ValueError:
+		comment_pos = len(html)
+
 	for match in re.finditer(ep_re, html):
 		if match.start() >= comment_pos:
 			break
 		ep_url, title = match.groups()
-		arr.append(Episode(title, urljoin(url, ep_url)))
-	return arr[::-1]
+		arr.append((title, ep_url))
+	return arr
+
+
+def getepisodelist(html, url):
+	cid = re.search(r"comic/(\d+)", url).group(1)
+	episodes = get_list(html, cid)
+
+	if not episodes:
+		ep_html = grabhtml(urljoin(url, "/support/chapters.aspx?id=" + cid), referer=url)
+		episodes = get_list(ep_html, cid)
+
+	episodes = [Episode(v[0].strip(), urljoin(url, v[1])) for v in episodes]
+	return episodes[::-1]
 
 def getimgurls(html, url):
 	configjs_url = re.search(
