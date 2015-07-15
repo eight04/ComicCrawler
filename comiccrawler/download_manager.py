@@ -70,6 +70,9 @@ class DownloadManager(worker.UserWorker):
 		@self.listen("ANALYZE_FINISHED")
 		def dummy(mission, thread):
 			"""After analyze, continue next (library)"""
+			if isinstance(mission, tuple):
+				mission = mission[0]
+
 			if thread is self.library_thread:
 				if mission.state == "UPDATE":
 					self.mission_manager.lift("library", mission)
