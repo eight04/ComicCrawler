@@ -63,11 +63,13 @@ class MissionManager(worker.UserWorker):
 		self.load()
 		while True:
 			self.wait(setting.getint("autosave", 5) * 60)
-			if self.edit:
-				self.save()
+			self.save()
 
 	def save(self):
 		"""Save missions to json."""
+		if not self.edit:
+			return
+
 		content_write(
 			"~/comiccrawler/pool.json",
 			json.dumps(
