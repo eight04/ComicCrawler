@@ -6,7 +6,7 @@ Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管�
 
 Todos
 -----
-* Ignore module.rest in ImageExistsError.
+* The misssion shows "updated" in mission list after re-analyze.
 
 20150608 更新
 -------------
@@ -222,6 +222,20 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.7.16
+  Added:
+	- Cleanup unused missions after session loads.
+	- Handle ajax episode list in seemh.
+	- Show an error if no update to download when clicking "download updates".
+	- Show an error if failing to load session.
+  Changed:
+	- Always use "UPDATE" state if the mission is not complete after re-analyzing.
+	- Create backup if failing to load session instead of moving them to "invalid-save" folder.
+	- Check edit flag in MissionManager.save().
+  Fixed:
+	- Can not download "updated" mission.
+	- Update checking will stop on error.
+	- Sankaku module is still using old method to create Episode.
 * 2015.7.15
 	- Add module seemh.
 * 2015.7.14
