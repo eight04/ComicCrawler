@@ -149,8 +149,14 @@ class MissionManager(worker.UserWorker):
 			mission = Mission(**m_data)
 			self._add(mission)
 
-		self.add("view", *[self.pool[url] for url in view])
-		self.add("library", *[self.pool[url] for url in library])
+		for url in view:
+			self.view[url] = self.pool[url]
+
+		for url in library:
+			self.library[url] = self.pool[url]
+
+		self.bubble("MISSION_LIST_REARRANGED", self.view)
+		self.bubble("MISSION_LIST_REARRANGED", self.library)
 
 	def _add(self, mission):
 		"""Add mission to public pool."""
