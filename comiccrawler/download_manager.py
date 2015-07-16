@@ -103,7 +103,7 @@ class DownloadManager(worker.UserWorker):
 
 	def get_mission_to_download(self):
 		"""Select those missions which available to download."""
-		states = ("ANALYZED", "PAUSE", "ERROR")
+		states = ("ANALYZED", "PAUSE", "ERROR", "UPDATE")
 		return self.mission_manager.get_by_state("view", states)
 
 	def get_mission_to_check_update(self):
