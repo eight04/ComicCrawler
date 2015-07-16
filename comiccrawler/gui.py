@@ -568,7 +568,7 @@ def select_title(parent, mission):
 			entry.focus_set()
 			self.entry = entry
 
-		def apply():
+		def apply(self):
 			title = self.entry.get()
 			mission.set("title", title)
 
