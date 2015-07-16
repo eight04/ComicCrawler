@@ -47,6 +47,15 @@ class MissionManager(worker.UserWorker):
 		self.library = OrderedDict()
 		self.edit = False
 
+	def cleanup(self):
+		"""Cleanup unused missions"""
+		main_pool = set(self.pool)
+		view_pool = set(self.view)
+		library_pool = set(self.library)
+
+		for url in main_pool - (view_pool | library_pool):
+			del self.pool[url]
+
 	def worker(self):
 		"""Override. The worker target."""
 		@self.listen("MISSION_PROPERTY_CHANGED")
@@ -111,6 +120,7 @@ class MissionManager(worker.UserWorker):
 			traceback.print_exc()
 			backup("~/comiccrawler/*.json")
 			self.bubble("MISSION_POOL_LOAD_FAILED", err)
+		self.cleanup()
 
 	def _load(self):
 		"""Load missions from json. Called by MissionManager.load."""
@@ -168,9 +178,8 @@ class MissionManager(worker.UserWorker):
 
 		for mission in missions:
 			del pool[mission.url]
-			if mission.url not in self.view and mission.url not in self.library:
-				del self.pool[mission.url]
 
+		self.cleanup()
 		self.bubble("MISSION_LIST_REARRANGED", pool)
 		self.edit = True
 
