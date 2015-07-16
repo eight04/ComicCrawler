@@ -222,6 +222,8 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.7.17
+	- Fix episode selecting bug.
 * 2015.7.16
 	+ Added:
 		- Cleanup unused missions after session loads.
