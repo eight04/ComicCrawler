@@ -222,6 +222,8 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.7.23
+	- Add module dmzj_m. Some expunged manga may be accessed from mobile page. `http://manhua.dmzj.com/name => http://m.dmzj.com/info/name.html`
 * 2015.7.22
 	- Fix bug in module eight.
 * 2015.7.17
