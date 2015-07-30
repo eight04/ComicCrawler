@@ -93,11 +93,13 @@ class DownloadManager(worker.UserWorker):
 				self.analyze_threads.remove(thread)
 				self.bubble("AFTER_ANALYZE_FAILED", mission)
 
+		@self.listen("MISSION_POOL_LOAD_SUCCESS")
+		def dummy():
+			if setting.getboolean("libraryautocheck"):
+				self.start_check_update()
+
 		self.reload_config()
 		self.mission_manager.start()
-
-		if setting.getboolean("libraryautocheck"):
-			self.start_check_update()
 
 		self.message_loop()
 

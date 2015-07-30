@@ -121,6 +121,7 @@ class MissionManager(worker.UserWorker):
 			backup("~/comiccrawler/*.json")
 			self.bubble("MISSION_POOL_LOAD_FAILED", err)
 		self.cleanup()
+		self.bubble("MISSION_POOL_LOAD_SUCCESS")
 
 	def _load(self):
 		"""Load missions from json. Called by MissionManager.load."""
