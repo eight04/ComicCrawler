@@ -9,7 +9,7 @@ Ex:
 
 import re
 
-from ..core import Episode
+from ..core import Episode, grabhtml
 from ..safeprint import safeprint
 
 domain = ["comic.sfacg.com"]
@@ -19,7 +19,7 @@ def gettitle(html, url):
 	html = html.replace("\n","")
 	t = re.search("<title>(.+?)</title>", html).group(1)
 	return t.split(",")[0]
-	
+
 def getepisodelist(html, url):
 	base = re.search("(https?://[^/]+)", url).group(1)
 	s = []
@@ -29,13 +29,12 @@ def getepisodelist(html, url):
 		e = Episode(title, base + url)
 		s.append(e)
 	return s[::-1]
-	
+
 def getimgurls(html, url):
 	js = re.search("src=\"(/Utility/.+?\.js)\"", html).group(1)
 	base = re.search("(https?://[^/]+)", url).group(1)
-	
-	htmljs = comiccrawler.grabhtml(base + js)	
+
+	htmljs = grabhtml(base + js)
 	host = "http://coldpic.sfacg.com"
 	pics = re.findall("picAy\[\d+\] = \"(.+?)\"", htmljs)
 	return [base + pic for pic in pics]
-	
