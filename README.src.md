@@ -222,6 +222,8 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.9.29
+	- Support http://www.chuixue.com.
 * 2015.8.7
 	- Fixed sfacg bug.
 * 2015.7.31
