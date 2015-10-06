@@ -10,6 +10,7 @@ Ex:
 import re, execjs
 from html import unescape
 from urllib.error import HTTPError
+from urllib.parse import urljoin
 
 from ..core import Episode, grabhtml
 from ..error import LastPageError, SkipEpisodeError, PauseDownloadError
@@ -29,28 +30,29 @@ def loadconfig():
 def gettitle(html, url):
 	if "pixiv.user.loggedIn = true" not in html:
 		raise PauseDownloadError("you didn't login!")
-	user = re.search("class=\"user\">(.+?)</h1>", html).group(1)
-	id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
-	return "{} - {}".format(id, user)
+	try:
+		user = re.search("class=\"user\">(.+?)</h1>", html).group(1)
+		id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
+		title = "{} - {}".format(id, user)
+	except Exception:
+		title = "[pixiv] " + re.search("<title>「([^」]+)").group(1)
+	return title
 
 def getepisodelist(html, url):
 	s = []
-	root = re.search("https?://[^/]+", url).group()
-	base = re.search("https?://[^?]+", url).group()
 	while True:
-		ms = re.findall(r'<a href="([^"]+)"><h1 class="title" title="([^"]+)">', html)
-		for m in ms:
-			url, title = m
-			uid = re.search("id=(\d+)", url).group(1)
-			e = Episode("{} - {}".format(uid, title), root + url)
+		for m in re.finditer(r'<a href="([^"]+)"><h1 class="title" title="([^"]+)">', html):
+			ep_url, title = m.groups()
+			uid = re.search("id=(\d+)", ep_url).group(1)
+			e = Episode("{} - {}".format(uid, title), urljoin(url, ep_url))
 			s.append(e)
 
 		un = re.search("href=\"([^\"]+)\" rel=\"next\"", html)
 		if un is None:
 			break
-		u = un.group(1).replace("&amp;", "&")
-		safeprint(base + u)
-		html = grabhtml(base + u)
+		next_url = urljoin(url, unescape(un.group(1)))
+		safeprint(next_url)
+		html = grabhtml(next_url)
 	return s[::-1]
 
 def getimgurls(html, url):
