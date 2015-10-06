@@ -35,7 +35,7 @@ def gettitle(html, url):
 		id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
 		title = "{} - {}".format(id, user)
 	except Exception:
-		title = "[pixiv] " + re.search("<title>「([^」]+)").group(1)
+		title = "[pixiv] " + re.search("<title>「([^」]+)", html).group(1)
 	return title
 
 def getepisodelist(html, url):
@@ -44,7 +44,7 @@ def getepisodelist(html, url):
 		for m in re.finditer(r'<a href="([^"]+)"><h1 class="title" title="([^"]+)">', html):
 			ep_url, title = m.groups()
 			uid = re.search("id=(\d+)", ep_url).group(1)
-			e = Episode("{} - {}".format(uid, title), urljoin(url, ep_url))
+			e = Episode("{} - {}".format(uid, unescape(title)), urljoin(url, ep_url))
 			s.append(e)
 
 		un = re.search("href=\"([^\"]+)\" rel=\"next\"", html)
