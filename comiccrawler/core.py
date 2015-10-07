@@ -62,6 +62,10 @@ class Episode:
 		self.skip = skip
 		self.complete = complete
 
+def format_escape(s):
+	"""Escape {} to {{}}"""
+	return sub("([{}])", r"\1\1", s)
+
 def getext(byte):
 	"""Return extension by testing the byte stream.
 
@@ -255,7 +259,7 @@ def crawl(mission, savepath, thread):
 
 		if getattr(module, "noepfolder", False):
 			efd = join(savepath, safefilepath(mission.title))
-			fexp = safefilepath(ep.title) + "_{:03}"
+			fexp = format_escape(safefilepath(ep.title)) + "_{:03}"
 		else:
 			efd = join(savepath, safefilepath(mission.title),
 					safefilepath(ep.title))
