@@ -222,6 +222,8 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.10.7
+	- Fix errors that unable to create folder if title contains "{}" characters.
 * 2015.10.6
 	- Support search page in pixiv module.
 * 2015.9.29
