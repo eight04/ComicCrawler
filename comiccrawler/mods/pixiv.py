@@ -78,32 +78,34 @@ def getimgurls(html, url):
 		return [rs.group(1)]
 
 	# old image layout
-	inner_url = re.search(r'"works_display"><a (?:class="[^"]*" )?href="([^"]+)"', html).group(1)
-	html = grabhtml(base + "/" + inner_url, referer=url)
+	match = re.search(r'"works_display"><a (?:class="[^"]*" )?href="([^"]+)"', html)
+	if match:
+		inner_url = match.group(1)
+		html = grabhtml(urljoin(url, inner_url), referer=url)
 
-	if "mode=big" in inner_url:
-		# single image
-		img = re.search(r'src="([^"]+)"', html).group(1)
-		return [img]
+		if "mode=big" in inner_url:
+			# single image
+			img = re.search(r'src="([^"]+)"', html).group(1)
+			return [img]
 
-	if "mode=manga" in inner_url:
-		# multiple image
-		imgs = []
+		if "mode=manga" in inner_url:
+			# multiple image
+			imgs = []
 
-		for match in re.finditer(r'a href="(/member_illust\.php\?mode=manga_big[^"]+)"', html):
-			large_page_url = base + match.group(1)
-			large_page_html = grabhtml(large_page_url)
-			img = re.search(r'img src="([^"]+)"', large_page_html).group(1)
-			imgs.append(img)
-
-		# New manga reader (2015/3/18)
-		# http://www.pixiv.net/member_illust.php?mode=manga&illust_id=19254298
-		if not imgs:
-			for match in re.finditer(r'originalImages\[\d+\] = ("[^"]+")', html):
-				img = execjs.eval(match.group(1))
+			for match in re.finditer(r'a href="(/member_illust\.php\?mode=manga_big[^"]+)"', html):
+				large_page_url = base + match.group(1)
+				large_page_html = grabhtml(large_page_url)
+				img = re.search(r'img src="([^"]+)"', large_page_html).group(1)
 				imgs.append(img)
 
-		return imgs
+			# New manga reader (2015/3/18)
+			# http://www.pixiv.net/member_illust.php?mode=manga&illust_id=19254298
+			if not imgs:
+				for match in re.finditer(r'originalImages\[\d+\] = ("[^"]+")', html):
+					img = execjs.eval(match.group(1))
+					imgs.append(img)
+
+			return imgs
 
 	# restricted
 	rs = re.search('<section class="restricted-content">', html)
