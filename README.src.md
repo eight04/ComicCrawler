@@ -222,6 +222,8 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.10.9
+	- Fix unicode range error in gui. See http://is.gd/F6JfjD
 * 2015.10.8
 	- Fix an error that unable to skip episode in pixiv module.
 * 2015.10.7
