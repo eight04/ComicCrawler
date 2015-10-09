@@ -6,7 +6,7 @@ from tkinter import *
 from tkinter.ttk import *
 from functools import partial
 
-import sys, os, webbrowser, worker
+import sys, os, webbrowser, worker, re
 import tkinter.messagebox as messagebox
 
 from .mods import list_domain, get_module
@@ -16,6 +16,7 @@ from .core import safefilepath
 from .error import ModuleError
 from .download_manager import DownloadManager
 
+# Translate state code to readible text.
 STATE = {
 	"INIT": "準備",
 	"ANALYZED": "解析完成",
@@ -28,7 +29,11 @@ STATE = {
 	"ANALYZING": "分析中",
 	"ANALYZE_INIT": "準備分析"
 }
-"""Translate state code to readible text."""
+
+def safe_tk(text):
+	"""Encode U+FFFF+ characters. Tkinter doesn't allow to display these character. See http://stackoverflow.com/questions/23530080/how-to-print-non-bmp-unicode-characters-in-tkinter-e-g"""
+
+	return re.sub(r"[^\u0000-\uFFFF]", "_", text)
 
 class DialogProvider:
 	"""Create dialog elements."""
@@ -63,7 +68,7 @@ class Dialog(Toplevel):
 		self.provider = cls(self)
 
 		# title
-		self.title(title)
+		self.title(safe_tk(title))
 
 		# body
 		self.body = Frame(self)
@@ -146,14 +151,14 @@ class MainWindow(worker.UserWorker):
 	def update_mission_info(self, tv, cid, mission):
 		"""Update mission info on treeview."""
 		tv.set(cid, "state", STATE[mission.state])
-		tv.set(cid, "name", mission.title)
+		tv.set(cid, "name", safe_tk(mission.title))
 
 	def register_message(self):
 		"""Add listeners."""
 		@self.listen("LOG_MESSAGE")
 		def dummy(text):
 			text = text.splitlines()[0]
-			self.statusbar["text"] = text
+			self.statusbar["text"] = safe_tk(text)
 
 		@self.listen("MISSION_PROPERTY_CHANGED")
 		def dummy(mission):
@@ -378,7 +383,7 @@ class MainWindow(worker.UserWorker):
 		def ask_analyze_update(mission):
 			return messagebox.askyesno(
 				"Comic Crawler",
-				mission.title + "\n\n任務已存在，要檢查更新嗎？",
+				safe_tk(mission.title) + "\n\n任務已存在，要檢查更新嗎？",
 				default="yes"
 			)
 
@@ -547,7 +552,7 @@ class MainWindow(worker.UserWorker):
 			cid = tv.insert(
 				"",
 				"end",
-				values=(mission.title, mission.module.name, STATE[mission.state])
+				values=(safe_tk(mission.title), mission.module.name, STATE[mission.state])
 			)
 			cid_index[cid] = mission
 
@@ -562,7 +567,7 @@ def select_title(parent, mission):
 	class Provider(DialogProvider):
 		def create_body(self, body):
 			entry = Entry(body)
-			entry.insert(0, mission.title)
+			entry.insert(0, safe_tk(mission.title))
 			entry.selection_range(0, "end")
 			entry.pack()
 			entry.focus_set()
@@ -593,7 +598,7 @@ def select_episodes(parent, mission):
 
 			# make checkbutton into inner frame
 			for ep in mission.episodes:
-				ck = Checkbutton(inner, text=ep.title)
+				ck = Checkbutton(inner, text=safe_tk(ep.title))
 				ck.state(("!alternate",))
 				if not ep.skip:
 					ck.state(("selected",))
