@@ -4,6 +4,12 @@
 
 import os, os.path as path, pprint, glob, time, shutil
 
+CHUNK_LIMIT = 500 * 1000 * 1000
+
+def write_big(file, content):
+	for piece in range(0, len(content), CHUNK_LIMIT):
+		file.write(content[piece:piece + CHUNK_LIMIT])
+
 def is_file(file):
 	"""Check if the file is file."""
 	file = path.expanduser(file)
@@ -28,14 +34,14 @@ def content_write(file, content, append=False):
 	if isinstance(content, bytes):
 		mode += "b"
 		with open(file, mode) as f:
-			f.write(content)
+			write_big(f, content)
 
 	else:
 		if not isinstance(content, str):
 			content = pprint.pformat(content)
 
 		with open(file, mode, encoding="utf-8") as f:
-			f.write(content)
+			write_big(f, content)
 
 	if file != original:
 		os.replace(file, original)
