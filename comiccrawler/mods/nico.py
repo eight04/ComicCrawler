@@ -62,7 +62,7 @@ def getimgurls(html, url):
 		return [img]
 
 	else:
-		img = re.search(r'href="(/image/source?id=\d+)', html).group(1)
+		img = re.search(r'href="(/image/source\?id=\d+)', html).group(1)
 		return [urljoin(url, img)]
 
 def errorhandler(er, ep):
