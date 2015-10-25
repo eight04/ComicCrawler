@@ -16,16 +16,18 @@ from ..core import Episode, grabhtml
 from ..error import LastPageError, SkipEpisodeError, PauseDownloadError
 from ..safeprint import safeprint
 
-cookie = {}
-domain = ["www.pixiv.net"]
-name = "Pixiv"
+cookie = {
+	"skip_fetish_warning": "1"
+}
+domain = ["seiga.nicovideo.jp"]
+name = "Nico"
 noepfolder = True
 config = {
 	"user_session": "請輸入Cookie中的user_session"
 }
 
 def loadconfig():
-	cookie["user_session"] = config["user_session"]
+	cookie.update(config)
 
 def gettitle(html, url):
 	artist = re.search(r'nickname">([^<]+)', html).group(1)
