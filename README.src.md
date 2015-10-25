@@ -7,6 +7,7 @@ Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管�
 Todos
 -----
 * The misssion shows "updated" in mission list after re-analyze.
+* Make grabber be able to return verbose info?
 
 20150608 更新
 -------------
