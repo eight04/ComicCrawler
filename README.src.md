@@ -223,6 +223,9 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.10.25
+	- Support nico seiga.
+	- Try to fix MemoryError when writing files.
 * 2015.10.9
 	- Fix unicode range error in gui. See http://is.gd/F6JfjD
 * 2015.10.8
