@@ -27,18 +27,18 @@ config = {
 }
 
 def loadconfig():
-	cookie.update(config)
+	cookie["user_session"] = config["user_session"]
 
 def gettitle(html, url):
 	artist = re.search(r'nickname">([^<]+)', html).group(1)
 	id = re.search(r'data-id="(\d+)', html).group(1)
-	return "{} - {}".format(id, artist)
+	return "[Nico] {} - {}".format(id, artist)
 
 def getepisodelist(html, url):
 	s = []
 	while True:
 		for match in re.finditer(r'href="(/seiga/im\d+)">\s*<span[^>]*><img[^>]*?alt="([^"]*)', html):
-			ep_url, title = m.groups()
+			ep_url, title = match.groups()
 			id = ep_url[7:]
 			e = Episode("{} - {}".format(id, unescape(title)), urljoin(url, ep_url))
 			s.append(e)
@@ -52,13 +52,18 @@ def getepisodelist(html, url):
 	return s[::-1]
 
 def getimgurls(html, url):
+	if "<!-- ▼Login -->" in html:
+		raise PauseDownloadError("You didn't login!")
+
 	source_url = re.search(r'href="(/image/source/\d+)', html)
 	if source_url:
-		source_html = grabhtml(source_url.group(1))
-		img = re.search(r'src="(/priv/[^"]+)').group(1)
+		source_html = grabhtml(urljoin(url, source_url.group(1)))
+		img = "http://lohas.nicoseiga.jp" + re.search(r'src="(/priv/[^"]+)', source_html).group(1)
+		return [img]
+
 	else:
 		img = re.search(r'href="(/image/source?id=\d+)', html).group(1)
-	return [urljoin(url, img)]
+		return [urljoin(url, img)]
 
 def errorhandler(er, ep):
 	pass
