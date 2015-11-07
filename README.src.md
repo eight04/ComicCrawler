@@ -223,6 +223,8 @@ def errorhandler(er, ep):
 
 Changelog
 ---------
+* 2015.11.8
+	- Fix next page issue in danbooru.
 * 2015.10.25
 	- Support nico seiga.
 	- Try to fix MemoryError when writing files.
