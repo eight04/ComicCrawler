@@ -9,6 +9,7 @@ Ex:
 
 import re
 from html import unescape
+from urllib.parse import urljoin
 
 from ..safeprint import safeprint
 from ..core import Episode, grabhtml
@@ -23,25 +24,26 @@ def gettitle(html, url):
 
 def getepisodelist(html, url):
 	s = []
-	base = re.search("(https?://[^/]+)", url).group(1)
 	while True:
 		for match in re.finditer(r'href="(/posts/(\d+)[^"]*)"', html):
 			u = match.group(1)
 			title = match.group(2)
-			e = Episode(title, base + u)
+			e = Episode(title, urljoin(url, u))
 			s.append(e)
 
-		u = re.search(r'"([^"]+)" rel="next"', html)
+		u = (re.search(r'"([^"]+)" rel="next"', html) or
+			re.search(r'<a rel="next" href="([^"]+)', html))
+
 		if not u:
 			break
-		u = base + unescape(u.group(1))
+
+		u = urljoin(url, unescape(u.group(1)))
 		safeprint(u)
 		html = grabhtml(u)
 
 	return s[::-1]
 
 def getimgurls(html, url):
-	base = re.search(r"(https?://[^/]+)", url).group(1)
 	pos = re.search(r"image-container", html).start()
 	img = re.compile(r'data-file-url="([^"]+)"').search(html, pos).group(1)
-	return [base + img]
+	return [urljoin(url, img)]
