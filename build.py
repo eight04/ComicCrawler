@@ -34,18 +34,19 @@ class Tasker:
 
 class Tasks:
 	def default(self):
-		self.readme()
+		self.build()
 		self.dist()
-		self.bump()
+		self.git()
 		self.install()
 
 	def dist(self):
 		import shutil, subprocess, sys
+
 		subprocess.call([sys.executable, "setup.py", "sdist", "bdist_wheel"])
 		subprocess.call(["twine", "upload", "dist/*"])
 		shutil.rmtree("dist")
 
-	def bump(self):
+	def git(self):
 		import subprocess
 		from setup import settings
 		version = settings["version"]
@@ -54,19 +55,27 @@ class Tasks:
 		subprocess.call(["git", "tag", "-a", "v" + version, "-m", "Release v" + version])
 		subprocess.call(["git", "push", "--follow-tags"])
 
-	def readme(self):
-		from comiccrawler.mods import list_domain
-		from setup import settings
-		version = settings["version"]
+	def build(self):
+		import re, comiccrawler.mods
 
-		# Create readme
-		write(
-			"README.md",
-			read("README.src.md").replace(
-				"@@SUPPORTED_DOMAINS",
-				" ".join(list_domain())
-			).replace("@@VERSION", version)
-		)
+		# Build readme
+		readme = read("README-src.rst")
+
+		version = find_version("comiccrawler/__init__.py")
+		domains = " ".join(comiccrawler.mods.list_domains())
+
+		readme = readme.replace("@@VERSION", version)
+		readme = readme.replace("@@DOMAINS", domains)
+
+		write("README.rst", readme)
+
+		# Build setup.py
+		setup = read("setup-src.py")
+
+		setup = setup.replace("@@VERSION", repr(version))
+		setup = setup.replace("@@README", repr(readme))
+
+		write("setup.py", setup)
 
 	def install(self):
 		import subprocess
