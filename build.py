@@ -39,10 +39,11 @@ class Tasks:
 		self.install()
 
 	def dist(self):
-		import shutil, subprocess, sys
+		import subprocess, sys
 		subprocess.call([sys.executable, "setup.py", "sdist", "bdist_wheel"])
 
 	def upload(self):
+		import subprocess
 		subprocess.call(["twine", "upload", "dist/*"])
 
 	def git(self):

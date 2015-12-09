@@ -51,7 +51,7 @@ Development Dependencies
 ---------------------
 
 Comic Crawler is on
-`PyPI <https://pypi.python.org/pypi/comiccrawler/2015.11.8>`__. 安裝完
+`PyPI <https://pypi.python.org/pypi/comiccrawler/2015.12.9>`__. 安裝完
 python 後，可以直接用 pip 指令自動安裝。
 
 Install Python
@@ -243,6 +243,10 @@ Module example
 
 Changelog
 ---------
+
+-  2015.12.9
+
+   -  Fix buildtime dependencies.
 
 -  2015.11.8
 

@@ -244,6 +244,10 @@ Module example
 Changelog
 ---------
 
+-  2015.12.9
+
+   -  Fix buildtime dependencies.
+
 -  2015.11.8
 
    -  Fix next page issue in danbooru.
