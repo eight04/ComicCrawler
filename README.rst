@@ -44,7 +44,6 @@ Dependencies
 Development Dependencies
 ------------------------
 
--  pypandoc - to convert markdown to rst.
 -  wheel - create python wheel.
 -  twine - upload package.
 
@@ -55,22 +54,22 @@ Comic Crawler is on
 `PyPI <https://pypi.python.org/pypi/comiccrawler/2015.11.8>`__. 安裝完
 python 後，可以直接用 pip 指令自動安裝。
 
-Python
-~~~~~~
+Install Python
+~~~~~~~~~~~~~~
 
 你需要 Python 3.4 以上。安裝檔可以從它的
 `官方網站 <https://www.python.org/>`__ 下載。
 
 安裝時記得要選「Add python.exe to path」，才能使用 pip 指令。
 
-Node.js
-~~~~~~~
+Install Node.js
+~~~~~~~~~~~~~~~
 
 有些網站的 JavaScript 用 Windows 內建的 Windows Script Host
 會解析失敗，建議安裝 `Node.js <https://nodejs.org/>`__.
 
-Comic Crawler
-~~~~~~~~~~~~~
+Install Comic Crawler
+~~~~~~~~~~~~~~~~~~~~~
 
 在 cmd 底下輸入以下指令︰
 
@@ -87,17 +86,7 @@ Comic Crawler
 Supported domains
 -----------------
 
-..  domain_list_start
-
-    chan.sankakucomplex.com comic.acgn.cc comic.ck101.com
-    comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org
-    g.e-hentai.org imgbox.com konachan.com m.dmzj.com manhua.dmzj.com
-    seiga.nicovideo.jp tel.dm5.com tsundora.com tw.seemh.com
-    www.8comic.com www.99comic.com www.chuixue.com www.comicvip.com
-    www.dm5.com www.iibq.com www.manhuadao.com www.pixiv.net
-    www.seemh.com yande.re
-
-..  domain_list_end
+    chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org g.e-hentai.org imgbox.com konachan.com m.dmzj.com manhua.dmzj.com seiga.nicovideo.jp tel.dm5.com tsundora.com tw.seemh.com www.8comic.com www.99comic.com www.chuixue.com www.comicvip.com www.dm5.com www.iibq.com www.manhuadao.com www.pixiv.net www.seemh.com yande.re
 
 使用說明
 --------

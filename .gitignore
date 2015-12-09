@@ -6,6 +6,7 @@
 __pycache__/
 download/
 build/
+dist/
 *.egg-info/
 
 test*

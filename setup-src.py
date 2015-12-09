@@ -9,13 +9,20 @@ https://github.com/pypa/sampleproject
 
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
+from os import path
+
+here = path.abspath(path.dirname(__file__))
+
+# Get the long description from the README file
+with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+    long_description = f.read()
 
 settings = {
 	"name": "comiccrawler",
 	"version": @@VERSION,
 	"description": 'An image crawler with extendible modules and gui',
 	# Get the long description from the relevant file
-	"long_description": @@README,
+	"long_description": long_description,
 	"url": 'https://github.com/eight04/ComicCrawler',
 	"author": 'eight',
 	"author_email": 'eight04@gmail.com',

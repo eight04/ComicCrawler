@@ -1,16 +1,17 @@
 #! python3
 
-import os.path as path, re, sys
+import os, os.path as path, re, sys
 
-here = path.abspath(path.dirname(__file__))
+# Make it always run in root
+os.chdir(path.abspath(path.dirname(__file__)))
 
 def read(file):
-	with open(path.join(here, file), "r", encoding='utf-8') as f:
+	with open(file, "r", encoding='utf-8') as f:
 		content = f.read()
 	return content
 
 def write(file, content):
-	with open(path.join(here, file), "w", encoding="utf-8") as f:
+	with open(file, "w", encoding="utf-8") as f:
 		f.write(content)
 
 class Tasker:
@@ -33,15 +34,16 @@ class Tasks:
 	def default(self):
 		self.build()
 		self.dist()
+		self.upload()
 		self.git()
 		self.install()
 
 	def dist(self):
 		import shutil, subprocess, sys
-
 		subprocess.call([sys.executable, "setup.py", "sdist", "bdist_wheel"])
+
+	def upload(self):
 		subprocess.call(["twine", "upload", "dist/*"])
-		shutil.rmtree("dist")
 
 	def git(self):
 		import subprocess, comiccrawler
@@ -60,7 +62,7 @@ class Tasks:
 		readme = read("README-src.rst")
 
 		version = comiccrawler.__version__
-		domains = " ".join(comiccrawler.mods.list_domains())
+		domains = " ".join(comiccrawler.mods.list_domain())
 
 		readme = readme.replace("@@VERSION", version)
 		readme = readme.replace("@@DOMAINS", domains)
@@ -71,7 +73,6 @@ class Tasks:
 		setup = read("setup-src.py")
 
 		setup = setup.replace("@@VERSION", repr(version))
-		setup = setup.replace("@@README", repr(readme))
 
 		write("setup.py", setup)
 
