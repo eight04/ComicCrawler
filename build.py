@@ -13,9 +13,6 @@ def write(file, content):
 	with open(path.join(here, file), "w", encoding="utf-8") as f:
 		f.write(content)
 
-def find_version(file):
-	return re.search(r"__version__ = (\S*)", read(file)).group(1).strip("\"'")
-
 class Tasker:
 	def __init__(self, task_cls):
 		tasks = task_cls()
@@ -47,21 +44,22 @@ class Tasks:
 		shutil.rmtree("dist")
 
 	def git(self):
-		import subprocess
-		from setup import settings
-		version = settings["version"]
+		import subprocess, comiccrawler
+
+		version = comiccrawler.__version__
+
 		subprocess.call(["git", "add", "-A", "."])
 		subprocess.call(["git", "commit", "-m", "Release v" + version])
 		subprocess.call(["git", "tag", "-a", "v" + version, "-m", "Release v" + version])
 		subprocess.call(["git", "push", "--follow-tags"])
 
 	def build(self):
-		import re, comiccrawler.mods
+		import re, comiccrawler, comiccrawler.mods
 
 		# Build readme
 		readme = read("README-src.rst")
 
-		version = find_version("comiccrawler/__init__.py")
+		version = comiccrawler.__version__
 		domains = " ".join(comiccrawler.mods.list_domains())
 
 		readme = readme.replace("@@VERSION", version)
