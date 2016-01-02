@@ -244,6 +244,10 @@ Module example
 Changelog
 ---------
 
+-  2016.1.3
+
+   -  Fix downloading failed in seemh.
+
 -  2015.12.9
 
    -  Fix buildtime dependencies.

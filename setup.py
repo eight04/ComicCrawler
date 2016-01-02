@@ -19,7 +19,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 settings = {
 	"name": "comiccrawler",
-	"version": '2015.12.9',
+	"version": '2016.1.3',
 	"description": 'An image crawler with extendible modules and gui',
 	# Get the long description from the relevant file
 	"long_description": long_description,
