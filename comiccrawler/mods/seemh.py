@@ -49,9 +49,9 @@ def getepisodelist(html, url):
 
 def getimgurls(html, url):
 	configjs_url = re.search(
-		r"http://statictw\.seemh\.com/scripts/config_\w+?\.js",
+		r'src="(http://[^"]+?/config_\w+?\.js)"',
 		html
-	).group()
+	).group(1)
 	configjs = grabhtml(configjs_url, referer=url)
 	crypto = re.search(r"(var CryptoJS.+?)var pVars", configjs, re.S).group(1)
 
