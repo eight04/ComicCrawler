@@ -309,14 +309,17 @@ class Crawler:
 
 	def download_image(self):
 		"""Download image to savepath."""
-		image = self.thread.sync(
+		self.image = self.thread.sync(
 			grabimg,
 			self.get_img(),
 			self.get_header(),
 			referer=self.ep.current_url
 		)
+
+	def save_image(self):
+		"""Write image to save path"""
 		# check image type
-		ext = getext(image)
+		ext = getext(self.image)
 		if not ext:
 			raise TypeError("Invalid image type.")
 		# everything is ok, save image
@@ -324,7 +327,8 @@ class Crawler:
 			self.savepath,
 			"{}.{}".format(self.get_filename(), ext)
 		)
-		content_write(full_filename, image)
+		content_write(full_filename, self.image)
+		self.image = None
 
 	def iter_next(self):
 		"""Iter to next page."""
@@ -503,6 +507,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 			safeprint("Downloading {} page {}: {}\n".format(
 					ep.title, ep.current_page, crawler.get_img()))
 			crawler.download_image()
+			crawler.save_image()
 			crawler.iter_next()
 			crawler.rest()
 
