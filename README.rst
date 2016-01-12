@@ -51,7 +51,7 @@ Development Dependencies
 ---------------------
 
 Comic Crawler is on
-`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.1.3>`__. 安裝完
+`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.1.12>`__. 安裝完
 python 後，可以直接用 pip 指令自動安裝。
 
 Install Python
@@ -86,7 +86,7 @@ Install Comic Crawler
 Supported domains
 -----------------
 
-    chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org g.e-hentai.org imgbox.com konachan.com m.dmzj.com manhua.dmzj.com seiga.nicovideo.jp tel.dm5.com tsundora.com tw.seemh.com www.8comic.com www.99comic.com www.chuixue.com www.comicvip.com www.dm5.com www.iibq.com www.manhuadao.com www.pixiv.net www.seemh.com yande.re
+    chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org g.e-hentai.org imgbox.com konachan.com m.dmzj.com manhua.dmzj.com seiga.nicovideo.jp tel.dm5.com tsundora.com tw.seemh.com www.8comic.com www.99comic.com www.chuixue.com www.comicvip.com www.dm5.com www.facebook.com www.iibq.com www.manhuadao.com www.pixiv.net www.seemh.com yande.re
 
 使用說明
 --------
@@ -243,6 +243,11 @@ Module example
 
 Changelog
 ---------
+
+-  2016.1.12
+
+   -  Add facebook module.
+   -  Add `circular` option in module. Which should be setted to `True` if downloader doesn't know where is the end of the album.
 
 -  2016.1.3
 

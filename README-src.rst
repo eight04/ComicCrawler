@@ -244,6 +244,11 @@ Module example
 Changelog
 ---------
 
+-  2016.1.12
+
+   -  Add facebook module.
+   -  Add `circular` option in module. Which should be setted to `True` if downloader doesn't know where is the end of the album.
+
 -  2016.1.3
 
    -  Fix downloading failed in seemh.
