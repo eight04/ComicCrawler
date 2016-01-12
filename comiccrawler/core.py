@@ -10,6 +10,7 @@ from gzip import decompress
 from worker import WorkerExit, UserWorker
 from traceback import print_exc
 from http.cookies import SimpleCookie
+from hashlib import md5
 
 from .safeprint import safeprint
 from .error import *
@@ -281,6 +282,13 @@ def crawl(mission, savepath, thread):
 	else:
 		safeprint("Mission complete!")
 
+def get_checksum(b):
+	return md5(b).hexdigest()
+
+def get_file_checksum(filename):
+	with open(filename, "rb") as f:
+		return get_checksum(f.read())
+
 class Crawler:
 	"""Create Crawler object. Contains img url, next page url."""
 
@@ -316,19 +324,20 @@ class Crawler:
 			referer=self.ep.current_url
 		)
 
-	def save_image(self):
-		"""Write image to save path"""
-		# check image type
+	def get_full_filename(self):
+		"""Generate full filename including extension"""
 		ext = getext(self.image)
 		if not ext:
 			raise TypeError("Invalid image type.")
 		# everything is ok, save image
-		full_filename = join(
+		return join(
 			self.savepath,
 			"{}.{}".format(self.get_filename(), ext)
 		)
-		content_write(full_filename, self.image)
-		self.image = None
+
+	def save_image(self):
+		"""Write image to save path"""
+		content_write(self.get_full_filename(), self.image)
 
 	def iter_next(self):
 		"""Iter to next page."""
@@ -387,6 +396,25 @@ class PerPageCrawler(Crawler):
 		super().__init__(*args)
 		self.cache = {}
 		self.cache_img = {}
+		self.checksums = None
+
+	def save_image(self):
+		"""Override, check hash before saving to avoid duplicate downloads"""
+		if getattr(self.downloader, "circular", False):
+			if not self.checksums:
+				self.checksums = set()
+				for file in os.listdir(self.savepath):
+					full_filename = os.path.join(self.savepath, file)
+					if os.path.isfile(full_filename):
+						self.checksums.add(get_file_checksum(full_filename))
+
+			checksum = get_checksum(self.image)
+			if checksum in self.checksums:
+				raise LastPageError
+			else:
+				self.checksums.add(checksum)
+
+		super().save_image()
 
 	def get_html(self):
 		"""Return html."""
