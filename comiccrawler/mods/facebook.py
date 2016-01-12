@@ -7,25 +7,28 @@ Ex:
 
 """
 
-import re, urllib.parse, html
+import re
+from urllib.parse import urljoin
+from html import unescape
 from ..core import Episode
 
 domain = ["www.facebook.com"]
 name = "FB"
 circular = True
+noepfolder = True
 
 def gettitle(html, url):
 	id = re.search(r"photos/pcb\.(\d+)", url).group(1)
 	title = re.search("<title[^>]*>([^<]+)", html).group(1)
-	return html.unescape("{} ({})".format(title, id))
+	return unescape("{} ({})".format(title, id))
 
 def getepisodelist(html, url):
 	return [Episode("image", url)]
 
 def getimgurl(html, url, page):
-	id = re.search(r"photos/pcb\.\d+/(\d+)").group(1)
-	return urllib.parse.urljoin(url, "/photo/download/?fbid=" + id)
+	id = re.search(r"photos/pcb\.\d+/(\d+)", url).group(1)
+	return urljoin(url, "/photo/download/?fbid=" + id)
 
 def getnextpageurl(html, url, page):
-	next_url = re.search('photoPageNextNav"[^>]*?href="([^"]+)').group(1)
-	return urllib.parse.urljoin(url, next_url)
+	next_url = re.search('photoPageNextNav"[^>]*?href="([^"]+)', html).group(1)
+	return urljoin(url, next_url)
