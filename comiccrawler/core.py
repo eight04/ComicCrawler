@@ -403,10 +403,11 @@ class PerPageCrawler(Crawler):
 		if getattr(self.downloader, "circular", False):
 			if not self.checksums:
 				self.checksums = set()
-				for file in os.listdir(self.savepath):
-					full_filename = os.path.join(self.savepath, file)
-					if os.path.isfile(full_filename):
-						self.checksums.add(get_file_checksum(full_filename))
+				if os.path.isdir(self.savepath):
+					for file in os.listdir(self.savepath):
+						full_filename = os.path.join(self.savepath, file)
+						if os.path.isfile(full_filename):
+							self.checksums.add(get_file_checksum(full_filename))
 
 			checksum = get_checksum(self.image)
 			if checksum in self.checksums:
