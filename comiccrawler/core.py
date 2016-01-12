@@ -6,11 +6,13 @@ from os.path import normpath, split, join
 from re import sub, search
 from urllib.parse import quote, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 from gzip import decompress
 from worker import WorkerExit, UserWorker
 from traceback import print_exc
 from http.cookies import SimpleCookie
 from hashlib import md5
+from time import sleep
 
 from .safeprint import safeprint
 from .error import *
@@ -177,7 +179,20 @@ def grabber(url, header=None, *, referer=None, cookie=None, raw=False, errorlog=
 	for key, value in header.items():
 		request.add_header(key, value)
 
-	response = urlopen(request, timeout=20)
+	response = None
+	while not response:
+		try:
+			response = urlopen(request, timeout=20)
+		except HTTPError as err:
+			if err.code == 429:
+				retry = 20
+				for key, value in err.headers.items():
+					if key == "Retry-After":
+						retry = int(value)
+						break
+				sleep(retry)
+			else:
+				raise
 
 	jar.load(response.getheader("Set-Cookie", ""))
 	if cookie is not None:
