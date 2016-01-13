@@ -249,6 +249,10 @@ Todos
 Changelog
 ---------
 
+-  2016.1.13
+
+   -  Handle HTTPError 429.
+
 -  2016.1.12
 
    -  Add facebook module.

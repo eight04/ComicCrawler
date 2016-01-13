@@ -51,7 +51,7 @@ Development Dependencies
 ---------------------
 
 Comic Crawler is on
-`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.1.12>`__. 安裝完
+`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.1.13>`__. 安裝完
 python 後，可以直接用 pip 指令自動安裝。
 
 Install Python
@@ -241,13 +241,22 @@ Module example
         """
         pass
 
+Todos
+-----
+
+- Support pool in Sankaku.
+
 Changelog
 ---------
+
+-  2016.1.13
+
+   -  Handle HTTPError 429.
 
 -  2016.1.12
 
    -  Add facebook module.
-   -  Add `circular` option in module. Which should be setted to `True` if downloader doesn't know where is the end of the album.
+   -  Add ``circular`` option in module. Which should be setted to ``True` if downloader doesn't know where is the end of the album.
 
 -  2016.1.3
 
