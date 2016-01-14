@@ -244,8 +244,10 @@ Module example
 Todos
 -----
 
-- Support pool in Sankaku.
-- Mission should send MISSION_PROPERTY_CHANGED event when episode status change.
+-  Support pool in Sankaku.
+-  Mission should send MISSION_PROPERTY_CHANGED event when episode status change.
+
+   -  We can remove DOWNLOAD_EP_COMPLETE listener in download_manager after this.
 
 Changelog
 ---------
