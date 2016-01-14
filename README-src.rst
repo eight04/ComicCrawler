@@ -245,6 +245,7 @@ Todos
 -----
 
 - Support pool in Sankaku.
+- Mission should send MISSION_PROPERTY_CHANGED event when episode status change.
 
 Changelog
 ---------
