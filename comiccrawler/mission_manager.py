@@ -59,7 +59,6 @@ class MissionManager(worker.UserWorker):
 	def worker(self):
 		"""Override. The worker target."""
 		@self.listen("MISSION_PROPERTY_CHANGED")
-		@self.listen("DOWNLOAD_EP_COMPLETE")
 		def dummy():
 			"""Set the edit flag after mission changed."""
 			self.edit = True

@@ -98,6 +98,10 @@ class DownloadManager(worker.UserWorker):
 			if setting.getboolean("libraryautocheck"):
 				self.start_check_update()
 
+		@self.listen("DOWNLOAD_EP_COMPLETE")
+		def dummy():
+			self.mission_manager.edit = True
+
 		self.reload_config()
 		self.mission_manager.start()
 
