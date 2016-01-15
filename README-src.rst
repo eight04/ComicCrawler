@@ -252,6 +252,10 @@ Todos
 Changelog
 ---------
 
+-  2016.1.15
+
+   -  Fix: it doesn't save session during downloading.
+
 -  2016.1.13
 
    -  Handle HTTPError 429.

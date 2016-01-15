@@ -51,7 +51,7 @@ Development Dependencies
 ---------------------
 
 Comic Crawler is on
-`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.1.13>`__. 安裝完
+`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.1.15>`__. 安裝完
 python 後，可以直接用 pip 指令自動安裝。
 
 Install Python
@@ -244,10 +244,17 @@ Module example
 Todos
 -----
 
-- Support pool in Sankaku.
+-  Support pool in Sankaku.
+-  Mission should send MISSION_PROPERTY_CHANGED event when episode status change.
+
+   -  We can remove DOWNLOAD_EP_COMPLETE listener in download_manager after this.
 
 Changelog
 ---------
+
+-  2016.1.15
+
+   -  Fix: it doesn't save session during downloading.
 
 -  2016.1.13
 
