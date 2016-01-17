@@ -249,6 +249,8 @@ Todos
 
    -  We can remove DOWNLOAD_EP_COMPLETE listener in download_manager after this.
 
+-  Try to iter next episode on TooManyRetry instead of dropping mission to the bottom.
+
 Changelog
 ---------
 

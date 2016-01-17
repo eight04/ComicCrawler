@@ -248,16 +248,25 @@ def download(mission, savepath, thread=None):
 	mission.set("state", "DOWNLOADING")
 	try:
 		crawl(mission, savepath, thread)
+
+		# Check if mission is complete
+		for ep in mission.episodes:
+			if not ep.complete and not ep.skip:
+				raise Exception("Mission is not completed")
+
 	except WorkerExit:
 		mission.set("state", "PAUSE")
 		raise
+
 	except Exception:
 		mission.set("state", "ERROR")
 		thread.bubble("DOWNLOAD_ERROR", mission)
 		raise
+
 	except PauseDownloadError:
 		mission.set("state", "ERROR")
 		thread.bubble("DOWNLOAD_INVALID", mission)
+
 	else:
 		mission.set("state", "FINISHED")
 		thread.bubble("DOWNLOAD_FINISHED", mission)
@@ -291,11 +300,10 @@ def crawl(mission, savepath, thread):
 			ep.complete = True
 			thread.bubble("DOWNLOAD_EP_COMPLETE", (mission, ep))
 
-		except SkipEpisodeError:
+		except SkipEpisodeError as err:
 			safeprint("Something bad happened, skip the episode.")
-			ep.skip = True
-	else:
-		safeprint("Mission complete!")
+			if err.always:
+				ep.skip = True
 
 def get_checksum(b):
 	return md5(b).hexdigest()
@@ -577,7 +585,7 @@ def error_loop(process, handle_error=None, limit=10):
 			print("[error_loop] Process error: ", er)
 			errorcount += 1
 			if errorcount >= limit:
-				raise Exception("Exceed error loop limit!")
+				raise SkipEpisodeError(always=False)
 			if handle_error:
 				try:
 					handle_error(er)
