@@ -9,7 +9,7 @@ class LastPageError(ComicCrawlerSignal):
 class SkipEpisodeError(ComicCrawlerSignal):
 	"""Raise SkipEpisodeError to exit crawl episodes loop."""
 	def __init__(self, always=True):
-		self.aways = always
+		self.always = always
 
 class PauseDownloadError(ComicCrawlerSignal):
 	"""Raise PauseDownloadError to exit crawl mission loop."""
