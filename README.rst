@@ -51,7 +51,7 @@ Development Dependencies
 ---------------------
 
 Comic Crawler is on
-`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.1.15>`__. 安裝完
+`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.1.17>`__. 安裝完
 python 後，可以直接用 pip 指令自動安裝。
 
 Install Python
@@ -248,9 +248,15 @@ Todos
 -  Mission should send MISSION_PROPERTY_CHANGED event when episode status change.
 
    -  We can remove DOWNLOAD_EP_COMPLETE listener in download_manager after this.
+   -  Make Episode inherit Worker use lots of memory. (Amount 4x as before)
 
 Changelog
 ---------
+
+-  2016.1.17
+
+   -  Fix: Facebook url match issue.
+   -  Downloader will download other episodes when error occur.
 
 -  2016.1.15
 

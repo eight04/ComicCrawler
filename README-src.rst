@@ -248,11 +248,15 @@ Todos
 -  Mission should send MISSION_PROPERTY_CHANGED event when episode status change.
 
    -  We can remove DOWNLOAD_EP_COMPLETE listener in download_manager after this.
-
--  Try to iter next episode on TooManyRetry instead of dropping mission to the bottom.
+   -  Make Episode inherit Worker use lots of memory. (Amount 4x as before)
 
 Changelog
 ---------
+
+-  2016.1.17
+
+   -  Fix: Facebook url match issue.
+   -  Downloader will download other episodes when error occur.
 
 -  2016.1.15
 
