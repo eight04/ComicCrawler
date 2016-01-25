@@ -121,7 +121,7 @@ def path_each(folder, callback, mode="f"):
 	folder = path.expanduser(folder)
 	if "*" in folder:
 		files = glob.iglob(folder)
-	else if is_dir(folder):
+	elif path.isdir(folder):
 		files = [path.join(folder, file) for file in os.listdir(folder)]
 	else:
 		return
