@@ -168,7 +168,8 @@ class DownloadManager(worker.UserWorker):
 			return
 
 		for mission in self.mission_manager.library.values():
-			mission.set("state", "ANALYZE_INIT")
+			if mission.state not in ("DOWNLOADING", "ANALYZING"):
+				mission.set("state", "ANALYZE_INIT")
 
 		mission = self.get_mission_to_check_update()
 		if mission:
