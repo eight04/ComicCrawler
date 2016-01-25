@@ -1,25 +1,17 @@
 #! python3
 
-from imghdr import what
-from os import mkdir, listdir
-from os.path import normpath, split, join
-from re import sub, search
 from urllib.parse import quote, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
-from gzip import decompress
-from worker import WorkerExit, UserWorker
-from traceback import print_exc
+
 from http.cookies import SimpleCookie
-from hashlib import md5
-from time import sleep
 
 from .safeprint import safeprint
 from .error import *
 from .io import content_write, is_file
 from .config import setting
 
-import pprint, traceback, os
+import pprint, traceback, os, imghdr, re, time, hashlib, gzip, worker
 
 default_header = {
 	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0",
@@ -27,7 +19,7 @@ default_header = {
 	"Accept-Encoding": "gzip, deflate"
 }
 
-class Mission(UserWorker):
+class Mission(worker.UserWorker):
 	"""Create Mission object. Contains information of the mission."""
 
 	def __init__(self, title=None, url=None, episodes=None, state="INIT"):
@@ -67,14 +59,14 @@ class Episode:
 
 def format_escape(s):
 	"""Escape {} to {{}}"""
-	return sub("([{}])", r"\1\1", s)
+	return re.sub("([{}])", r"\1\1", s)
 
 def getext(byte):
 	"""Return extension by testing the byte stream.
 
 	imghdr issue: http://bugs.python.org/issue16512
 	"""
-	r = what("", byte)
+	r = imghdr.what("", byte)
 	if r:
 		if r.lower() == "jpeg":
 			return "jpg"
@@ -103,7 +95,7 @@ def getext(byte):
 
 def safefilepath(s):
 	"""Return a safe directory name."""
-	return sub("[/\\\?\|<>:\"\*]","_",s).strip()
+	return re.sub("[/\\\?\|<>:\"\*]","_",s).strip()
 
 def quote_unicode(s):
 	"""Quote unicode characters only."""
@@ -190,7 +182,7 @@ def grabber(url, header=None, *, referer=None, cookie=None, raw=False, errorlog=
 					if key == "Retry-After":
 						retry = int(value)
 						break
-				sleep(retry)
+				time.sleep(retry)
 			else:
 				raise
 
@@ -203,7 +195,7 @@ def grabber(url, header=None, *, referer=None, cookie=None, raw=False, errorlog=
 
 	# decompress gziped data
 	if response.getheader("Content-Encoding") == "gzip":
-		b = decompress(b)
+		b = gzip.decompress(b)
 
 	if raw:
 		content = b
@@ -211,7 +203,7 @@ def grabber(url, header=None, *, referer=None, cookie=None, raw=False, errorlog=
 	else:
 		# find html defined encoding
 		s = b.decode("utf-8", "replace")
-		match = search(r"charset=[\"']?([^\"'>]+)", s)
+		match = re.search(r"charset=[\"']?([^\"'>]+)", s)
 		if match:
 			s = b.decode(match.group(1), "replace")
 		content = s
@@ -254,7 +246,7 @@ def download(mission, savepath, thread=None):
 			if not ep.complete and not ep.skip:
 				raise Exception("Mission is not completed")
 
-	except WorkerExit:
+	except worker.WorkerExit:
 		mission.set("state", "PAUSE")
 		raise
 
@@ -283,10 +275,10 @@ def crawl(mission, savepath, thread):
 			continue
 
 		if getattr(module, "noepfolder", False):
-			efd = join(savepath, safefilepath(mission.title))
+			efd = os.path.join(savepath, safefilepath(mission.title))
 			fexp = format_escape(safefilepath(ep.title)) + "_{:03}"
 		else:
-			efd = join(savepath, safefilepath(mission.title),
+			efd = os.path.join(savepath, safefilepath(mission.title),
 					safefilepath(ep.title))
 			fexp = "{:03}"
 
@@ -306,7 +298,7 @@ def crawl(mission, savepath, thread):
 				ep.skip = True
 
 def get_checksum(b):
-	return md5(b).hexdigest()
+	return hashlib.md5(b).hexdigest()
 
 def get_file_checksum(filename):
 	with open(filename, "rb") as f:
@@ -353,7 +345,7 @@ class Crawler:
 		if not ext:
 			raise TypeError("Invalid image type.")
 		# everything is ok, save image
-		return join(
+		return os.path.join(
 			self.savepath,
 			"{}.{}".format(self.get_filename(), ext)
 		)
@@ -601,13 +593,13 @@ def analyze(mission, thread=None):
 	try:
 		analyze_info(mission, mission.module, thread)
 
-	except WorkerExit:
+	except worker.WorkerExit:
 		mission.set("state", "ERROR")
 		raise
 
 	except Exception as er:
 		mission.set("state", "ERROR")
-		print_exc()
+		traceback.print_exc()
 		thread.bubble("ANALYZE_FAILED", (mission, er))
 
 	except PauseDownloadError:
