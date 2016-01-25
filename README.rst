@@ -51,7 +51,7 @@ Development Dependencies
 ---------------------
 
 Comic Crawler is on
-`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.1.17>`__. 安裝完
+`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.1.26>`__. 安裝完
 python 後，可以直接用 pip 指令自動安裝。
 
 Install Python
@@ -252,6 +252,12 @@ Todos
 
 Changelog
 ---------
+
+-  2016.1.26
+
+   -  Change: checking update won't affect mission which is downloading.
+   -  Fix: page won't skip if savepath contains "~".
+   -  Add: a new url pattern in facebook.
 
 -  2016.1.17
 

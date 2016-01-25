@@ -253,6 +253,12 @@ Todos
 Changelog
 ---------
 
+-  2016.1.26
+
+   -  Change: checking update won't affect mission which is downloading.
+   -  Fix: page won't skip if savepath contains "~".
+   -  Add: a new url pattern in facebook.
+
 -  2016.1.17
 
    -  Fix: Facebook url match issue.
