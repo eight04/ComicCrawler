@@ -8,7 +8,7 @@ from http.cookies import SimpleCookie
 
 from .safeprint import safeprint
 from .error import *
-from .io import content_write, is_file
+from .io import content_write, content_read, path_each
 from .config import setting
 
 import pprint, traceback, os, imghdr, re, time, hashlib, gzip, worker
@@ -300,9 +300,13 @@ def crawl(mission, savepath, thread):
 def get_checksum(b):
 	return hashlib.md5(b).hexdigest()
 
-def get_file_checksum(filename):
-	with open(filename, "rb") as f:
-		return get_checksum(f.read())
+def get_file_checksum(file):
+	return get_checksum(content_read(file, raw=True))
+
+def extract_filename(file):
+	dir, fn = os.path.split(file)
+	fn, ext = os.path.splitext(fn)
+	return fn
 
 class Crawler:
 	"""Create Crawler object. Contains img url, next page url."""
@@ -320,10 +324,10 @@ class Crawler:
 		"""Check if current page exists in savepath."""
 		if self.exist_pages is None:
 			self.exist_pages = set()
-			if os.path.isdir(self.savepath):
-				for file in  os.listdir(self.savepath):
-					if os.path.isfile(os.path.join(self.savepath, file)):
-						self.exist_pages.add(os.path.splitext(file)[0])
+			path_each(
+				self.savepath,
+				lambda file: self.exist_pages.add(extract_filename(file))
+			)
 		return self.get_filename() in self.exist_pages
 
 	def get_filename(self):
@@ -418,11 +422,10 @@ class PerPageCrawler(Crawler):
 		if getattr(self.downloader, "circular", False):
 			if not self.checksums:
 				self.checksums = set()
-				if os.path.isdir(self.savepath):
-					for file in os.listdir(self.savepath):
-						full_filename = os.path.join(self.savepath, file)
-						if os.path.isfile(full_filename):
-							self.checksums.add(get_file_checksum(full_filename))
+				path_each(
+					self.savepath,
+					lambda file: self.checksums.add(get_file_checksum(file))
+				)
 
 			checksum = get_checksum(self.image)
 			if checksum in self.checksums:

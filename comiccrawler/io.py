@@ -110,3 +110,22 @@ def backup(file):
 		if not is_file(file):
 			return
 		shutil.copyfile(file, file + time.strftime("@%Y-%m-%d_%H%M%S"))
+
+def path_each(folder, callback, mode="f"):
+	"""Iter through all file in the folder.
+
+	`folder` may contain "*", or it will use the children in the folder.
+	`callback` will recieve a filename param.
+	`mode` is a string containing f or/and d, to filter file, directory.
+	"""
+	folder = path.expanduser(folder)
+	if "*" in folder:
+		files = glob.iglob(folder)
+	else if is_dir(folder):
+		files = [path.join(folder, file) for file in os.listdir(folder)]
+	else:
+		return
+
+	for file in files:
+		if path.isfile(file) and "f" in mode or path.isdir(file) and "d" in mode:
+			callback(file)
