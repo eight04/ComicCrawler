@@ -10,24 +10,6 @@ Todos
 -  The misssion shows "updated" in mission list after re-analyze.
 -  Make grabber be able to return verbose info?
 
-20150608 更新
--------------
-
--  放上 PyPI，改變安裝方式
--  使用 json 儲存檔案，存檔結構改變。使用 migrate 指令可以將當下目錄的
-   save.dat, library.dat 轉換成新格式。
--  更新方法︰
-
-   -  開啟 cmd，輸入 ``pip install comiccrawler``
-   -  用 cd 指令進入舊存檔的資料夾。例 ``cd /d D:\ComicCrawler-master``
-   -  輸入 ``comiccrawler migrate`` 轉換存檔。
-   -  輸入 ``comiccrawler gui`` 啟動，啟動完再關閉。
-   -  開啟資料夾 ``%USERPROFILE%\comiccrawler``\ ，把 ``setting.ini``
-      給覆蓋掉。
-   -  再次輸入 ``comiccrawler gui``\ 。
-
-      -  以後只要輸入這個指令就能啟動了
-
 Features
 --------
 
@@ -139,13 +121,15 @@ Supported domains
     savepath = ~/comiccrawler/download
 
     ; 開啟 grabber 偵錯
-    logerror = false
+    errorlog = false
 
     ; 每隔 5 分鐘自動存檔
     autosave = 5
 
 -  設定檔位於 ``%USERPROFILE%\comiccrawler\setting.ini``
 -  執行一次 ``comiccrawler gui`` 後關閉，設定檔會自動產生
+-  各別的網站會有自己的設定，通常是要填入一些登入相關資訊
+-  設定檔會在重新啟動後生效。若 ComicCrawler 正在執行中，可以點「重載設定檔」來載入新設定
 
 Module example
 --------------
