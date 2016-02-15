@@ -559,7 +559,7 @@ class MainWindow(worker.UserWorker):
 def reselect_episodes(parent, mission):
 	"""Reselect episode"""
 	if select_episodes(parent, mission):
-		mission.set("state", "ANALYZED")
+		mission.state = "ANALYZED"
 
 def select_title(parent, mission):
 	"""Create dialog to change mission title."""
@@ -575,7 +575,7 @@ def select_title(parent, mission):
 
 		def apply(self):
 			title = self.entry.get()
-			mission.set("title", title)
+			mission.title = title
 
 	return Dialog(parent, title="重命名", cls=Provider).wait()
 

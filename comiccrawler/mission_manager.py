@@ -27,8 +27,8 @@ class MissionPoolEncoder(json.JSONEncoder):
 	"""Encode Mission, Episode to json."""
 
 	def default(self, object):
-		if isinstance(object, Mission):
-			return shallow(vars(object), exclude=["module", "thread"])
+		if isinstance(object, MissionProxy):
+			return shallow(vars(object.mission), exclude=["module", "thread"])
 
 		if isinstance(object, Episode):
 			return shallow(vars(object))
@@ -67,6 +67,10 @@ class MissionManager(worker.UserWorker):
 		def dummy():
 			"""Save missions after the thread terminate."""
 			self.save()
+
+		@self.listen("SAVE_MISSION")
+			"""Save mission lately"""
+			self.edit = True
 
 		self.load()
 		while True:
@@ -146,8 +150,9 @@ class MissionManager(worker.UserWorker):
 			for ep_data in m_data["episodes"]:
 				episodes.append(Episode(**ep_data))
 			m_data["episodes"] = episodes
-			mission = Mission(**m_data)
-			self._add(mission)
+			mission = MissionProxy(Mission(**m_data), self)
+			# self._add(mission)
+			self.pool[mission.url] = mission
 
 		for url in view:
 			self.view[url] = self.pool[url]
@@ -158,18 +163,19 @@ class MissionManager(worker.UserWorker):
 		self.bubble("MISSION_LIST_REARRANGED", self.view)
 		self.bubble("MISSION_LIST_REARRANGED", self.library)
 
-	def _add(self, mission):
+	# def _add(self, mission):
 		"""Add mission to public pool."""
-		if mission.url not in self.pool:
-			self.add_child(mission)
-			self.pool[mission.url] = mission
+		# if mission.url not in self.pool:
+			# self.add_child(mission)
+			# self.pool[mission.url] = mission
 
 	def add(self, pool_name, *missions):
 		"""Add missions to pool."""
 		pool = getattr(self, pool_name)
 
 		for mission in missions:
-			self._add(mission)
+			self.pool[mission.url] = mission
+			# self._add(mission)
 			pool[mission.url] = mission
 
 		self.bubble("MISSION_LIST_REARRANGED", pool)
@@ -225,3 +231,19 @@ class MissionManager(worker.UserWorker):
 			return self.pool[url]
 		return getattr(self, pool_name)[url]
 
+
+class MissionProxy:
+	"""Send a message to manager when mission state was changed"""
+	def __init__(self, mission, manager):
+		self.__dict__["mission"] = mission
+		self.__dict__["manager"] = manager
+
+	def __getattr__(self, name):
+		return getattr(self.mission, name)
+
+	def __setattr__(self, name, value):
+		setattr(self.mission, name, value)
+		self.manager.message("MISSION_PROPERTY_CHANGED", flag="BUBBLE")
+
+	def save(self):
+		self.manager.message("SAVE_MISSION")

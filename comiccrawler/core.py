@@ -19,7 +19,7 @@ default_header = {
 	"Accept-Encoding": "gzip, deflate"
 }
 
-class Mission(worker.UserWorker):
+class Mission:
 	"""Create Mission object. Contains information of the mission."""
 
 	def __init__(self, title=None, url=None, episodes=None, state="INIT"):
@@ -35,15 +35,6 @@ class Mission(worker.UserWorker):
 		self.module = get_module(url)
 		if not self.module:
 			raise ModuleError("Get module failed!")
-
-	def set(self, key, value):
-		"""Set new attribute."""
-
-		if not hasattr(self, key):
-			return
-
-		setattr(self, key, value)
-		self.bubble("MISSION_PROPERTY_CHANGED", self)
 
 class Episode:
 	"""Create Episode object. Contains information of an episode."""
@@ -237,7 +228,7 @@ def download(mission, savepath, thread=None):
 	# warning there is a deadlock,
 	# never do mission.lock.acquire in callback...
 	safeprint("Start downloading " + mission.title)
-	mission.set("state", "DOWNLOADING")
+	mission.state = "DOWNLOADING"
 	try:
 		crawl(mission, savepath, thread)
 
@@ -247,20 +238,20 @@ def download(mission, savepath, thread=None):
 				raise Exception("Mission is not completed")
 
 	except worker.WorkerExit:
-		mission.set("state", "PAUSE")
+		mission.state = "PAUSE"
 		raise
 
 	except Exception:
-		mission.set("state", "ERROR")
+		mission.state = "ERROR"
 		thread.bubble("DOWNLOAD_ERROR", mission)
 		raise
 
 	except PauseDownloadError:
-		mission.set("state", "ERROR")
+		mission.state = "ERROR"
 		thread.bubble("DOWNLOAD_INVALID", mission)
 
 	else:
-		mission.set("state", "FINISHED")
+		mission.state = "FINISHED"
 		thread.bubble("DOWNLOAD_FINISHED", mission)
 
 def crawl(mission, savepath, thread):
@@ -285,7 +276,7 @@ def crawl(mission, savepath, thread):
 		safeprint("Downloading ep {}".format(ep.title))
 
 		try:
-			crawlpage(ep, module, efd, fexp, thread)
+			crawlpage(ep, module, efd, fexp, thread, mission.save)
 
 		except LastPageError:
 			safeprint("Episode download complete!")
@@ -531,7 +522,7 @@ class AllPageCrawler(Crawler):
 		if self.ep.current_page < len(urls):
 			return self.ep.url
 
-def crawlpage(ep, downloader, savepath, fexp, thread):
+def crawlpage(ep, downloader, savepath, fexp, thread, page_done):
 	"""Crawl all pages of an episode.
 
 	To complete current episode, raise LastPageError.
@@ -562,6 +553,8 @@ def crawlpage(ep, downloader, savepath, fexp, thread):
 			safeprint("page {} already exist".format(
 					ep.current_page))
 			crawler.iter_next()
+
+		page_done()
 
 	def download_error(er):
 		crawler.handle_error(er)
@@ -597,16 +590,16 @@ def analyze(mission, thread=None):
 		analyze_info(mission, mission.module, thread)
 
 	except worker.WorkerExit:
-		mission.set("state", "ERROR")
+		mission.state = "ERROR"
 		raise
 
 	except Exception as er:
-		mission.set("state", "ERROR")
+		mission.state = "ERROR"
 		traceback.print_exc()
 		thread.bubble("ANALYZE_FAILED", (mission, er))
 
 	except PauseDownloadError:
-		mission.set("state", "ERROR")
+		mission.state = "ERROR"
 		thread.bubble("ANALYZE_INVALID", mission)
 
 	else:
@@ -626,7 +619,7 @@ def analyze_info(mission, downloader, thread):
 	"""Analyze mission."""
 	safeprint("Start analyzing {}".format(mission.url))
 
-	mission.set("state", "ANALYZING")
+	mission.state = "ANALYZING"
 
 	header = getattr(downloader, "header", None)
 	cookie = getattr(downloader, "cookie", None)
@@ -652,14 +645,14 @@ def analyze_info(mission, downloader, thread):
 		# Check update
 		for ep in mission.episodes:
 			if not ep.skip and not ep.complete:
-				mission.set("state", "UPDATE")
+				mission.state = "UPDATE"
 				break
 		else:
-			mission.set("state", "FINISHED")
+			mission.state = "FINISHED"
 
 	else:
 		mission.episodes = episodes
-		mission.set("state", "ANALYZED")
+		mission.state = "ANALYZED"
 
 	# remove duplicate
 	remove_duplicate_episode(mission)

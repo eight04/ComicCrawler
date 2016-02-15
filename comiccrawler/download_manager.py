@@ -135,7 +135,7 @@ class DownloadManager(worker.UserWorker):
 
 	def create_mission(self, url):
 		"""Create the mission from url."""
-		return Mission(url=url)
+		return MissionProxy(Mission(url=url), self)
 
 	def start_analyze(self, mission):
 		"""Analyze the mission."""
@@ -169,7 +169,7 @@ class DownloadManager(worker.UserWorker):
 
 		for mission in self.mission_manager.library.values():
 			if mission.state not in ("DOWNLOADING", "ANALYZING"):
-				mission.set("state", "ANALYZE_INIT")
+				mission.state = "ANALYZE_INIT"
 
 		mission = self.get_mission_to_check_update()
 		if mission:

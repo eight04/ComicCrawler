@@ -9,6 +9,8 @@ Todos
 
 -  The misssion shows "updated" in mission list after re-analyze.
 -  Make grabber be able to return verbose info?
+-  Mission state change with message.
+   -  How to handle episodes in MissionProxy?
 
 Features
 --------
