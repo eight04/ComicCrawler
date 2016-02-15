@@ -80,6 +80,8 @@ class DownloadManager(worker.UserWorker):
 				mission = self.get_mission_to_check_update()
 				if mission:
 					self.library_thread = self.create_child(analyze).start(mission)
+				else:
+					setting["lastcheckupdate"] = time.time()
 
 		@self.listen("ANALYZE_FINISHED")
 		def dummy(mission, thread):
@@ -95,7 +97,8 @@ class DownloadManager(worker.UserWorker):
 
 		@self.listen("MISSION_POOL_LOAD_SUCCESS")
 		def dummy():
-			if setting.getboolean("libraryautocheck"):
+			if (setting.getboolean("libraryautocheck") and
+					time.time() - setting.getfloat("lastcheckupdate", 0) > 24 * 60 * 60):
 				self.start_check_update()
 
 		@self.listen("DOWNLOAD_EP_COMPLETE")
