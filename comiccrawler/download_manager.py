@@ -2,7 +2,7 @@
 
 """Download Manager"""
 
-import subprocess, traceback, worker
+import subprocess, traceback, worker, time
 
 from os import path
 
