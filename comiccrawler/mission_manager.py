@@ -11,29 +11,10 @@ from .config import setting
 from .core import Mission, Episode
 from .io import content_read, content_write, is_file, backup
 
-# def shallow(dict, exclude=None):
-	"""Return a shallow copy of a dict.
-
-	Arguments:
-	exclude - A list of key name which should not to copy. (default: None)
-	"""
-	# new_dict = {}
-	# for key in dict:
-		# if not exclude or key not in exclude:
-			# new_dict[key] = dict[key]
-	# return new_dict
-
 class MissionPoolEncoder(json.JSONEncoder):
 	"""Encode Mission, Episode to json."""
 
 	def default(self, object):
-		# if isinstance(object, MissionProxy):
-			# return shallow(vars(object.mission), exclude=["module", "thread"])
-
-		# if isinstance(object, Episode):
-			# return shallow(vars(object))
-
-		# return super().default(object)
 		if hasattr(object, "tojson"):
 			return object.tojson()
 
@@ -254,6 +235,6 @@ class MissionProxy:
 		self.manager.message("SAVE_MISSION", self)
 
 	def tojson(self):
-		json = vars(self.mission)
+		json = vars(self.mission).copy()
 		del json["module"]
 		return json
