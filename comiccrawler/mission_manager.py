@@ -69,6 +69,7 @@ class MissionManager(worker.UserWorker):
 			self.save()
 
 		@self.listen("SAVE_MISSION")
+		def dummy():
 			"""Save mission lately"""
 			self.edit = True
 
@@ -243,7 +244,7 @@ class MissionProxy:
 
 	def __setattr__(self, name, value):
 		setattr(self.mission, name, value)
-		self.manager.message("MISSION_PROPERTY_CHANGED", flag="BUBBLE")
+		self.manager.message("MISSION_PROPERTY_CHANGED", self, flag="BUBBLE")
 
 	def save(self):
-		self.manager.message("SAVE_MISSION")
+		self.manager.message("SAVE_MISSION", self)
