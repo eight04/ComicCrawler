@@ -9,6 +9,7 @@ Todos
 
 -  The misssion shows "updated" in mission list after re-analyze.
 -  Make grabber be able to return verbose info?
+-  Need a better error log system.
 
 Features
 --------
@@ -33,7 +34,7 @@ Development Dependencies
 ---------------------
 
 Comic Crawler is on
-`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.1.26>`__. 安裝完
+`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.2.15>`__. 安裝完
 python 後，可以直接用 pip 指令自動安裝。
 
 Install Python
@@ -236,6 +237,11 @@ Todos
 
 Changelog
 ---------
+
+-  2016.2.15
+
+   -  Add `lastcheckupdate` setting. Now the library will only auto check update once a day.
+   -  Refactor. Use MissionProxy, Mission doesn't inherit UserWorker anymore.
 
 -  2016.1.26
 

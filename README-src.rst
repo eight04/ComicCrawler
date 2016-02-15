@@ -238,6 +238,11 @@ Todos
 Changelog
 ---------
 
+-  2016.2.15
+
+   -  Add `lastcheckupdate` setting. Now the library will only auto check update once a day.
+   -  Refactor. Use MissionProxy, Mission doesn't inherit UserWorker anymore.
+
 -  2016.1.26
 
    -  Change: checking update won't affect mission which is downloading.
