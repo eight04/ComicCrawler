@@ -10,6 +10,7 @@ Todos
 -  The misssion shows "updated" in mission list after re-analyze.
 -  Make grabber be able to return verbose info?
 -  Need a better error log system.
+-  Support pool in Sankaku.
 
 Features
 --------
@@ -226,14 +227,6 @@ Module example
         """
         pass
 
-Todos
------
-
--  Support pool in Sankaku.
--  Mission should send MISSION_PROPERTY_CHANGED event when episode status change.
-
-   -  We can remove DOWNLOAD_EP_COMPLETE listener in download_manager after this.
-   -  Make Episode inherit Worker use lots of memory. (Amount 4x as before)
 
 Changelog
 ---------

@@ -217,6 +217,10 @@ class MissionManager(worker.UserWorker):
 			return self.pool[url]
 		return getattr(self, pool_name)[url]
 
+	def create_mission(self, url):
+		"""Create a new mission"""
+		return MissionProxy(Mission(url=url), self)
+
 
 class MissionProxy:
 	"""Send a message to manager when mission state was changed"""

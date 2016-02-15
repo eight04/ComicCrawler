@@ -101,10 +101,6 @@ class DownloadManager(worker.UserWorker):
 					time.time() - setting.getfloat("lastcheckupdate", 0) > 24 * 60 * 60):
 				self.start_check_update()
 
-		@self.listen("DOWNLOAD_EP_COMPLETE")
-		def dummy():
-			self.mission_manager.edit = True
-
 		self.reload_config()
 		self.mission_manager.start()
 
@@ -138,7 +134,7 @@ class DownloadManager(worker.UserWorker):
 
 	def create_mission(self, url):
 		"""Create the mission from url."""
-		return MissionProxy(Mission(url=url), self)
+		return self.mission_manager.create_mission(url)
 
 	def start_analyze(self, mission):
 		"""Analyze the mission."""
