@@ -231,6 +231,10 @@ Module example
 Changelog
 ---------
 
+-  2016.2.15.1
+
+   -  Fix: can not add mission.
+
 -  2016.2.15
 
    -  Add `lastcheckupdate` setting. Now the library will only auto check update once a day.

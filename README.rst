@@ -10,6 +10,7 @@ Todos
 -  The misssion shows "updated" in mission list after re-analyze.
 -  Make grabber be able to return verbose info?
 -  Need a better error log system.
+-  Support pool in Sankaku.
 
 Features
 --------
@@ -34,7 +35,7 @@ Development Dependencies
 ---------------------
 
 Comic Crawler is on
-`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.2.15>`__. 安裝完
+`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.2.15.1>`__. 安裝完
 python 後，可以直接用 pip 指令自動安裝。
 
 Install Python
@@ -226,17 +227,13 @@ Module example
         """
         pass
 
-Todos
------
-
--  Support pool in Sankaku.
--  Mission should send MISSION_PROPERTY_CHANGED event when episode status change.
-
-   -  We can remove DOWNLOAD_EP_COMPLETE listener in download_manager after this.
-   -  Make Episode inherit Worker use lots of memory. (Amount 4x as before)
 
 Changelog
 ---------
+
+-  2016.2.15.1
+
+   -  Fix: can not add mission.
 
 -  2016.2.15
 
