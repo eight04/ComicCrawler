@@ -237,23 +237,23 @@ Changelog
 
 -  2016.2.15
 
-   -  Add `lastcheckupdate` setting. Now the library will only auto check update once a day.
+   -  Add `lastcheckupdate` setting. Now the library will only automatically check updates once a day.
    -  Refactor. Use MissionProxy, Mission doesn't inherit UserWorker anymore.
 
 -  2016.1.26
 
-   -  Change: checking update won't affect mission which is downloading.
-   -  Fix: page won't skip if savepath contains "~".
+   -  Change: checking updates won't affect mission which is downloading.
+   -  Fix: page won't skip if the savepath contains "~".
    -  Add: a new url pattern in facebook.
 
 -  2016.1.17
 
-   -  Fix: Facebook url match issue.
-   -  Downloader will download other episodes when error occur.
+   -  Fix: an url matching issue in Facebook.
+   -  Enhance: downloader will loop through other episodes rather than stop current mission on crawlpage error.
 
 -  2016.1.15
 
-   -  Fix: it doesn't save session during downloading.
+   -  Fix: ComicCrawler doesn't save session during downloading.
 
 -  2016.1.13
 
@@ -262,7 +262,7 @@ Changelog
 -  2016.1.12
 
    -  Add facebook module.
-   -  Add ``circular`` option in module. Which should be setted to ``True` if downloader doesn't know where is the end of the album.
+   -  Add ``circular`` option in module. Which should be set to ``True` if downloader doesn't know which is the last page of the album. (e.g. Facebook)
 
 -  2016.1.3
 
@@ -270,7 +270,7 @@ Changelog
 
 -  2015.12.9
 
-   -  Fix buildtime dependencies.
+   -  Fix build-time dependencies.
 
 -  2015.11.8
 
