@@ -10,7 +10,7 @@ from urllib.parse import urljoin
 from ..safeprint import safeprint
 from ..core import Episode
 
-domain = ["www.8comic.com", "www.comicvip.com"]
+domain = ["www.8comic.com", "www.comicvip.com", "www.comicbus.com"]
 name = "無限"
 
 def gettitle(html, url):
