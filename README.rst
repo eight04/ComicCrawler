@@ -35,7 +35,7 @@ Development Dependencies
 ---------------------
 
 Comic Crawler is on
-`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.2.15.1>`__. 安裝完
+`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.2.27>`__. 安裝完
 python 後，可以直接用 pip 指令自動安裝。
 
 Install Python
@@ -70,7 +70,7 @@ Install Comic Crawler
 Supported domains
 -----------------
 
-    chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org g.e-hentai.org imgbox.com konachan.com m.dmzj.com manhua.dmzj.com seiga.nicovideo.jp tel.dm5.com tsundora.com tw.seemh.com www.8comic.com www.99comic.com www.chuixue.com www.comicvip.com www.dm5.com www.facebook.com www.iibq.com www.manhuadao.com www.pixiv.net www.seemh.com yande.re
+    chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org g.e-hentai.org imgbox.com konachan.com m.dmzj.com manhua.dmzj.com seiga.nicovideo.jp tel.dm5.com tsundora.com tw.seemh.com www.8comic.com www.99comic.com www.chuixue.com www.comicbus.com www.comicvip.com www.dm5.com www.facebook.com www.iibq.com www.manhuadao.com www.pixiv.net www.seemh.com yande.re
 
 使用說明
 --------
@@ -230,6 +230,11 @@ Module example
 
 Changelog
 ---------
+
+-  2016.2.27
+
+   -  Fix: lastcheckupdate doesn't work.
+   -  Add: comicbus domain (8comic).
 
 -  2016.2.15.1
 

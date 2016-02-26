@@ -231,6 +231,11 @@ Module example
 Changelog
 ---------
 
+-  2016.2.27
+
+   -  Fix: lastcheckupdate doesn't work.
+   -  Add: comicbus domain (8comic).
+
 -  2016.2.15.1
 
    -  Fix: can not add mission.
