@@ -81,7 +81,7 @@ class DownloadManager(worker.UserWorker):
 				if mission:
 					self.library_thread = self.create_child(analyze).start(mission)
 				else:
-					setting["lastcheckupdate"] = time.time()
+					setting["lastcheckupdate"] = str(time.time())
 
 		@self.listen("ANALYZE_FINISHED")
 		def dummy(mission, thread):
