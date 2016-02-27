@@ -4,6 +4,11 @@ Comic Crawler
 Comic Crawler 是用來扒圖的一支 Python
 Script。擁有簡易的下載管理員、圖書館功能、 與方便的擴充能力。
 
+2016.2.27 更新
+-------------
+
+-  "www.comicvip.com" 被 "www.comicbus.com" 取代。詳細請參考 [#7](https://github.com/eight04/ComicCrawler/issues/7)
+
 Todos
 -----
 
