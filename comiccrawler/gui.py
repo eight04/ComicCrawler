@@ -622,7 +622,7 @@ def select_episodes(parent, mission):
 						ck_holder[ep] = ck
 					ck = Checkbutton(inner)
 					ck.state(("!alternate", "selected"))
-					ck.grid(column=p_i, row=20, sticky="w")
+					ck.grid(column=p_i, row=e_i + 1, sticky="w")
 					ck.config(command=set_page(ck, page))
 				canvas.create_window((left, 0), window=inner, anchor="nw")
 				inner.update_idletasks()
