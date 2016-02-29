@@ -4,11 +4,11 @@
 
 """
 
-import re
+import re, execjs
 from urllib.parse import urljoin
 
 from ..safeprint import safeprint
-from ..core import Episode
+from ..core import Episode, grabhtml
 
 domain = ["www.8comic.com", "www.comicvip.com", "www.comicbus.com"]
 name = "無限"
@@ -21,28 +21,40 @@ def getepisodelist(html, url):
 	html = html.replace("\n","")
 	matches = re.finditer("<a href='#' onclick=\"cview\('(.+?)',(\d+?)\);return "
 			"false;\" id=\"\w+?\" class=\"\w+?\">(.+?)</a>", html, re.M)
+	comicviewjs = grabhtml(urljoin(url, "/js/comicview.js"))
+	ctx = execjs.compile(
+		"""
+		var output;
+		function getCookie() {}
+		var window = {
+			open: function(result){
+				output = result;
+			}
+		};
+		function get(url, catid) {
+			cview(url, catid);
+			return output;
+		}
+		var document = {
+			location: {
+				href: ""
+			}
+		};
+		""" + comicviewjs
+	);
+
 	s = []
 	for match in matches:
 		ep_url, catid, title = match.groups()
+
+		ep_url = ctx.call("get", ep_url, int(catid))
 
 		# tag cleanup
 		title = title.strip()
 		title = re.sub("<script.+?</script>","",title)
 		title = re.sub("<.+?>","",title)
 
-		catid = int(catid)
-
-		if catid in (3,8,10,11,13,14,15,16,18,20):
-			base = "/show/best-manga-"
-		else:
-			base = "/show/cool-"
-
-		# I have no idea what is this
-		# base = "/view/"
-
-		ep_url = ep_url.replace(".html", "").replace("-", ".html?ch=")
-
-		e = Episode(title, urljoin(url, base + ep_url))
+		e = Episode(title, urljoin(url, ep_url))
 		s.append(e)
 	return s
 
