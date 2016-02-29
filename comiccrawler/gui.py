@@ -590,77 +590,79 @@ def select_episodes(parent, mission):
 				xscrollcommand=xscrollbar.set,
 				highlightthickness="0"
 			)
-			inner = Frame(canvas)
 
-			# list of checkbutton
-			self.vs = vs = []
-			i = 0
+			# split to each page
+			pages = [mission.episodes[i:i + 20] for i in range(0, len(mission.episodes), 20)]
+			# split to each window
+			windows = [pages[i:i + 10] for i in range(0, len(pages), 10)]
 
-			# make checkbutton into inner frame
-			for ep in mission.episodes:
-				ck = Checkbutton(inner, text=safe_tk(ep.title))
-				ck.state(("!alternate",))
-				if not ep.skip:
-					ck.state(("selected",))
-				ck.grid(column=i // 20, row=i % 20, sticky="w")
-				vs.append((ck, ep))
-				i += 1
+			self.ck_holder = ck_holder = {}
 
-			def colsel(gck, c):
-				def _():
-					for i in range(c*20, (c+1)*20):
-						if i >= len(vs):
-							break
-						ck, ep = vs[i]
-						if gck.instate(("selected", )):
-							ck.state(("selected", ))
-						else:
-							ck.state(("!selected", ))
-				return _
+			def set_page(ck, page):
+				def callback():
+					if ck.instate(("selected",)):
+						value = ("selected", )
+					else:
+						value = ("!selected", )
 
-			from math import ceil
-			for i in range(ceil(len(mission.episodes) / 20)):
-				ck = Checkbutton(inner)
-				ck.state(("!alternate", "selected"))
-				ck.grid(column=i, row=20, sticky="w")
-				ck.config(command=colsel(ck, i))
+					for ep in page:
+						ck_holder[ep].state(value)
+				return callback
 
-			# caculates frame size after inner frame configured and resize canvas
-			def t(event):
-				canvas.config(scrollregion=inner.bbox("ALL"),
-						height=inner.bbox("ALL")[3],
-						width=inner.bbox("ALL")[2])
-				inner.unbind("<Configure>")
-			inner.bind("<Configure>", t)
+			left = 0
+			for window in windows:
+				inner = Frame(canvas)
+				for p_i, page in enumerate(window):
+					for e_i, ep in enumerate(page):
+						ck = Checkbutton(inner, text=safe_tk(ep.title))
+						ck.state(("!alternate",))
+						if not ep.skip:
+							ck.state(("selected",))
+						ck.grid(column=p_i, row=e_i, sticky="w")
+						ck_holder[ep] = ck
+					ck = Checkbutton(inner)
+					ck.state(("!alternate", "selected"))
+					ck.grid(column=p_i, row=20, sticky="w")
+					ck.config(command=set_page(ck, page))
+				canvas.create_window((left, 0), window=inner, anchor="nw")
+				inner.update_idletasks()
+				left += inner.winfo_reqwidth()
+
+			# Resize canvas
+			canvas.update_idletasks()
+			cord = canvas.bbox("all")
+			canvas.config(
+				scrollregion=cord,
+				height=cord[3],
+				width=cord[2]
+			)
 
 			# caculates canvas's size then deside wether to show scrollbar
-			def t(event):
+			def decide_scrollbar(event):
 				if canvas.winfo_width() >= canvas.winfo_reqwidth():
 					xscrollbar.pack_forget()
-				canvas.unbind("<Configure>")
-			canvas.bind("<Configure>", t)
+					canvas.unbind("<Configure>")
+			canvas.bind("<Configure>", decide_scrollbar)
 
 			# draw innerframe on canvas then show
-			canvas.create_window((0,0),window=inner, anchor='nw')
 			canvas.pack()
 
 			# link scrollbar to canvas then show
 			xscrollbar.config(command=canvas.xview)
 			xscrollbar.pack(fill="x")
 
+
 		def create_btn_bar(self, btn_bar):
 			Button(btn_bar, text="反相", command=self.toggle).pack(side="left")
 			super().create_btn_bar(btn_bar)
 
 		def apply(self):
-			for v in self.vs:
-				ck, ep = v
+			for ep, ck in self.ck_holder.items():
 				ep.skip = not ck.instate(("selected",))
 			return len([ i for i in mission.episodes if not i.skip ])
 
 		def toggle(self):
-			for v in self.vs:
-				ck, ep = v
+			for ep, ck in self.ck_holder.items():
 				if ck.instate(("selected", )):
 					ck.state(("!selected", ))
 				else:
