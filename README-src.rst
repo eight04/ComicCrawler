@@ -236,6 +236,10 @@ Module example
 Changelog
 ---------
 
+-  2016.2.29
+
+   -  Fix: use latest comicview.js (8comic).
+
 -  2016.2.27
 
    -  Fix: lastcheckupdate doesn't work.
