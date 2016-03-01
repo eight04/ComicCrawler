@@ -16,6 +16,8 @@ Todos
 -  Make grabber be able to return verbose info?
 -  Need a better error log system.
 -  Support pool in Sankaku.
+-  Add episode.id so the module can change the url of the episode.
+-  Add module.migrate so the module can change the url of the mission.
 
 Features
 --------
