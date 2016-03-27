@@ -12,6 +12,7 @@ from html import unescape
 
 from ..core import Episode, grabhtml
 from ..safeprint import safeprint
+from ..error import SkipEpisodeError
 
 domain = ["konachan.com"]
 name = "Konachan"
@@ -41,5 +42,11 @@ def getepisodelist(html, url):
 	return s[::-1]
 
 def getimgurls(html, url):
-	img = re.search('href="([^"]+)" id="highres"', html).group(1)
+	try:
+		img = re.search('href="([^"]+)" id="highres"', html).group(1)
+	except AttributeError:
+		if "This post was deleted" in html:
+			raise SkipEpisodeError
+		else:
+			raise
 	return [img]
