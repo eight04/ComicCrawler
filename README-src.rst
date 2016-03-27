@@ -7,7 +7,7 @@ Script。擁有簡易的下載管理員、圖書館功能、 與方便的擴充�
 2016.2.27 更新
 -------------
 
--  "www.comicvip.com" 被 "www.comicbus.com" 取代。詳細請參考 [#7](https://github.com/eight04/ComicCrawler/issues/7)
+-  "www.comicvip.com" 被 "www.comicbus.com" 取代。詳細請參考 `#7 <https://github.com/eight04/ComicCrawler/issues/7>`__
 
 Todos
 -----
@@ -237,6 +237,11 @@ Module example
 
 Changelog
 ---------
+
+-  2016.3.27
+
+   -  Fix: handle deleted post (konachan).
+   -  Fix: enhance dialog. try to fix `#8 <https://github.com/eight04/ComicCrawler/issues/8>`__.
 
 -  2016.2.29
 
