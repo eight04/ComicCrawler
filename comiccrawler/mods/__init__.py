@@ -55,7 +55,11 @@ def get_module(url):
 		
 	domain = match.group(1)
 	
-	if domain not in domain_index:
-		return None
-	
-	return domain_index[domain]
+	while domain:
+		if domain in domain_index:
+			return domain_index[domain]
+		try:
+			domain = domain[domain.index(".") + 1:]
+		except ValueError:
+			break
+	return None
