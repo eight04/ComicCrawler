@@ -8,7 +8,7 @@ Ex:
 """
 
 import re, json
-from html import unescape
+from urllib.parse import urljoin
 
 from ..core import Episode, grabhtml
 from ..safeprint import safeprint
@@ -34,13 +34,13 @@ def getepisodelist(html, url):
 		un = re.search('<a href="([^"]+)" id="next">', html)
 		if un is None:
 			break
-		un = urljoin(url, unescape(un.group(1)))
-		safeprint(base + u)
+		un = urljoin(url, un.group(1))
+		safeprint(un)
 		html = grabhtml(un)
 	return s[::-1]
 
 def getimgurls(html, url):
-	s = re.search('<script type="application/ld+json">([^<]*)</script>', html).group(1)
+	s = re.search('<script type="application/ld\+json">([^<]*)</script>', html).group(1)
 	o = json.loads(s)
 	if isinstance(o["image"], str):
 		return [o["image"]]
