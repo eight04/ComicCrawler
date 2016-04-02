@@ -239,6 +239,11 @@ Module example
 Changelog
 ---------
 
+-  2016.4.2
+
+   -  Add tumblr module.
+   -  Enhance: support sub-domain in ``mods.get_module``.
+
 -  2016.3.27
 
    -  Fix: handle deleted post (konachan).
