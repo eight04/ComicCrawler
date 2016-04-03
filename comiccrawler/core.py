@@ -321,11 +321,17 @@ class Crawler:
 		self.get_html()
 		self.get_images()
 		
-		try:
-			for i in range(0, self.ep.i + 1):
+		for i in range(0, self.ep.i + 1):
+			try:
 				self.image = next(self.images)
-		except StopIteration:
-			self.ep.i = i - 1
+			except StopIteration:
+				self.images = None
+				if i == 0:
+					# the list is emty
+					self.iter_next()
+				else:
+					# point to last image
+					self.ep.i = i - 1
 			
 	def page_exists(self):
 		"""Check if current page exists in savepath."""
@@ -383,24 +389,32 @@ class Crawler:
 
 	def iter_next(self):
 		"""Iter to next image."""
-		try:
-			self.image = next(self.images)
-			
-		except StopIteration:
+		if not self.images:
 			next_page = self.get_next_page()
 			if not next_page:
 				raise LastPageError
 			self.ep.current_url = next_page
 			self.ep.current_page += self.ep.i + 1
-			self.ep.i = -1
-			
+			self.ep.i = 0
 			self.get_html()
 			self.get_images()
-			
-			self.iter_next()
-			
-		else:
-			self.ep.i += 1
+		if self.image:
+			try:
+				self.image = next(self.images)
+				self.ep.i += 1
+				
+			except StopIteration:
+				next_page = self.get_next_page()
+				if not next_page:
+					raise LastPageError
+				self.ep.current_url = next_page
+				self.ep.current_page += self.ep.i + 1
+				self.ep.i = -1
+				
+				self.get_html()
+				self.get_images()
+				
+				self.iter_next()
 		
 	def rest(self):
 		"""Rest some time."""

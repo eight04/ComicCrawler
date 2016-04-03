@@ -136,7 +136,7 @@ class MissionManager(worker.UserWorker):
 			for ep_data in m_data["episodes"]:
 				# compatible 2916.4.3
 				if "i" not in ep_data and ep_data["url"] == ep_data["current_url"]:
-					ep_data["i"] = ep_data["current_page"] - 1
+					ep_data["i"] = ep_data["current_page"]
 					ep_data["current_page"] = 1
 				episodes.append(Episode(**ep_data))
 			m_data["episodes"] = episodes
