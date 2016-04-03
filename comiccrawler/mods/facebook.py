@@ -18,7 +18,7 @@ name = "FB"
 circular = True
 noepfolder = True
 
-def gettitle(html, url):
+def get_title(html, url):
 	try:
 		id = re.search(r"photos/([^/]+)", url).group(1)
 	except AttributeError:
@@ -26,16 +26,16 @@ def gettitle(html, url):
 	title = re.search("<title[^>]*>([^<]+)", html).group(1)
 	return unescape("{} ({})".format(title, id))
 
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	return [Episode("image", url)]
 
-def getimgurl(html, url, page):
+def get_images(html, url):
 	try:
 		id = re.search(r"photos/[^/]+/(\d+)", url).group(1)
 	except AttributeError:
 		id = re.search("fbid=([^&]+)", url).group(1)
 	return urljoin(url, "/photo/download/?fbid=" + id)
 
-def getnextpageurl(html, url, page):
+def get_next_page(html, url):
 	next_url = re.search('photoPageNextNav"[^>]*?href="([^"]+)', html).group(1)
 	return urljoin(url, next_url)

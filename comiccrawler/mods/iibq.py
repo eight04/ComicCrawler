@@ -17,11 +17,11 @@ from ..core import Episode, grabhtml
 domain = ["www.iibq.com"]
 name = "精明眼"
 
-def gettitle(html, url):
+def get_title(html, url):
 	title = re.search(r"<h1[^>]*>(.+?)</h1>", html, re.DOTALL).group(1)
 	return title.strip()
 	
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	s = []
 	html = html[html.index('<div class="cVol">'):]
 	base = re.search("(https?://[^/]+)", url).group(1)
@@ -33,7 +33,7 @@ def getepisodelist(html, url, last_episode):
 			
 	return s[::-1]
 
-def getimgurls(html, url):
+def get_images(html, url):
 	sFiles = re.search('sFiles="([^"]+)"', html).group(1)
 	sPath = re.search('sPath="([^"]+)"', html).group(1)
 	

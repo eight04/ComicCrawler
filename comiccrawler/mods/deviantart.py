@@ -9,6 +9,7 @@ JDownloader2 now support　deviantart.com!
 
 from re import search, compile
 from html import unescape
+from urllib.parse import urljoin
 
 from ..safeprint import safeprint
 from ..error import PauseDownloadError
@@ -23,45 +24,36 @@ config = {
 	"userinfo": "請輸入Cookie中的userinfo"
 }
 
-def loadconfig():
+def load_config():
 	cookie.update(config)
 
-def gettitle(html, url):
+def get_title(html, url):
 	return unescape(search("<title>(.+?)</title>", html).group(1))
 
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	if '"loggedIn":true' not in html:
 		raise PauseDownloadError("you didn't log in!")
 	base = search("(https?://[^/]+)", url).group(1)
 	s = []
-	while True:
-		safeprint(url)
-		startpos = html.index('id="gmi-ResourceStream"')
-		ex = compile('<a class="thumb[^"]*?" href="({}/art/.+?)" title="(.+?)"'.format(base))
+	startpos = html.index('id="gmi-ResourceStream"')
+	ex = compile('<a class="thumb[^"]*?" href="({}/art/.+?)" title="(.+?)"'.format(base))
 
-		for match in ex.finditer(html, startpos):
-			id = search("\d+$", match.group(1)).group()
-			title = match.group(2).rpartition(" by ")[0]
-			# WTF r u doing deviantArt?
-			title = unescape(unescape(title))
+	for match in ex.finditer(html, startpos):
+		id = search("\d+$", match.group(1)).group()
+		title = match.group(2).rpartition(" by ")[0]
+		# WTF r u doing deviantArt?
+		title = unescape(unescape(title))
 
-			s.append(
-				Episode(
-					"{} - {}".format(id, title),
-					match.group(1)
-				)
+		s.append(
+			Episode(
+				"{} - {}".format(id, title),
+				match.group(1)
 			)
-
-		next = search('id="gmi-GPageButton"[^>]+?href="([^"]+?)"><span>Next</span>', html)
-		if not next:
-			break
-		url = base + unescape(next.group(1))
-		html = grabhtml(url)
+		)
 
 	return s[::-1]
 
-
-def getimgurls(html, url):
+def get_images(html, url):
 	if '"loggedIn":true' not in html:
 		raise PauseDownloadError("you didn't log in!")
 
@@ -73,3 +65,8 @@ def getimgurls(html, url):
 		pass
 	i = search('<img[^>]+src="([^"]+)"[^>]+class="dev-content-full">', html).group(1)
 	return [i]
+	
+def get_next_page(html, url):
+	next = search('id="gmi-GPageButton"[^>]+?href="([^"]+?)"><span>Next</span>', html)
+	if next:
+		return urljoin(url, unescape(next.group(1)))

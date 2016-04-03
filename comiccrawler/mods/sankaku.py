@@ -2,6 +2,7 @@
 
 import re
 from html import unescape
+from urllib.parse import urljoin
 
 from ..core import Episode, grabhtml
 from ..safeprint import safeprint
@@ -14,34 +15,30 @@ config = {
 	"cf_clearance": "請輸入Cookie中的cf_clearance"
 }
 
-def loadconfig():
+def load_config():
 	cookie.update(config)
 
-def gettitle(html, url):
+def get_title(html, url):
 	title = re.search(r"<title>/?(.+?) \|", html).group(1)
 	return "[sankaku] " + title
 
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
-	while True:
-		for m in re.finditer(r'href="(/(?:[^/]*/)?post/show/(\d+))"', html):
-			url, pid = m.groups()
-			e = Episode(pid, base + url)
-			if last_episode and last_episode.url == e.url:
-				return s[::-1]
-			s.append(e)
-
-		m = re.search('next-page-url="([^"]+)"', html)
-		if not m:
-			break
-		u = unescape(m.group(1))
-		safeprint(base + u)
-		html = grabhtml(base + u)
+	for m in re.finditer(r'href="(/(?:[^/]*/)?post/show/(\d+))"', html):
+		url, pid = m.groups()
+		e = Episode(pid, base + url)
+		s.append(e)
 	return s[::-1]
 
-def getimgurls(html, url):
+def get_images(html, url):
 	u = re.search('href="([^"]+)" id=highres', html)
 	if not u:
 		u = re.search('embed src="([^"]+)"', html)
 	return ["https:" + u.group(1)]
+
+def get_next_page(html, url):
+	match = re.search('next-page-url="([^"]+)"', html)
+	if match:
+		return urljoin(url, unescape(match.group(1)))
+		

@@ -13,11 +13,11 @@ from ..core import Episode, grabhtml
 domain = ["www.8comic.com", "www.comicvip.com", "www.comicbus.com"]
 name = "無限"
 
-def gettitle(html, url):
+def get_title(html, url):
 	return re.search("<font color=\"#FF6600\" style=\"font:12pt;"
 			"font-weight:bold;\">(.+?)</font>",html).group(1)
 
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	html = html.replace("\n","")
 	matches = re.finditer("<a href='#' onclick=\"cview\('(.+?)',(\d+?)\);return "
 			"false;\" id=\"\w+?\" class=\"\w+?\">(.+?)</a>", html, re.M)
@@ -58,7 +58,7 @@ def getepisodelist(html, url, last_episode):
 		s.append(e)
 	return s
 
-def getimgurls(html, url):
+def get_images(html, url):
 	m = re.search("ch=(\d+)", url)
 	if m is None:
 		ch = "1"

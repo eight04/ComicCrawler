@@ -26,32 +26,24 @@ config = {
 	"user_session": "請輸入Cookie中的user_session"
 }
 
-def loadconfig():
+def load_config():
 	cookie["user_session"] = config["user_session"]
 
-def gettitle(html, url):
+def get_title(html, url):
 	artist = re.search(r'nickname">([^<]+)', html).group(1)
 	id = re.search(r'data-id="(\d+)', html).group(1)
 	return "[Nico] {} - {}".format(id, artist)
 
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	s = []
-	while True:
-		for match in re.finditer(r'href="(/seiga/im\d+)">\s*<span[^>]*><img[^>]*?alt="([^"]*)', html):
-			ep_url, title = match.groups()
-			id = ep_url[7:]
-			e = Episode("{} - {}".format(id, unescape(title)), urljoin(url, ep_url))
-			s.append(e)
-
-		next_url = re.search(r'href="([^"]+)" rel="next"', html)
-		if next_url is None:
-			break
-		next_url = urljoin(url, unescape(next_url.group(1)))
-		safeprint(next_url)
-		html = grabhtml(next_url)
+	for match in re.finditer(r'href="(/seiga/im\d+)">\s*<span[^>]*><img[^>]*?alt="([^"]*)', html):
+		ep_url, title = match.groups()
+		id = ep_url[7:]
+		e = Episode("{} - {}".format(id, unescape(title)), urljoin(url, ep_url))
+		s.append(e)
 	return s[::-1]
 
-def getimgurls(html, url):
+def get_images(html, url):
 	if "<!-- ▼Login -->" in html:
 		raise PauseDownloadError("You didn't login!")
 
@@ -65,5 +57,7 @@ def getimgurls(html, url):
 		img = re.search(r'href="(/image/source\?id=\d+)', html).group(1)
 		return [urljoin(url, img)]
 
-def errorhandler(er, ep):
-	pass
+def get_next_page(html, url):
+	match = re.search(r'href="([^"]+)" rel="next"', html)
+	if match:
+		return urljoin(url, unescape(match.group(1)))

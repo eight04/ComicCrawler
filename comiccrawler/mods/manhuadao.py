@@ -16,10 +16,10 @@ from ..safeprint import safeprint
 domain = ["www.manhuadao.com"]
 name = "漫畫島"
 
-def gettitle(html, url):
+def get_title(html, url):
 	return re.search(r'class="book-title">\s*<h1>([^<]*)', html).group(1)
 	
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	s = []
 	base, id = re.search(r"(https?://[^/]+)/book/([^/]+)", url).groups()
 	
@@ -30,7 +30,7 @@ def getepisodelist(html, url, last_episode):
 		
 	return s[::-1]
 
-def getimgurls(html, url):
+def get_images(html, url):
 	base, protocol, id = re.search(r"((https?://)[^/]+)/book/([^/]+)", url).groups()
 	
 	core = re.search(r'src="(/scripts/core[^"]+)"', html).group(1)

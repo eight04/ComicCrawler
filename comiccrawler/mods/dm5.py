@@ -23,10 +23,10 @@ cookie = {
 domain = ["www.dm5.com", "tel.dm5.com"]
 name = "動漫屋"
 
-def gettitle(html, url):
+def get_title(html, url):
 	return search("class=\"inbt_title_h2\">([^<]+)</h1>", html).group(1)
 
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	s = []
 	# base = search("(https?://[^/]+)", url).group(1)
 	html = html[html.index("cbc_1"):]
@@ -39,41 +39,38 @@ def getepisodelist(html, url, last_episode):
 
 	return s[::-1]
 
-cache = {}
-def getimgurl(html, url, page):
-
-	if url not in cache:
-		key = search(r'id="dm5_key".+?<script[^>]+?>\s*eval(.+?)</script>', html, DOTALL)
-		if key:
-			key = eval(key.group(1)).split(";")[1]
-			key = search(r"=(.+)$", key).group(1)
-			key = eval(key)
-		else:
-			key = ""
-		length = search("DM5_IMAGE_COUNT=(\d+);", html).group(1)
-		cid = search("DM5_CID=(\d+);", html).group(1)
-		funs = []
-		for p in range(1, int(length) + 1):
-			fun_url = urljoin(url, "chapterfun.ashx?cid={}&page={}&language=1&key={}&gtk=6".format(cid, p, key))
-			funs.append(fun_url)
-		cache[url] = funs
-
-		# Grab cookies?
-		grabhtml(funs[0], referer=url)
-
-	if page - 1 >= len(cache[url]):
-		del cache[url]
-		raise LastPageError
-
-	fun_url = cache[url][page - 1]
-	text = grabhtml(fun_url, referer=url)
-	d = compile(text).eval("(typeof (hd_c) != 'undefined' && hd_c.length > 0 && typeof (isrevtt) != 'undefined') ? hd_c : d")
-	return d[0]
-
-def getnextpageurl(html, url, page):
-	# Simulate ajax load
-	return url
+def create_grabber(fun, url):
+	def grabber():
+		text = grabhtml(fun, referer=url)
+		d = compile(text).eval("(typeof (hd_c) != 'undefined' && hd_c.length > 0 && typeof (isrevtt) != 'undefined') ? hd_c : d")
+		return d[0]
+	return grabber
+	
+first_grabber = None
+		
+def get_images(html, url):
+	key = search(r'id="dm5_key".+?<script[^>]+?>\s*eval(.+?)</script>', html, DOTALL)
+	
+	if key:
+		key = eval(key.group(1)).split(";")[1]
+		key = search(r"=(.+)$", key).group(1)
+		key = eval(key)
+		
+	else:
+		key = ""
+		
+	count = search("DM5_IMAGE_COUNT=(\d+);", html).group(1)
+	cid = search("DM5_CID=(\d+);", html).group(1)
+	s = []
+	for p in range(1, int(count) + 1):
+		fun_url = urljoin(url, "chapterfun.ashx?cid={}&page={}&language=1&key={}&gtk=6".format(cid, p, key))
+		s.append(create_grabber(fun_url, url))
+		
+	global first_grabber
+	first_grabber = s[0]
+	
+	return s
 
 def errorhandler(err, ep):
-	fun_url = cache[ep.current_url][0]
-	grabhtml(fun_url, referer=ep.current_url)
+	if first_grabber:
+		first_grabber()

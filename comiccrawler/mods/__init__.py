@@ -36,8 +36,8 @@ def load_config():
 	for mod in mods:
 		if hasattr(mod, "config"):
 			mod.config = section(mod.name, mod.config)
-		if hasattr(mod, "loadconfig"):
-			mod.loadconfig()
+		if hasattr(mod, "load_config"):
+			mod.load_config()
 			
 load_config()
 

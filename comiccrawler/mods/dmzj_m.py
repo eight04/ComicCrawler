@@ -12,10 +12,10 @@ from urllib.parse import urljoin
 domain = ["m.dmzj.com"]
 name = "動漫之家M"
 
-def gettitle(html, url):
+def get_title(html, url):
 	return re.search('comicName">([^<]+)', html).group(1)
 
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	data_js = re.search("initIntroData(.+?);", html, re.DOTALL).group(1)
 	data = execjs.eval(data_js)
 
@@ -33,7 +33,7 @@ def getepisodelist(html, url, last_episode):
 
 	return episodes
 
-def getimgurls(html, url):
+def get_images(html, url):
 	pages_js = re.search(r'page_url":(\[[^\]]+\])', html).group(1)
 	pages = execjs.eval(pages_js)
 

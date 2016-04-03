@@ -17,7 +17,7 @@ from ..core import Episode, grabhtml
 domain = ["tw.seemh.com", "www.seemh.com"]
 name = "看漫畫"
 
-def gettitle(html, url):
+def get_title(html, url):
 	return re.search(r'<h1>([^<]*)', html).group(1)
 
 def get_list(html, cid):
@@ -36,7 +36,7 @@ def get_list(html, cid):
 	return arr
 
 
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	cid = re.search(r"comic/(\d+)", url).group(1)
 	episodes = get_list(html, cid)
 
@@ -47,7 +47,7 @@ def getepisodelist(html, url, last_episode):
 	episodes = [Episode(v[0].strip(), urljoin(url, v[1])) for v in episodes]
 	return episodes[::-1]
 
-def getimgurls(html, url):
+def get_images(html, url):
 	configjs_url = re.search(
 		r'src="(http://[^"]+?/config_\w+?\.js)"',
 		html

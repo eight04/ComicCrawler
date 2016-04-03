@@ -17,26 +17,19 @@ from ..error import SkipEpisodeError
 domain = ["comic.ck101.com"]
 name = "卡提諾"
 
-def gettitle(html, url):
+def get_title(html, url):
 	return re.search("<h1 itemprop=\"name\">(.+?)</h1>", html).group(1)
 	
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
-	while True:
-		for m in re.finditer("<a onclick=\"_gaq.push\(\['_trackEvent', '詳情頁-lists','[^']+','[^']+'\]\);\" target=\"_blank\" href=\"([^\"]+)\" title=\"[^\"]+\">(.+?)</a>", html, re.M):
-			url, title = m
-			e = Episode(m.group(2), base + m.group(1))
-			s.append(e)
-			
-		un = re.search("ref=\"([^\"]+?)\" title='下一頁'", html)
-		if un is None:
-			break
-		safeprint(base + un.group(1))
-		html = grabhtml(base + un.group(1))
+	for m in re.finditer("<a onclick=\"_gaq.push\(\['_trackEvent', '詳情頁-lists','[^']+','[^']+'\]\);\" target=\"_blank\" href=\"([^\"]+)\" title=\"[^\"]+\">(.+?)</a>", html, re.M):
+		url, title = m
+		e = Episode(m.group(2), base + m.group(1))
+		s.append(e)
 	return s[::-1]
-
-def getimgurl(html, url, page):
+			
+def get_images(html, url):
 	"""
 	Since ck101 has lots of bugs, something like this: 
 		http://comic.ck101.com/vols/9206635/1
@@ -54,9 +47,13 @@ def getimgurl(html, url, page):
 		else:
 			raise
 			
-def getnextpageurl(html, url, page):
+def get_next_page(html, url):
 	base = re.search("(https?://[^/]+)", url).group(1)
+	
+	un = re.search("ref=\"([^\"]+?)\" title='下一頁'", html)
+	if un:
+		return base + un.group(1)
+
 	r = re.search("<a href=\"(.+?)\" class=\"nextPageButton\" title=\"下一頁\">", html)
-	if r is None:
-		return ""
-	return base + r.group(1)
+	if r:
+		return base + r.group(1)

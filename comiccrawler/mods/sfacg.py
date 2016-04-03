@@ -15,12 +15,12 @@ from ..safeprint import safeprint
 domain = ["comic.sfacg.com"]
 name = "SF"
 
-def gettitle(html, url):
+def get_title(html, url):
 	html = html.replace("\n","")
 	t = re.search("<title>(.+?)</title>", html).group(1)
 	return t.split(",")[0]
 
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	base = re.search("(https?://[^/]+)", url).group(1)
 	s = []
 	for m in re.findall("<li><a href=\"(.+?)\" target=\"_blank\">(.+?)</a></li>", html, re.M):
@@ -30,7 +30,7 @@ def getepisodelist(html, url, last_episode):
 		s.append(e)
 	return s[::-1]
 
-def getimgurls(html, url):
+def get_images(html, url):
 	js = re.search("src=\"(/Utility/.+?\.js)\"", html).group(1)
 	base = re.search("(https?://[^/]+)", url).group(1)
 

@@ -24,10 +24,10 @@ config = {
 	"SESSID": "請輸入Cookie中的PHPSESSID"
 }
 
-def loadconfig():
+def load_config():
 	cookie["PHPSESSID"] = config["SESSID"]
 
-def gettitle(html, url):
+def get_title(html, url):
 	if "pixiv.user.loggedIn = true" not in html:
 		raise PauseDownloadError("you didn't login!")
 	try:
@@ -38,24 +38,16 @@ def gettitle(html, url):
 		title = "[pixiv] " + re.search("<title>「([^」]+)", html).group(1)
 	return title
 
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	s = []
-	while True:
-		for m in re.finditer(r'<a href="([^"]+)"><h1 class="title" title="([^"]+)">', html):
-			ep_url, title = m.groups()
-			uid = re.search("id=(\d+)", ep_url).group(1)
-			e = Episode("{} - {}".format(uid, unescape(title)), urljoin(url, ep_url))
-			s.append(e)
-
-		un = re.search("href=\"([^\"]+)\" rel=\"next\"", html)
-		if un is None:
-			break
-		next_url = urljoin(url, unescape(un.group(1)))
-		safeprint(next_url)
-		html = grabhtml(next_url)
+	for m in re.finditer(r'<a href="([^"]+)"><h1 class="title" title="([^"]+)">', html):
+		ep_url, title = m.groups()
+		uid = re.search("id=(\d+)", ep_url).group(1)
+		e = Episode("{} - {}".format(uid, unescape(title)), urljoin(url, ep_url))
+		s.append(e)
 	return s[::-1]
 
-def getimgurls(html, url):
+def get_images(html, url):
 	if "pixiv.user.loggedIn = true" not in html:
 		raise PauseDownloadError("you didn't login!")
 
@@ -128,3 +120,8 @@ def errorhandler(er, ep):
 		# Private page?
 		if er.code == 403:
 			raise SkipEpisodeError
+
+def get_next_page(html, url):
+	match = re.search("href=\"([^\"]+)\" rel=\"next\"", html)
+	if match:
+		return urljoin(url, unescape(match.group(1)))

@@ -8,25 +8,24 @@ Ex:
 """
 
 import re
+from urllib.parse import urljoin
 from ..core import Episode
 
 domain = ["www.99comic.com"]
 name = "99"
 
-def gettitle(html, url):
+def get_title(html, url):
 	return re.search("<h1><a title='([^']+)'", html).group(1)
 	
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
 	for m in re.finditer("href='(/comics/[^']+/)'>([^<]+)</a>(?!</li>)", html):
-		url = m.group(1)
-		title = m.group(2)
-		e = Episode(title, base + url)
-		s.append(e)
+		ep_url, title = m.groups()
+		s.append(Episode(title, urljoin(url, ep_url)))
 	return s[::-1]
 
-def getimgurls(html, url):	
+def get_images(html, url):	
 	ds = [
 		"http://218.24.35.163:9393/dm01/",
 		"http://218.24.35.163:9393/dm02/",

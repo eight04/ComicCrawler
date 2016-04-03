@@ -22,22 +22,22 @@ config = {
 
 class BandwidthLimitError(Exception): pass
 
-def loadconfig():
+def load_config():
 	cookie.update(config)
 
-def gettitle(html, url):
+def get_title(html, url):
 	t = re.findall("<h1 id=\"g(j|n)\">(.+?)</h1>", html)
 	t = t[-1][1]
 
 	return unescape(t)
 
-def getepisodelist(html, url, last_episode):
+def get_episodes(html, url):
 	url = re.search(r'href="([^\"]+?/s/\w+/\w+-1)"', html).group(1)
 	e = Episode("image", url)
 	return [e]
 
 nl = ""
-def getimgurl(html, url, page):
+def get_images(html, url):
 	global nl
 	i = re.search("<img id=\"img\" src=\"(.+?)\"", html)
 	i = unescape(i.group(1))
@@ -57,9 +57,9 @@ def errorhandler(er, ep):
 	else:
 		ep.current_url = url
 
-def getnextpageurl(html, url, pagenumber):
-	r = re.search("href=\"([^\"]+?-{})\"".format(pagenumber+1), html)
-	if r is None:
-		return ""
-	else:
-		return r.group(1)
+def get_next_page(html, url):
+	m = re.search('id="next" onclick="[^"]+" href="([^"+])', html)
+	if m:
+		m = m.group(1)
+		if m not in url:
+			return m
