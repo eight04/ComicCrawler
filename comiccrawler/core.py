@@ -629,7 +629,12 @@ def analyze_info(mission, downloader, thread):
 	if not mission.title:
 		mission.title = downloader.gettitle(html, mission.url)
 
-	episodes = thread.sync(downloader.getepisodelist, html, mission.url)
+	if mission.episodes:
+		last_episode = mission.episodes[-1]
+	else:
+		last_episode = None
+		
+	episodes = thread.sync(downloader.getepisodelist, html, mission.url, last_episode)
 
 	if not episodes:
 		raise Exception("Episode list is empty")
