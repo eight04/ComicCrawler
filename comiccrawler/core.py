@@ -39,7 +39,7 @@ class Mission:
 class Episode:
 	"""Create Episode object. Contains information of an episode."""
 
-	def __init__(self, title=None, url=None, current_url=None, current_page=0, skip=False, complete=False):
+	def __init__(self, title=None, url=None, current_url=None, current_page=0, skip=False, complete=False, i=0):
 		"""Construct."""
 		self.title = title
 		self.url = url
@@ -47,6 +47,7 @@ class Episode:
 		self.current_page = current_page
 		self.skip = skip
 		self.complete = complete
+		self.i = i
 
 def format_escape(s):
 	"""Escape {} to {{}}"""
@@ -310,7 +311,22 @@ class Crawler:
 		self.fexp = fexp
 		self.thread = thread
 		self.exist_pages = None
-
+		
+		if not ep.current_url:
+			ep.current_url = ep.url
+			
+		if not ep.current_page:
+			ep.current_page = 1
+			
+		self.get_html()
+		self.get_images()
+		
+		try:
+			for i in range(0, self.ep.i + 1):
+				self.image = next(self.images)
+		except StopIteration:
+			self.ep.i = i - 1
+			
 	def page_exists(self):
 		"""Check if current page exists in savepath."""
 		if self.exist_pages is None:
@@ -323,13 +339,15 @@ class Crawler:
 
 	def get_filename(self):
 		"""Get current page file name."""
-		return self.fexp.format(self.ep.current_page)
+		return self.fexp.format(self.ep.current_page + self.ep.i)
 
 	def download_image(self):
-		"""Download image to savepath."""
-		self.image = self.thread.sync(
+		"""Download image"""
+		self.get_image()
+			
+		self.image_bin = self.thread.sync(
 			grabimg,
-			self.get_img(),
+			self.image,
 			self.get_header(),
 			referer=self.ep.current_url
 		)
@@ -347,32 +365,77 @@ class Crawler:
 
 	def save_image(self):
 		"""Write image to save path"""
-		content_write(self.get_full_filename(), self.image)
+		if getattr(self.downloader, "circular", False):
+			if not self.checksums:
+				self.checksums = set()
+				path_each(
+					self.savepath,
+					lambda file: self.checksums.add(get_file_checksum(file))
+				)
+
+			checksum = get_checksum(self.image_bin)
+			if checksum in self.checksums:
+				raise LastPageError
+			else:
+				self.checksums.add(checksum)
+
+		content_write(self.get_full_filename(), self.image_bin)
 
 	def iter_next(self):
-		"""Iter to next page."""
-		nextpageurl = self.get_nextpage()
-		if not nextpageurl:
-			raise LastPageError
-
-		self.ep.current_url = nextpageurl
-		self.ep.current_page += 1
-
+		"""Iter to next image."""
+		try:
+			self.image = next(self.images)
+			
+		except StopIteration:
+			next_page = self.get_next_page()
+			if not next_page:
+				raise LastPageError
+			self.ep.current_url = next_page
+			self.ep.current_page += self.ep.i + 1
+			self.ep.i = -1
+			
+			self.get_html()
+			self.get_images()
+			
+			self.iter_next()
+			
+		else:
+			self.ep.i += 1
+		
 	def rest(self):
 		"""Rest some time."""
 		self.thread.wait(self.get_rest())
-
-	def get_img(self):
-		"""Override me. Return img url. It should cahe each page."""
-		pass
-
-	def get_nextpage(self):
-		"""Override me. Return next page url."""
-		pass
-
-	def flush(self):
-		"""Override me. Cleanup url cache."""
-		pass
+		
+	def get_next_page(self):
+		if hasattr(self.downloader, "get_next_page"):
+			return self.thread.sync(
+				self.downloader.get_next_page,
+				self.html,
+				self.ep.current_url
+			)
+		
+	def get_html(self):
+		self.html = self.thread.sync(
+			grabhtml,
+			self.ep.current_url,
+			self.get_header(),
+			cookie=self.get_cookie()
+		)
+		
+	def get_image(self):
+		if callable(self.image):
+			self.image = self.thread.sync(self.image)
+		
+	def get_images(self):
+		"""Get images"""
+		images = self.thread.sync(
+			self.downloader.get_images,
+			self.html, 
+			self.ep.current_url
+		)
+		if isinstance(images, str):
+			images = [images]
+		self.images = iter(images)
 
 	def get_header(self):
 		"""Return downloader header."""
@@ -398,130 +461,7 @@ class Crawler:
 		except Exception as er:
 			print("[Crawler] Failed to handle error: {}".format(er))
 
-class PerPageCrawler(Crawler):
-	"""Iter over per pages."""
-
-	def __init__(self, *args):
-		"""Extend. Add cache."""
-		super().__init__(*args)
-		self.cache = {}
-		self.cache_img = {}
-		self.checksums = None
-
-	def save_image(self):
-		"""Override, check hash before saving to avoid duplicate downloads"""
-		if getattr(self.downloader, "circular", False):
-			if not self.checksums:
-				self.checksums = set()
-				path_each(
-					self.savepath,
-					lambda file: self.checksums.add(get_file_checksum(file))
-				)
-
-			checksum = get_checksum(self.image)
-			if checksum in self.checksums:
-				raise LastPageError
-			else:
-				self.checksums.add(checksum)
-
-		super().save_image()
-
-	def get_html(self):
-		"""Return html."""
-		url = self.ep.current_url
-		if not url:
-			raise LastPageError
-		if url not in self.cache:
-			self.cache[url] = self.thread.sync(
-				grabhtml,
-				self.ep.current_url,
-				self.get_header(),
-				cookie=self.get_cookie()
-			)
-		return self.cache[url]
-
-	def get_img(self):
-		"""Override."""
-		page = self.ep.current_page
-		if page not in self.cache_img:
-			self.cache_img[page] = self.thread.sync(
-				self.downloader.getimgurl,
-				self.get_html(),
-				self.ep.current_url,
-				self.ep.current_page,
-			)
-		return self.cache_img[page]
-
-	def get_nextpage(self):
-		"""Override."""
-		return self.thread.sync(
-			self.downloader.getnextpageurl,
-			self.get_html(),
-			self.ep.current_url,
-			self.ep.current_page,
-		)
-
-	def flush(self):
-		"""Override."""
-		if self.cache:
-			self.cache = {}
-		if self.cache_img:
-			self.cache_img = {}
-
-class AllPageCrawler(Crawler):
-	"""Get all info in first page."""
-
-	def __init__(self, *args):
-		"""Extend."""
-		super().__init__(*args)
-		self.imgurls = None
-		self.create_imgurls()
-
-	def create_imgurls(self):
-		"""Create imgurls."""
-		def process():
-			html = self.thread.sync(
-				grabhtml,
-				self.ep.url,
-				self.get_header(),
-				cookie=self.get_cookie()
-			)
-
-			imgurls = self.thread.sync(
-				self.downloader.getimgurls,
-				html,
-				self.ep.url
-			)
-
-			if not imgurls:
-				raise Exception("imgurls is empty")
-
-			self.imgurls = imgurls
-			raise ExitErrorLoop
-
-		def handle_error(er):
-			self.handle_error(er)
-			self.thread.wait(5)
-
-		error_loop(process, handle_error)
-
-	def get_imgurls(self):
-		"""Try to get imgurls."""
-		return self.imgurls
-
-	def get_img(self):
-		"""Return img url."""
-		urls = self.get_imgurls()
-		if self.ep.current_page > len(urls):
-			raise LastPageError
-		return urls[self.ep.current_page - 1]
-
-	def get_nextpage(self):
-		"""Return next page. Always use first page."""
-		urls = self.get_imgurls()
-		if self.ep.current_page < len(urls):
-			return self.ep.url
-
+			
 def crawlpage(ep, downloader, savepath, fexp, thread, page_done):
 	"""Crawl all pages of an episode.
 
@@ -529,30 +469,22 @@ def crawlpage(ep, downloader, savepath, fexp, thread, page_done):
 	To skip current episode, raise SkipEpisodeError.
 	To stop downloading (fatal error), raise PauseDownloadError.
 	"""
-	if not ep.current_page:
-		ep.current_page = 1
-
-	if not ep.current_url:
-		ep.current_url = ep.url
-
-	if hasattr(downloader, "getimgurls"):
-		crawler = AllPageCrawler(ep, downloader, savepath, fexp, thread)
-	else:
-		crawler = PerPageCrawler(ep, downloader, savepath, fexp, thread)
+	crawler = Crawler(ep, downloader, savepath, fexp, thread)
 
 	def download():
-		if not crawler.page_exists():
+		if crawler.page_exists():
+			safeprint("page {} already exist".format(
+					ep.current_page))
+			crawler.iter_next()
+			
+		else:
+			crawler.get_image()
 			safeprint("Downloading {} page {}: {}\n".format(
-					ep.title, ep.current_page, crawler.get_img()))
+					ep.title, ep.current_page, crawler.image))
 			crawler.download_image()
 			crawler.save_image()
 			crawler.iter_next()
 			crawler.rest()
-
-		else:
-			safeprint("page {} already exist".format(
-					ep.current_page))
-			crawler.iter_next()
 
 		page_done()
 
@@ -627,14 +559,25 @@ def analyze_info(mission, downloader, thread):
 	html = thread.sync(grabhtml, mission.url, header, cookie=cookie)
 
 	if not mission.title:
-		mission.title = downloader.gettitle(html, mission.url)
+		mission.title = downloader.get_title(html, mission.url)
 
 	if mission.episodes:
-		last_episode = mission.episodes[-1]
+		last_ep = mission.episodes[-1]
 	else:
-		last_episode = None
+		last_ep = None
 		
-	episodes = thread.sync(downloader.getepisodelist, html, mission.url, last_episode)
+	url = mission.url
+	episodes = []
+	while True:
+		eps = thread.sync(downloader.get_episodes, html, url)
+		episodes = list(eps) + episodes
+		if last_ep and any(ep.url == last_ep.url for ep in eps):
+			break
+		next_url = thread.sync(downloader.get_next_page, html, url)
+		if not next_url:
+			break
+		url = next_url
+		html = thread.sync(grabhtml, url, header, cookie=cookie)
 
 	if not episodes:
 		raise Exception("Episode list is empty")

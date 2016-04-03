@@ -19,6 +19,9 @@ Todos
 -  Add episode.id so the module can change the url of the episode.
 -  Add module.migrate so the module can change the url of the mission.
 -  Add last_episode option to module.get_episodes so the module can return new episode only.
+-  Support multiple image in one page.
+-  Support multiple episodes in one page.
+-  Rewrite Crawler. You should only change episode stats if iter success.
 
 Features
 --------
