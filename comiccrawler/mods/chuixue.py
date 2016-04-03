@@ -12,7 +12,7 @@ name = "吹雪"
 def gettitle(html, url):
 	return re.search("wdname='([^']+)'", html).group(1)
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	id = re.search("manhua/(\d+)", url).group(1)
 	s = []
 	for match in re.finditer('<a href="(/manhua/' + id + '/\d+\.html)"[^>]*>([^<]+)', html):

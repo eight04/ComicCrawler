@@ -16,7 +16,7 @@ name = "99"
 def gettitle(html, url):
 	return re.search("<h1><a title='([^']+)'", html).group(1)
 	
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
 	for m in re.finditer("href='(/comics/[^']+/)'>([^<]+)</a>(?!</li>)", html):

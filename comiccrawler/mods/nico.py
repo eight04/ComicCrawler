@@ -34,7 +34,7 @@ def gettitle(html, url):
 	id = re.search(r'data-id="(\d+)', html).group(1)
 	return "[Nico] {} - {}".format(id, artist)
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	while True:
 		for match in re.finditer(r'href="(/seiga/im\d+)">\s*<span[^>]*><img[^>]*?alt="([^"]*)', html):

@@ -22,15 +22,16 @@ def gettitle(html, url):
 	title = re.search(r"<title>/?(.+?) \|", html).group(1)
 	return "[konachan] " + title
 	
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
 	while True:
-		ms = re.findall('<a class="thumb" href="([^"]+)"', html)
-		for m in ms:
-			url = m
+		for m in re.finditer('<a class="thumb" href="([^"]+)"', html):
+			url = m.group(1)
 			uid = re.search(r"show/(\d+)", url).group(1)
 			e = Episode(uid, base + url)
+			if last_episode and last_episode.url == e.url:
+				return s[::-1]
 			s.append(e)
 			
 		un = re.search('<a class="next_page" rel="next" href="([^"]+)">', html)

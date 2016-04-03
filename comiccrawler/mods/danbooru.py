@@ -22,7 +22,7 @@ def gettitle(html, url):
 	title = re.search(r"<title>(.+?)</title>", html, re.DOTALL).group(1)
 	return title.strip()
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	while True:
 		for match in re.finditer(r'href="(/posts/(\d+)[^"]*)"', html):

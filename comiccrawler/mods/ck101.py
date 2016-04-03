@@ -20,7 +20,7 @@ name = "卡提諾"
 def gettitle(html, url):
 	return re.search("<h1 itemprop=\"name\">(.+?)</h1>", html).group(1)
 	
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
 	while True:

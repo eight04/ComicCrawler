@@ -38,7 +38,7 @@ def gettitle(html, url):
 		title = "[pixiv] " + re.search("<title>「([^」]+)", html).group(1)
 	return title
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	while True:
 		for m in re.finditer(r'<a href="([^"]+)"><h1 class="title" title="([^"]+)">', html):

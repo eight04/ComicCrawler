@@ -15,7 +15,7 @@ name = "動漫之家"
 def gettitle(html, url):
 	return re.search("<h1>(.+?)</h1>", html).group(1)
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	comicurl = re.search("comic_url = \"(.+?)\"", html).group(1)
 	s = []
 	for match in re.finditer(r'href="(/{}[^"]+)" (?: class="color_red")?>(.+?)</a>\s*</li>'.format(comicurl), html):

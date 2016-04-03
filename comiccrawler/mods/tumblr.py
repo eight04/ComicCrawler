@@ -22,7 +22,7 @@ def gettitle(html, url):
 	id = url[url.index("://") + 3: url.index(".tumblr.com")]
 	return "[tumblr] {} ({})".format(title, id)
 	
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	# base = re.search("(https?://[^/]+)", url).group(1)
 	pattern = 'href="(' + re.escape(urljoin(url, "/post/")) + '(\d+))'

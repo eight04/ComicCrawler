@@ -20,7 +20,7 @@ def gettitle(html, url):
 	t = re.search("<title>(.+?)</title>", html).group(1)
 	return t.split(",")[0]
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	base = re.search("(https?://[^/]+)", url).group(1)
 	s = []
 	for m in re.findall("<li><a href=\"(.+?)\" target=\"_blank\">(.+?)</a></li>", html, re.M):

@@ -29,7 +29,7 @@ def loadconfig():
 def gettitle(html, url):
 	return unescape(search("<title>(.+?)</title>", html).group(1))
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	if '"loggedIn":true' not in html:
 		raise PauseDownloadError("you didn't log in!")
 	base = search("(https?://[^/]+)", url).group(1)

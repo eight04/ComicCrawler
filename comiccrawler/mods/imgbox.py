@@ -16,7 +16,7 @@ def gettitle(html, url):
 	title = re.sub(r" - \d+ images$", "", title)
 	return "[imgbox] " + title
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	for match in re.finditer(r'href="(/(\w+))"><img', html):
 		ep_url, id = match.groups()

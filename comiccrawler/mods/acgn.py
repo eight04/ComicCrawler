@@ -20,7 +20,7 @@ def gettitle(html, url):
 	title = re.search(r"h3><a[^>]+>([^<]+)", html).group(1)
 	return unescape(title)
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	cwd = re.search("https?://[^?]+/", url).group()
 

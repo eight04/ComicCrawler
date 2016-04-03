@@ -36,7 +36,7 @@ def get_list(html, cid):
 	return arr
 
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	cid = re.search(r"comic/(\d+)", url).group(1)
 	episodes = get_list(html, cid)
 

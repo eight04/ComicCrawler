@@ -21,16 +21,15 @@ def gettitle(html, url):
 	title = re.search(r"<title>/?(.+?) \|", html).group(1)
 	return "[sankaku] " + title
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	base = re.search("(https?://[^/]+)", url).group(1)
 	while True:
-		ms = re.findall(r'href="(/(?:[^/]*/)?post/show/(\d+))"', html)
-
-		for m in ms:
-			url, pid = m
-
+		for m in re.finditer(r'href="(/(?:[^/]*/)?post/show/(\d+))"', html):
+			url, pid = m.groups()
 			e = Episode(pid, base + url)
+			if last_episode and last_episode.url == e.url:
+				return s[::-1]
 			s.append(e)
 
 		m = re.search('next-page-url="([^"]+)"', html)

@@ -17,7 +17,7 @@ def gettitle(html, url):
 	return re.search("<font color=\"#FF6600\" style=\"font:12pt;"
 			"font-weight:bold;\">(.+?)</font>",html).group(1)
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	html = html.replace("\n","")
 	matches = re.finditer("<a href='#' onclick=\"cview\('(.+?)',(\d+?)\);return "
 			"false;\" id=\"\w+?\" class=\"\w+?\">(.+?)</a>", html, re.M)

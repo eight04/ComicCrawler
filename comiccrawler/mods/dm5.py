@@ -26,7 +26,7 @@ name = "動漫屋"
 def gettitle(html, url):
 	return search("class=\"inbt_title_h2\">([^<]+)</h1>", html).group(1)
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	# base = search("(https?://[^/]+)", url).group(1)
 	html = html[html.index("cbc_1"):]

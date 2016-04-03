@@ -19,7 +19,7 @@ name = "漫畫島"
 def gettitle(html, url):
 	return re.search(r'class="book-title">\s*<h1>([^<]*)', html).group(1)
 	
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	base, id = re.search(r"(https?://[^/]+)/book/([^/]+)", url).groups()
 	

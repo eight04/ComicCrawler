@@ -26,7 +26,7 @@ def gettitle(html, url):
 	title = re.search("<title[^>]*>([^<]+)", html).group(1)
 	return unescape("{} ({})".format(title, id))
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	return [Episode("image", url)]
 
 def getimgurl(html, url, page):

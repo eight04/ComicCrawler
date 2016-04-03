@@ -21,7 +21,7 @@ def gettitle(html, url):
 	title = re.search(r"<h1[^>]*>(.+?)</h1>", html, re.DOTALL).group(1)
 	return title.strip()
 	
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	html = html[html.index('<div class="cVol">'):]
 	base = re.search("(https?://[^/]+)", url).group(1)

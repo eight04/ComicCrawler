@@ -15,7 +15,7 @@ name = "動漫之家M"
 def gettitle(html, url):
 	return re.search('comicName">([^<]+)', html).group(1)
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	data_js = re.search("initIntroData(.+?);", html, re.DOTALL).group(1)
 	data = execjs.eval(data_js)
 

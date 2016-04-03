@@ -14,7 +14,7 @@ def gettitle(html, url):
 	title = re.search(r'top_title">([^<]+)', html).group(1)
 	return "[tsundora] " + title
 
-def getepisodelist(html, url):
+def getepisodelist(html, url, last_episode):
 	s = []
 	# base = re.search("(https?://[^/]+)", url).group(1)
 	while True:
