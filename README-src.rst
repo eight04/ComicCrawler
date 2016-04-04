@@ -155,22 +155,25 @@ Module example
 
     """
 
-    import re
+    import re, urllib.parse
     from ..core import Episode
 
     # The header used in grabber method
     header = {}
+	
+	# The cookies
+	cookie = {}
 
-    # Match domain
+    # Match domain. Support sub-domain.
     domain = ["www.example.com", "comic.example.com"]
 
     # Module name
-    name = "This Is an Example"
+    name = "Example"
 
     # With noepfolder = True, Comic Crawler won't generate subfolder for each episode.
     noepfolder = False
 
-    # Wait 5 seconds between each page
+    # Wait 5 seconds between each download.
     rest = 5
 
     # Specific user settings
@@ -179,60 +182,46 @@ Module example
         "hash": "hash-default-value"
     }
 
-    def loadconfig():
+    def load_config():
         """This function will be called each time the config reloaded.
         """
-        header["Cookie"] = "user={}; hash={}".format(config["user"], config["hash"])
+        cookie.update(config)
 
-    def gettitle(html, url):
+    def get_title(html, url):
         """Return mission title.
 
         Title will be used in saving filepath, so be sure to avoid duplicate title.
         """
         return re.search("<h1 id='title'>(.+?)</h1>", html).group(1)
 
-    def getepisodelist(html, url):
+    def get_episodes(html, url):
         """Return episode list.
 
-        The episode list should be sorted by date, latest at last, so the
-        downloader will download the oldest first.
+        The episode list should be sorted by date, oldest first.
         """
-        base = re.search("(https?://[^/]+)", url).group(1)
         match_iter = re.finditer("<a href='(.+?)'>(.+?)</a>", html)
         episodes = []
         for match in match_iter:
             m_url, title = match.groups()
-            episodes.append(Episode(title, base + m_url))
+            episodes.append(Episode(title, urllib.parse.urljoin(url, m_url)))
         return episodes
 
-    """
-    There are two methods to get images url. If you can get all urls from the
-    first page, then use getimgurls. If you have to download each pages to get
-    image url, use getimgurl and nextpage functions.
-
-    You should only use one of two methods. Never write getimgurls and getimgurl
-    both.
-    """
-
-    def getimgurls(html, url):
-        """Return the list of all images"""
+    def get_images(html, url):
+        """Get the URL of all images. Return list, iterator, or string.
+		
+		The list and iterator may generate URL string or a callback function to get URL string.
+		"""
 
         match_iter = re.finditer("<img src='(.+?)'>", html)
         return [match.group(1) for match in match_iter]
 
-    def getimgurl(html, page, url):
-        """Return the url of the image"""
-
-        return re.search("<img id='showimage' src='(.+?)'>", html).group(1)
-
-    def getnextpageurl(page, html, url):
-        """Return the url of the next page. Return None if this is the last page.
-        """
-
+    def get_next_page(html, url):
+        """Return the url of the next page."""
         match = re.search("<a id='nextpage' href='(.+?)'>next</a>", html)
-        return match and match.group(1)
+		if match:
+			return match.group(1)
 
-    def errorhandler(er, ep):
+    def errorhandler(error, episode):
         """Downloader will call errorhandler if there is an error happened when
         downloading image. Normally you can just ignore this function.
         """
