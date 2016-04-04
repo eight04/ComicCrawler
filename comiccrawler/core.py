@@ -492,7 +492,6 @@ def crawlpage(ep, downloader, savepath, fexp, thread, page_done):
 
 	def download_error(er):
 		crawler.handle_error(er)
-		crawler.flush()
 		thread.wait(5)
 
 	error_loop(download, download_error)
