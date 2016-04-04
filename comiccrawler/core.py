@@ -39,15 +39,17 @@ class Mission:
 class Episode:
 	"""Create Episode object. Contains information of an episode."""
 
-	def __init__(self, title=None, url=None, current_url=None, current_page=0, skip=False, complete=False, i=0):
+	def __init__(self, title=None, url=None, current_url=None, current_page=0, skip=False, complete=False, total=0):
 		"""Construct."""
 		self.title = title
 		self.url = url
 		self.current_url = current_url
+		# position of images on current page
 		self.current_page = current_page
 		self.skip = skip
 		self.complete = complete
-		self.i = i
+		# total number of images in this episode
+		self.total = total
 
 def format_escape(s):
 	"""Escape {} to {{}}"""
@@ -299,39 +301,34 @@ def extract_filename(file):
 	dir, fn = os.path.split(file)
 	fn, ext = os.path.splitext(fn)
 	return fn
-
+	
 class Crawler:
 	"""Create Crawler object. Contains img url, next page url."""
 
 	def __init__(self, ep, downloader, savepath, fexp, thread):
 		"""Construct."""
 		self.ep = ep
-		self.downloader = downloader
 		self.savepath = savepath
+		self.downloader = downloader
 		self.fexp = fexp
 		self.thread = thread
 		self.exist_pages = None
 		
-		if not ep.current_url:
-			ep.current_url = ep.url
-			
-		if not ep.current_page:
-			ep.current_page = 1
+		if not self.ep.current_url:
+			self.ep.current_url = self.ep.url
+			self.ep.current_page = 1
 			
 		self.get_html()
 		self.get_images()
 		
-		for i in range(0, self.ep.i + 1):
-			try:
-				self.image = next(self.images)
-			except StopIteration:
-				self.images = None
-				if i == 0:
-					# the list is emty
-					self.iter_next()
-				else:
-					# point to last image
-					self.ep.i = i - 1
+		# skip some images
+		try:
+			for i in range(0, self.ep.current_page - 1):
+				next(self.images)
+			self.image = next(self.images)
+		except StopIteration:
+			# cannot find the page?
+			self.image = None
 			
 	def page_exists(self):
 		"""Check if current page exists in savepath."""
@@ -345,12 +342,10 @@ class Crawler:
 
 	def get_filename(self):
 		"""Get current page file name."""
-		return self.fexp.format(self.ep.current_page + self.ep.i)
+		return self.fexp.format(self.ep.total + 1)
 
 	def download_image(self):
 		"""Download image"""
-		self.get_image()
-			
 		self.image_bin = self.thread.sync(
 			grabimg,
 			self.image,
@@ -360,13 +355,12 @@ class Crawler:
 
 	def get_full_filename(self):
 		"""Generate full filename including extension"""
-		ext = getext(self.image)
+		ext = getext(self.image_bin)
 		if not ext:
 			raise TypeError("Invalid image type.")
-		# everything is ok, save image
 		return os.path.join(
 			self.savepath,
-			"{}.{}".format(self.get_filename(), ext)
+			self.get_filename() + os.extsep + ext
 		)
 
 	def save_image(self):
@@ -387,38 +381,38 @@ class Crawler:
 
 		content_write(self.get_full_filename(), self.image_bin)
 
-	def iter_next(self):
-		"""Iter to next image."""
-		if not self.images:
-			next_page = self.get_next_page()
-			if not next_page:
-				raise LastPageError
-			self.ep.current_url = next_page
-			self.ep.current_page += self.ep.i + 1
-			self.ep.i = 0
-			self.get_html()
-			self.get_images()
-		if self.image:
-			try:
-				self.image = next(self.images)
-				self.ep.i += 1
-				
-			except StopIteration:
-				next_page = self.get_next_page()
-				if not next_page:
-					raise LastPageError
-				self.ep.current_url = next_page
-				self.ep.current_page += self.ep.i + 1
-				self.ep.i = -1
-				
-				self.get_html()
-				self.get_images()
-				
-				self.iter_next()
+	def next_page(self):
+		"""Iter to next page."""
+		next_page = self.get_next_page()
+		if not next_page:
+			raise LastPageError
+			
+		self.ep.current_url = next_page
+		self.ep.current_page = 1
+		
+		self.get_html()
+		self.get_images()
+		
+		try:
+			self.image = next(self.images)
+		except StopIteration:
+			self.image = None
+
+	def next_image(self):
+		self.ep.current_page += 1
+		self.ep.total += 1
+		try:
+			self.image = next(self.images)
+		except StopIteration:
+			self.image = None
+	
+	def resolve_image(self):
+		if callable(self.image):
+			self.image = self.thread.sync(self.image)		
 		
 	def rest(self):
 		"""Rest some time."""
-		self.thread.wait(self.get_rest())
+		self.thread.wait(getattr(self.downloader, "rest", 0))
 		
 	def get_next_page(self):
 		if hasattr(self.downloader, "get_next_page"):
@@ -436,10 +430,6 @@ class Crawler:
 			cookie=self.get_cookie()
 		)
 		
-	def get_image(self):
-		if callable(self.image):
-			self.image = self.thread.sync(self.image)
-		
 	def get_images(self):
 		"""Get images"""
 		images = self.thread.sync(
@@ -450,14 +440,10 @@ class Crawler:
 		if isinstance(images, str):
 			images = [images]
 		self.images = iter(images)
-
+		
 	def get_header(self):
 		"""Return downloader header."""
 		return getattr(self.downloader, "header", None)
-
-	def get_rest(self):
-		"""Return downloader rest."""
-		return getattr(self.downloader, "rest", 0)
 
 	def get_cookie(self):
 		"""Return downloader cookie."""
@@ -484,23 +470,25 @@ def crawlpage(ep, downloader, savepath, fexp, thread, page_done):
 	To stop downloading (fatal error), raise PauseDownloadError.
 	"""
 	crawler = Crawler(ep, downloader, savepath, fexp, thread)
-
+	
 	def download():
-		if crawler.page_exists():
-			safeprint("page {} already exist".format(
-					ep.current_page))
-			crawler.iter_next()
+		if not crawler.image:
+			crawler.next_page()
+			return
 			
-		else:
-			crawler.get_image()
-			safeprint("Downloading {} page {}: {}\n".format(
-					ep.title, ep.current_page, crawler.image))
-			crawler.download_image()
-			crawler.save_image()
-			crawler.iter_next()
-			crawler.rest()
-
+		if crawler.page_exists():
+			safeprint("page {} already exist".format(ep.total + 1))
+			crawler.next_image()
+			return
+			
+		crawler.resolve_image()
+		safeprint("Downloading {} page {}: {}\n".format(
+			ep.title, ep.total + 1, crawler.image))
+		crawler.download_image()
+		crawler.save_image()
 		page_done()
+		crawler.rest()
+		crawler.next_image()
 
 	def download_error(er):
 		crawler.handle_error(er)

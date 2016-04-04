@@ -135,9 +135,19 @@ class MissionManager(worker.UserWorker):
 			episodes = []
 			for ep_data in m_data["episodes"]:
 				# compatible 2916.4.3
-				if "i" not in ep_data and ep_data["url"] == ep_data["current_url"]:
-					ep_data["i"] = ep_data["current_page"]
-					ep_data["current_page"] = 1
+				if "total" not in ep_data:
+					if not ep_data["current_url"]:
+						ep_data["total"] = 0
+						
+					elif ep_data["url"] == ep_data["current_url"]:
+						# first page crawler
+						ep_data["total"] = ep_data["current_page"] - 1
+						
+					else:
+						# per page crawler
+						ep_data["total"] = ep_data["current_page"] - 1
+						ep_data["current_page"] = 1
+						
 				episodes.append(Episode(**ep_data))
 			m_data["episodes"] = episodes
 			mission = MissionProxy(Mission(**m_data), self)
