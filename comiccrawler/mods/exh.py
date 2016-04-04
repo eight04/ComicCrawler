@@ -58,8 +58,8 @@ def errorhandler(er, ep):
 		ep.current_url = url
 
 def get_next_page(html, url):
-	m = re.search('id="next" onclick="[^"]+" href="([^"+])', html)
-	if m:
-		m = m.group(1)
-		if m not in url:
-			return m
+	match = re.search('id="next"[^>]+?href="([^"]+)', html)
+	if match:
+		match = match.group(1)
+		if match not in url:
+			return match
