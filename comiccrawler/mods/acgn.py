@@ -31,7 +31,7 @@ def get_episodes(html, url):
 	return s
 
 def get_images(html, url):
-	return [match.group(1) for match in re.finditer(r'_src="([^"]+)"', html)]:
+	return [match.group(1) for match in re.finditer(r'_src="([^"]+)"', html)]
 
 def errorhandler(err, ep):
 	if "暫缺" in ep.title:
