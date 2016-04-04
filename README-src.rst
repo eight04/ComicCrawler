@@ -12,16 +12,10 @@ Script。擁有簡易的下載管理員、圖書館功能、 與方便的擴充�
 Todos
 -----
 
--  The misssion shows "updated" in mission list after re-analyze.
 -  Make grabber be able to return verbose info?
 -  Need a better error log system.
 -  Support pool in Sankaku.
--  Add episode.id so the module can change the url of the episode.
--  Add module.migrate so the module can change the url of the mission.
--  Add last_episode option to module.get_episodes so the module can return new episode only.
--  Support multiple image in one page.
--  Support multiple episodes in one page.
--  Rewrite Crawler. You should only change episode stats if iter success.
+-  Add module.get_episode_id to make the module decide how to compare episodes.
 
 Features
 --------
@@ -230,6 +224,13 @@ Module example
 
 Changelog
 ---------
+
+-  2016.4.4
+
+   -  Use new API!
+   -  Analyzer will check the last episode to decide whether to analyze all pages.
+   -  Support multiple images in one page.
+   -  Change how getimgurl and getimgurls work.
 
 -  2016.4.2
 

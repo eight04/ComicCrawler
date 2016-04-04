@@ -12,13 +12,10 @@ Script。擁有簡易的下載管理員、圖書館功能、 與方便的擴充�
 Todos
 -----
 
--  The misssion shows "updated" in mission list after re-analyze.
 -  Make grabber be able to return verbose info?
 -  Need a better error log system.
 -  Support pool in Sankaku.
--  Add episode.id so the module can change the url of the episode.
--  Add module.migrate so the module can change the url of the mission.
--  Add last_episode option to module.get_episodes so the module can return new episode only.
+-  Add module.get_episode_id to make the module decide how to compare episodes.
 
 Features
 --------
@@ -43,7 +40,7 @@ Development Dependencies
 ---------------------
 
 Comic Crawler is on
-`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.4.2>`__. 安裝完
+`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.4.4>`__. 安裝完
 python 後，可以直接用 pip 指令自動安裝。
 
 Install Python
@@ -152,22 +149,25 @@ Module example
 
     """
 
-    import re
+    import re, urllib.parse
     from ..core import Episode
 
     # The header used in grabber method
     header = {}
+	
+	# The cookies
+	cookie = {}
 
-    # Match domain
+    # Match domain. Support sub-domain.
     domain = ["www.example.com", "comic.example.com"]
 
     # Module name
-    name = "This Is an Example"
+    name = "Example"
 
     # With noepfolder = True, Comic Crawler won't generate subfolder for each episode.
     noepfolder = False
 
-    # Wait 5 seconds between each page
+    # Wait 5 seconds between each download.
     rest = 5
 
     # Specific user settings
@@ -176,60 +176,46 @@ Module example
         "hash": "hash-default-value"
     }
 
-    def loadconfig():
+    def load_config():
         """This function will be called each time the config reloaded.
         """
-        header["Cookie"] = "user={}; hash={}".format(config["user"], config["hash"])
+        cookie.update(config)
 
-    def gettitle(html, url):
+    def get_title(html, url):
         """Return mission title.
 
         Title will be used in saving filepath, so be sure to avoid duplicate title.
         """
         return re.search("<h1 id='title'>(.+?)</h1>", html).group(1)
 
-    def getepisodelist(html, url):
+    def get_episodes(html, url):
         """Return episode list.
 
-        The episode list should be sorted by date, latest at last, so the
-        downloader will download the oldest first.
+        The episode list should be sorted by date, oldest first.
         """
-        base = re.search("(https?://[^/]+)", url).group(1)
         match_iter = re.finditer("<a href='(.+?)'>(.+?)</a>", html)
         episodes = []
         for match in match_iter:
             m_url, title = match.groups()
-            episodes.append(Episode(title, base + m_url))
+            episodes.append(Episode(title, urllib.parse.urljoin(url, m_url)))
         return episodes
 
-    """
-    There are two methods to get images url. If you can get all urls from the
-    first page, then use getimgurls. If you have to download each pages to get
-    image url, use getimgurl and nextpage functions.
-
-    You should only use one of two methods. Never write getimgurls and getimgurl
-    both.
-    """
-
-    def getimgurls(html, url):
-        """Return the list of all images"""
+    def get_images(html, url):
+        """Get the URL of all images. Return list, iterator, or string.
+		
+		The list and iterator may generate URL string or a callback function to get URL string.
+		"""
 
         match_iter = re.finditer("<img src='(.+?)'>", html)
         return [match.group(1) for match in match_iter]
 
-    def getimgurl(html, page, url):
-        """Return the url of the image"""
-
-        return re.search("<img id='showimage' src='(.+?)'>", html).group(1)
-
-    def getnextpageurl(page, html, url):
-        """Return the url of the next page. Return None if this is the last page.
-        """
-
+    def get_next_page(html, url):
+        """Return the url of the next page."""
         match = re.search("<a id='nextpage' href='(.+?)'>next</a>", html)
-        return match and match.group(1)
+		if match:
+			return match.group(1)
 
-    def errorhandler(er, ep):
+    def errorhandler(error, episode):
         """Downloader will call errorhandler if there is an error happened when
         downloading image. Normally you can just ignore this function.
         """
@@ -238,6 +224,13 @@ Module example
 
 Changelog
 ---------
+
+-  2016.4.4
+
+   -  Use new API!
+   -  Analyzer will check the last episode to decide whether to analyze all pages.
+   -  Support multiple images in one page.
+   -  Change how getimgurl and getimgurls work.
 
 -  2016.4.2
 
