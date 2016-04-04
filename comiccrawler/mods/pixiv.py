@@ -83,12 +83,15 @@ def get_images(html, url):
 		if "mode=manga" in inner_url:
 			# multiple image
 			imgs = []
+			
+			def create_grabber(url):
+				def grabber():
+					html = grabhtml(url)
+					return re.search(r'img src="([^"]+)"', html).group(1)
+				return grabber
 
 			for match in re.finditer(r'a href="(/member_illust\.php\?mode=manga_big[^"]+)"', html):
-				large_page_url = base + match.group(1)
-				large_page_html = grabhtml(large_page_url)
-				img = re.search(r'img src="([^"]+)"', large_page_html).group(1)
-				imgs.append(img)
+				imgs.append(create_grabber(base + match.group(1)))
 
 			# New manga reader (2015/3/18)
 			# http://www.pixiv.net/member_illust.php?mode=manga&illust_id=19254298
