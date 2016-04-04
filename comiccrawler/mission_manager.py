@@ -147,6 +147,9 @@ class MissionManager(worker.UserWorker):
 						# per page crawler
 						ep_data["total"] = ep_data["current_page"] - 1
 						ep_data["current_page"] = 1
+					
+					if ep_data["complete"]:
+						ep_data["total"] += 1
 						
 				episodes.append(Episode(**ep_data))
 			m_data["episodes"] = episodes
