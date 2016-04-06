@@ -27,6 +27,7 @@ Features
 Dependencies
 ------------
 
+-  docopt - command line interface.
 -  pyexecjs - to execute javascript.
 -  pythreadworker - a small threading library.
 

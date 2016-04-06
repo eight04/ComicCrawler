@@ -53,7 +53,7 @@ def console_init():
 		MainWindow().run()
 
 	elif arguments["download"]:
-		console_download(arguments["URL"], arguments["savepath"])
+		console_download(arguments["URL"], arguments["--dest"])
 
 	elif arguments["migrate"]:
 		from .migrate import migrate
