@@ -2,6 +2,7 @@
 *.ini
 *.log
 *.pyc
+*.bak
 
 __pycache__/
 download/
