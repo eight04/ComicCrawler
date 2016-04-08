@@ -3,6 +3,7 @@
 *.log
 *.pyc
 *.bak
+.doit*
 
 __pycache__/
 download/
