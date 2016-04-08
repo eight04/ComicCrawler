@@ -22,7 +22,7 @@ class Replacer:
 		self.pattern = re.compile("|".join(dict.keys()))
 		
 	def do(self, text):
-		return pattern.sub(self.replacer, text)
+		return self.pattern.sub(self.replacer, text)
 		
 	def replacer(self, match):
 		return self.dict[match.group()]
