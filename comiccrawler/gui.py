@@ -391,15 +391,16 @@ class MainWindow(worker.UserWorker):
 		def addurl():
 			url = self.entry_url.get()
 			self.entry_url.delete(0, "end")
-			self.pre_url = url
 
 			try:
 				mission = self.downloader.mission_manager.get_by_url(url)
+				self.pre_url = url
 				if not ask_analyze_update(mission):
 					return
 			except KeyError:
 				try:
 					mission = self.downloader.create_mission(url)
+					self.pre_url = url
 				except ModuleError:
 					messagebox.showerror(
 						"Comic Crawler",
