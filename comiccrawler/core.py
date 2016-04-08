@@ -574,6 +574,8 @@ def analyze_info(mission, downloader, thread):
 		episodes = list(eps) + episodes
 		if last_ep and any(ep.url == last_ep.url for ep in eps):
 			break
+		if not hasattr(downloader, "get_next_page"):
+			break
 		next_url = thread.sync(downloader.get_next_page, html, url)
 		if not next_url:
 			break
