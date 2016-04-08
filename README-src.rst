@@ -37,6 +37,7 @@ Development Dependencies
 -  wheel - create python wheel.
 -  twine - upload package.
 -  doit - to build project.
+-  docutils - to test rst.
 
 下載和安裝（Windows）
 ---------------------
