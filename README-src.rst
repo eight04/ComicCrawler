@@ -36,6 +36,7 @@ Development Dependencies
 
 -  wheel - create python wheel.
 -  twine - upload package.
+-  doit - to build project.
 
 下載和安裝（Windows）
 ---------------------
