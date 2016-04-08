@@ -226,6 +226,11 @@ Module example
 Changelog
 ---------
 
+-  2016.4.8
+
+   -  Fix get_next_page error.
+   -  Fix key error in CLI.
+
 -  2016.4.4
 
    -  Use new API!

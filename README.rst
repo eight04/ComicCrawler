@@ -27,6 +27,7 @@ Features
 Dependencies
 ------------
 
+-  docopt - command line interface.
 -  pyexecjs - to execute javascript.
 -  pythreadworker - a small threading library.
 
@@ -40,7 +41,7 @@ Development Dependencies
 ---------------------
 
 Comic Crawler is on
-`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.4.4>`__. 安裝完
+`PyPI <https://pypi.python.org/pypi/comiccrawler/2016.4.8>`__. 安裝完
 python 後，可以直接用 pip 指令自動安裝。
 
 Install Python
@@ -224,6 +225,11 @@ Module example
 
 Changelog
 ---------
+
+-  2016.4.8
+
+   -  Fix get_next_page error.
+   -  Fix key error in CLI.
 
 -  2016.4.4
 
