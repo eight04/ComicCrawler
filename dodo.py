@@ -1,5 +1,6 @@
 DOIT_CONFIG = {
-	"default_tasks": ["build", "test", "dist", "upload", "git", "install"]
+	"default_tasks": ["build", "test", "dist", "upload", "git", "install"],
+	"verbosity": 2
 }
 
 # Make it always run in root
@@ -52,8 +53,8 @@ def task_git():
 	return {
 		"actions": [
 			"git add -A .",
-			"git commit -m Release v" + v,
-			"git tag -a v" + v + " -m", "Release v" + v,
+			"git commit -m \"Release v{}\"".format(v),
+			"git tag -a v{0} -m \"Release v{0}\"".format(v),
 			"git push --follow-tags"
 		]
 	}

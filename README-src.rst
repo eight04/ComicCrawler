@@ -228,6 +228,11 @@ Module example
 Changelog
 ---------
 
+-  2016.4.13
+
+   -  Fix facebook bug.
+   -  Move to doit.
+
 -  2016.4.8
 
    -  Fix get_next_page error.
