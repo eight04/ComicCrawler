@@ -313,6 +313,7 @@ class Crawler:
 		self.fexp = fexp
 		self.thread = thread
 		self.exist_pages = None
+		self.checksums = None
 		
 		if not self.ep.current_url:
 			self.ep.current_url = self.ep.url
@@ -575,6 +576,8 @@ def analyze_info(mission, downloader, thread):
 		if last_ep and any(ep.url == last_ep.url for ep in eps):
 			break
 		if not hasattr(downloader, "get_next_page"):
+			break
+		if len(episodes) and episodes[0].url == mission.url:
 			break
 		next_url = thread.sync(downloader.get_next_page, html, url)
 		if not next_url:
