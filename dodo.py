@@ -19,10 +19,13 @@ class Replacer:
 		import pathlib
 		for file in files:
 			file = pathlib.Path(file)
+			sum = 0
 			content = file.read_text(encoding="utf-8")
 			for pattern, replace in self.patterns:
-				content = pattern.sub(replace, content)
-			file.write_text(content, encoding="utf-8")
+				content, count = pattern.subn(replace, content)
+				sum += count
+			if sum:
+				file.write_text(content, encoding="utf-8")
 		
 	def replacer(self, match):
 		return self.dict[match.group()]
