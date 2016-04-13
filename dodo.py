@@ -7,15 +7,6 @@ DOIT_CONFIG = {
 import os
 os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
-def read(file):
-	with open(file, "r", encoding='utf-8') as f:
-		content = f.read()
-	return content
-
-def write(file, content):
-	with open(file, "w", encoding="utf-8") as f:
-		f.write(content)
-		
 class Replacer:
 	def __init__(self, dict):
 		import re
@@ -23,7 +14,6 @@ class Replacer:
 		for pattern, replace in dict.items():
 			pattern = re.compile(pattern)
 			self.patterns.append((pattern, replace))
-		return self
 		
 	def do(self, *files):
 		import pathlib
@@ -37,14 +27,15 @@ class Replacer:
 	def replacer(self, match):
 		return self.dict[match.group()]
 		
-
 def task_build():
 
 	def build(targets):
 		import comiccrawler.mods
 		
+		domains = " ".join(comiccrawler.mods.list_domain())
+		
 		Replacer({
-			r"\.\. DOMAINS[\s\S]+?\.\. END DOMAINS": ".. DOMAINS\n\n" + " ".join(comiccrawler.mods.list_domain()) + "\n\n.. END DOMAINS"
+			r"\.\. DOMAINS[\s\S]+?\.\. END DOMAINS": ".. DOMAINS\n\n    " + domains + "\n\n.. END DOMAINS"
 		}).do("README.rst")
 		
 	return {
