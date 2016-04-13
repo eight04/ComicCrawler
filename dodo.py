@@ -1,5 +1,5 @@
 DOIT_CONFIG = {
-	"default_tasks": ["build", "test", "dist", "upload", "git", "install"],
+	"default_tasks": ["build", "test"],
 	"verbosity": 2
 }
 
@@ -19,11 +19,20 @@ def write(file, content):
 class Replacer:
 	def __init__(self, dict):
 		import re
-		self.dict = dict
-		self.pattern = re.compile("|".join(dict.keys()))
+		self.patterns = []
+		for pattern, replace in dict.items():
+			pattern = re.compile(pattern)
+			self.patterns.append((pattern, replace))
+		return self
 		
-	def do(self, text):
-		return self.pattern.sub(self.replacer, text)
+	def do(self, *files):
+		import pathlib
+		for file in files:
+			file = pathlib.Path(file)
+			content = file.read_text(encoding="utf-8")
+			for pattern, replace in self.patterns:
+				content = pattern.sub(replace, content)
+			file.write_text(content, encoding="utf-8")
 		
 	def replacer(self, match):
 		return self.dict[match.group()]
@@ -32,19 +41,14 @@ class Replacer:
 def task_build():
 
 	def build(targets):
-		import comiccrawler, comiccrawler.mods
+		import comiccrawler.mods
 		
-		replacer = Replacer({
-			"@@VERSION": comiccrawler.__version__,
-			"@@DOMAINS": " ".join(comiccrawler.mods.list_domain())
-		})
-		
-		for target in targets:
-			write(target.replace("-src", ""), replacer.do(read(target)))
+		Replacer({
+			r"\.\. DOMAINS[\s\S]+?\.\. END DOMAINS": ".. DOMAINS\n\n" + " ".join(comiccrawler.mods.list_domain()) + "\n\n.. END DOMAINS"
+		}).do("README.rst")
 		
 	return {
-		"actions": [build],
-		"targets": ["README-src.rst", "setup-src.py"]
+		"actions": [build]
 	}
 	
 def task_git():
@@ -73,11 +77,33 @@ def task_upload():
 	from comiccrawler import __version__ as v
 	
 	return {
-		"actions": ["twine upload %(targets)s"],
-		"targets": ["dist/*" + v + "*"]
+		"actions": ["twine upload dist/*{}*".format(v)]
 	}
 	
 def task_dist():
 	return {
 		"actions": ["py setup.py sdist bdist_wheel"]
+	}
+
+def task_bump():
+	def bump():
+		import datetime, comiccrawler
+		pre_version = comiccrawler.__version__
+		today = datetime.date.today()
+		version = "{}.{}.{}".format(today.year, today.month, today.day)
+		if pre_version.startswith(version):
+			if version == pre_version:
+				version += ".1"
+			else:
+				version += ".{}".format(int(pre_version.split(".")[3]) + 1)
+				
+		# write to files
+		Replacer({pre_version: version}).do("setup.py", "comiccrawler/__init__.py")
+		
+	return {
+		"actions": [
+			"doit build test",
+			bump,
+			"doit dist upload git install"
+		]
 	}
