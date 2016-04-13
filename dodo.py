@@ -35,7 +35,7 @@ def task_build():
 		domains = " ".join(comiccrawler.mods.list_domain())
 		
 		Replacer({
-			r"\.\. DOMAINS[\s\S]+?\.\. END DOMAINS": ".. DOMAINS\n\n    " + domains + "\n\n.. END DOMAINS"
+			r"\.\. DOMAINS[\s\S]+?\.\. END DOMAINS": ".. DOMAINS\n..\n\n    " + domains + "\n\n.. END DOMAINS"
 		}).do("README.rst")
 		
 	return {
