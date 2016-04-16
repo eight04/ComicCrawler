@@ -66,13 +66,13 @@ Install Comic Crawler
 
 ::
 
-	pip install comiccrawler
+    pip install comiccrawler
 
 更新時︰
 
 ::
 
-	pip install --upgrade comiccrawler
+    pip install --upgrade comiccrawler
 
 Supported domains
 -----------------
@@ -80,7 +80,7 @@ Supported domains
 .. DOMAINS
 ..
 
-	chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org g.e-hentai.org imgbox.com konachan.com m.dmzj.com manhua.dmzj.com seiga.nicovideo.jp tel.dm5.com tsundora.com tumblr.com tw.seemh.com www.8comic.com www.99comic.com www.chuixue.com www.comicbus.com www.comicvip.com www.dm5.com www.facebook.com www.iibq.com www.manhuadao.com www.pixiv.net www.seemh.com yande.re
+    chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org g.e-hentai.org imgbox.com konachan.com m.dmzj.com manhua.dmzj.com seiga.nicovideo.jp tel.dm5.com tsundora.com tumblr.com tw.seemh.com www.8comic.com www.99comic.com www.chuixue.com www.comicbus.com www.comicvip.com www.dm5.com www.facebook.com www.iibq.com www.manhuadao.com www.pixiv.net www.seemh.com yande.re
 
 .. END DOMAINS
 
@@ -89,23 +89,23 @@ Supported domains
 
 ::
 
-	Usage:
-	  comiccrawler domains
-	  comiccrawler download URL [--dest SAVE_FOLDER]
-	  comiccrawler gui
-	  comiccrawler migrate
-	  comiccrawler (--help | --version)
+    Usage:
+      comiccrawler domains
+      comiccrawler download URL [--dest SAVE_FOLDER]
+      comiccrawler gui
+      comiccrawler migrate
+      comiccrawler (--help | --version)
 
-	Commands:
-	  domains             列出支援的網址
-	  download URL        下載指定的 url
-	  gui                 啟動主視窗
-	  migrate             轉換當前目錄底下的 save.dat, library.dat 成新格式
+    Commands:
+      domains             列出支援的網址
+      download URL        下載指定的 url
+      gui                 啟動主視窗
+      migrate             轉換當前目錄底下的 save.dat, library.dat 成新格式
 
-	Options:
-	  --dest SAVE_FOLDER  設定下載目錄（預設為 "."）
-	  --help              顯示幫助訊息
-	  --version           顯示版本
+    Options:
+      --dest SAVE_FOLDER  設定下載目錄（預設為 "."）
+      --help              顯示幫助訊息
+      --version           顯示版本
 
 圖形介面
 --------
@@ -122,21 +122,21 @@ Supported domains
 
 ::
 
-	[DEFAULT]
-	; 設定下載完成後要執行的程式，會傳入下載資料夾的位置
-	runafterdownload =
+    [DEFAULT]
+    ; 設定下載完成後要執行的程式，會傳入下載資料夾的位置
+    runafterdownload =
 
-	; 啟動時自動檢查圖書館更新
-	libraryautocheck = true
+    ; 啟動時自動檢查圖書館更新
+    libraryautocheck = true
 
-	; 下載目的資料夾
-	savepath = ~/comiccrawler/download
+    ; 下載目的資料夾
+    savepath = ~/comiccrawler/download
 
-	; 開啟 grabber 偵錯
-	errorlog = false
+    ; 開啟 grabber 偵錯
+    errorlog = false
 
-	; 每隔 5 分鐘自動存檔
-	autosave = 5
+    ; 每隔 5 分鐘自動存檔
+    autosave = 5
 
 -  設定檔位於 ``%USERPROFILE%\comiccrawler\setting.ini``
 -  執行一次 ``comiccrawler gui`` 後關閉，設定檔會自動產生
@@ -148,83 +148,83 @@ Module example
 
 .. code:: python
 
-	#! python3
-	"""
-	This is an example to show how to write a comiccrawler module.
+    #! python3
+    """
+    This is an example to show how to write a comiccrawler module.
 
-	"""
+    """
 
-	import re, urllib.parse
-	from ..core import Episode
+    import re, urllib.parse
+    from ..core import Episode
 
-	# The header used in grabber method
-	header = {}
-	
-	# The cookies
-	cookie = {}
+    # The header used in grabber method
+    header = {}
+    
+    # The cookies
+    cookie = {}
 
-	# Match domain. Support sub-domain.
-	domain = ["www.example.com", "comic.example.com"]
+    # Match domain. Support sub-domain.
+    domain = ["www.example.com", "comic.example.com"]
 
-	# Module name
-	name = "Example"
+    # Module name
+    name = "Example"
 
-	# With noepfolder = True, Comic Crawler won't generate subfolder for each episode.
-	noepfolder = False
+    # With noepfolder = True, Comic Crawler won't generate subfolder for each episode.
+    noepfolder = False
 
-	# Wait 5 seconds between each download.
-	rest = 5
+    # Wait 5 seconds between each download.
+    rest = 5
 
-	# Specific user settings
-	config = {
-		"user": "user-default-value",
-		"hash": "hash-default-value"
-	}
+    # Specific user settings
+    config = {
+        "user": "user-default-value",
+        "hash": "hash-default-value"
+    }
 
-	def load_config():
-		"""This function will be called each time the config reloaded.
-		"""
-		cookie.update(config)
+    def load_config():
+        """This function will be called each time the config reloaded.
+        """
+        cookie.update(config)
 
-	def get_title(html, url):
-		"""Return mission title.
+    def get_title(html, url):
+        """Return mission title.
 
-		Title will be used in saving filepath, so be sure to avoid duplicate title.
-		"""
-		return re.search("<h1 id='title'>(.+?)</h1>", html).group(1)
+        Title will be used in saving filepath, so be sure to avoid duplicate title.
+        """
+        return re.search("<h1 id='title'>(.+?)</h1>", html).group(1)
 
-	def get_episodes(html, url):
-		"""Return episode list.
+    def get_episodes(html, url):
+        """Return episode list.
 
-		The episode list should be sorted by date, oldest first.
-		"""
-		match_iter = re.finditer("<a href='(.+?)'>(.+?)</a>", html)
-		episodes = []
-		for match in match_iter:
-			m_url, title = match.groups()
-			episodes.append(Episode(title, urllib.parse.urljoin(url, m_url)))
-		return episodes
+        The episode list should be sorted by date, oldest first.
+        """
+        match_iter = re.finditer("<a href='(.+?)'>(.+?)</a>", html)
+        episodes = []
+        for match in match_iter:
+            m_url, title = match.groups()
+            episodes.append(Episode(title, urllib.parse.urljoin(url, m_url)))
+        return episodes
 
-	def get_images(html, url):
-		"""Get the URL of all images. Return list, iterator, or string.
-		
-		The list and iterator may generate URL string or a callback function to get URL string.
-		"""
+    def get_images(html, url):
+        """Get the URL of all images. Return list, iterator, or string.
+        
+        The list and iterator may generate URL string or a callback function to get URL string.
+        """
 
-		match_iter = re.finditer("<img src='(.+?)'>", html)
-		return [match.group(1) for match in match_iter]
+        match_iter = re.finditer("<img src='(.+?)'>", html)
+        return [match.group(1) for match in match_iter]
 
-	def get_next_page(html, url):
-		"""Return the url of the next page."""
-		match = re.search("<a id='nextpage' href='(.+?)'>next</a>", html)
-		if match:
-			return match.group(1)
+    def get_next_page(html, url):
+        """Return the url of the next page."""
+        match = re.search("<a id='nextpage' href='(.+?)'>next</a>", html)
+        if match:
+            return match.group(1)
 
-	def errorhandler(error, episode):
-		"""Downloader will call errorhandler if there is an error happened when
-		downloading image. Normally you can just ignore this function.
-		"""
-		pass
+    def errorhandler(error, episode):
+        """Downloader will call errorhandler if there is an error happened when
+        downloading image. Normally you can just ignore this function.
+        """
+        pass
 
 
 Changelog
@@ -326,8 +326,7 @@ Changelog
 
 -  2015.10.7
 
-   -  Fix errors that unable to create folder if title contains "{}"
-	  characters.
+   -  Fix errors that unable to create folder if title contains "{}" characters.
 
 -  2015.10.6
 
@@ -347,9 +346,7 @@ Changelog
 
 -  2015.7.23
 
-   -  Add module dmzj\_m. Some expunged manga may be accessed from
-	  mobile page.
-	  ``http://manhua.dmzj.com/name => http://m.dmzj.com/info/name.html``
+   -  Add module dmzj\_m. Some expunged manga may be accessed from mobile page. ``http://manhua.dmzj.com/name => http://m.dmzj.com/info/name.html``
 
 -  2015.7.22
 
@@ -363,25 +360,22 @@ Changelog
 
    -  Added:
 
-	  -  Cleanup unused missions after session loads.
-	  -  Handle ajax episode list in seemh.
-	  -  Show an error if no update to download when clicking "download
-		 updates".
-	  -  Show an error if failing to load session.
+      -  Cleanup unused missions after session loads.
+      -  Handle ajax episode list in seemh.
+      -  Show an error if no update to download when clicking "download updates".
+      -  Show an error if failing to load session.
 
    -  Changed:
 
-	  -  Always use "UPDATE" state if the mission is not complete after
-		 re-analyzing.
-	  -  Create backup if failing to load session instead of moving them
-		 to "invalid-save" folder.
-	  -  Check edit flag in MissionManager.save().
+      -  Always use "UPDATE" state if the mission is not complete after re-analyzing.
+      -  Create backup if failing to load session instead of moving them to "invalid-save" folder.
+      -  Check edit flag in MissionManager.save().
 
    -  Fixed:
 
-	  -  Can not download "updated" mission.
-	  -  Update checking will stop on error.
-	  -  Sankaku module is still using old method to create Episode.
+      -  Can not download "updated" mission.
+      -  Update checking will stop on error.
+      -  Sankaku module is still using old method to create Episode.
 
 -  2015.7.15
 
@@ -424,8 +418,7 @@ Changelog
    -  Enhance ``safeprint``. Use ``echo`` command.
    -  Enhance ``content_write``. Add ``append=False`` option.
    -  Enhance ``Crawler``. Cache imgurl.
-   -  Enhance ``grabber``. Add ``cookie=None`` option. Change errorlog
-	  behavior.
+   -  Enhance ``grabber``. Add ``cookie=None`` option. Change errorlog behavior.
    -  Fix ``grabber`` unicode encoding issue.
    -  Some module update.
 
