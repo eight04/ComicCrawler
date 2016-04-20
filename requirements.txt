@@ -1,0 +1,3 @@
+docutils~=0.12
+twine~=1.6.5
+pyxcute~=0.1.1
