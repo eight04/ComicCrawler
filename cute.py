@@ -8,7 +8,7 @@ from xcute import cute, Version, split_version, conf
 def bump():
 	"""My bump task"""
 	path = pathlib.Path('comiccrawler/__init__.py')
-	text = path.read_text(encoding='utf-8')
+	text = path.read_text('utf-8')
 	left, old_version, right = split_version(text)
 	old_version = tuple(int(token) for token in old_version.split("."))
 	date = datetime.datetime.now()
@@ -19,7 +19,7 @@ def bump():
 		version += (1,)
 	version = ".".join(map(str, version))
 	conf["version"] = version
-	path.write_text(left + version + right)
+	path.write_text(left + version + right, 'utf-8')
 
 cute(
 	test = 'setup check -r',
