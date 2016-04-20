@@ -35,8 +35,8 @@ Development Dependencies
 
 -  wheel - create python wheel.
 -  twine - upload package.
--  doit - to build project.
 -  docutils - to test rst.
+-  pyxcute - task runner.
 
 下載和安裝（Windows）
 ---------------------
@@ -229,6 +229,10 @@ Module example
 
 Changelog
 ---------
+
+-  2016.4.20
+
+   -  Update install_requires.
 
 -  2016.4.13
 
