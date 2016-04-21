@@ -2,20 +2,23 @@
 
 """Comic Crawler GUI."""
 
+import os
+import webbrowser
+import re
+import tkinter.messagebox as messagebox
+
 from tkinter import *
 from tkinter.ttk import *
-from functools import partial
+
 from worker import current
 from time import time
-
-import sys, os, webbrowser, worker, re
-import tkinter.messagebox as messagebox
 
 from .mods import list_domain, get_module, load_config
 from .config import setting
 from .safeprint import print, printer
 from .core import safefilepath, create_mission
 from .error import ModuleError
+
 from .download_manager import download_manager
 from .mission_manager import mission_manager
 from .channel import download_ch, mission_ch, message_ch
