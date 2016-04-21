@@ -462,9 +462,6 @@ def analyze_info(mission, downloader):
 		url = next_url
 		html = grabhtml(url, header, cookie=cookie)
 
-	if not episodes:
-		raise Exception("Episode list is empty")
-
 	# Check if re-analyze
 	if mission.episodes:
 		# Insert new episodes
@@ -482,6 +479,9 @@ def analyze_info(mission, downloader):
 			mission.state = "FINISHED"
 
 	else:
+		if not episodes:
+			raise Exception("Episode list is empty")
+
 		mission.episodes = episodes
 		mission.state = "ANALYZED"
 
