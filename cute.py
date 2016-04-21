@@ -2,6 +2,7 @@
 
 import pathlib
 import datetime
+import re
 
 from xcute import cute, Version, split_version, conf
 
@@ -20,12 +21,31 @@ def bump():
 	version = ".".join(map(str, version))
 	conf["version"] = version
 	path.write_text(left + version + right, 'utf-8')
+	
+def split_domains(text):
+	"""Split text into left, domains, right"""
+	match = re.search(r'\.\. DOMAINS\s*\.\.\s*([\s\S]+?)\s*\.\. END DOMAINS', text)
+	i = match.start(1)
+	j = match.end(1)
+	return text[:i], text[i:j], text[j:]
+	
+def domains():
+	"""Update domains"""
+	from comiccrawler.mods import list_domain
+	domains = " ".join(list_domain())
+	path = pathlib.Path('README.rst')
+	text = path.read_text('utf-8')
+	left, old_domains, right = split_domains(text)
+	if old_domains == domains:
+		return
+	path.write_text(left + domains + right, 'utf-8')
 
 cute(
 	test = 'setup check -r',
 	bump_pre = 'test',
 	bump = bump,
-	bump_post = ['dist', 'release', 'publish', 'install'],
+	bump_post = ['domains', 'dist', 'release', 'publish', 'install'],
+	domains = domains,
 	dist = 'python setup.py sdist bdist_wheel',
 	release = [
 		'git add .',
