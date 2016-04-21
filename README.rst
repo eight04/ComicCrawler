@@ -15,8 +15,6 @@ Todos
 -  Need a better error log system.
 -  Support pool in Sankaku.
 -  Add module.get_episode_id to make the module decide how to compare episodes.
--  Load 3rd party plugin.
--  Move to requests.
 
 Features
 --------
