@@ -11,7 +11,6 @@ Ex:
 import re, execjs
 
 from ..core import Episode, grabhtml
-from ..safeprint import safeprint
 
 domain = ["www.manhuadao.com"]
 name = "漫畫島"

@@ -11,7 +11,6 @@ import re, execjs
 from html import unescape
 from functools import partial
 
-from ..safeprint import safeprint
 from ..core import Episode, grabhtml
 
 domain = ["www.iibq.com"]

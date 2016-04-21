@@ -9,7 +9,6 @@ Ex:
 
 import re
 
-from ..safeprint import safeprint
 from ..core import Episode, grabhtml
 from ..error import SkipEpisodeError
 

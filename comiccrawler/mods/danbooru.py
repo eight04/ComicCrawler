@@ -11,7 +11,6 @@ import re
 from html import unescape
 from urllib.parse import urljoin
 
-from ..safeprint import safeprint
 from ..core import Episode, grabhtml
 
 domain = ["danbooru.donmai.us"]

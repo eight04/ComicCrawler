@@ -7,7 +7,6 @@
 import re, execjs
 from urllib.parse import urljoin
 
-from ..safeprint import safeprint
 from ..core import Episode, grabhtml
 
 domain = ["www.8comic.com", "www.comicvip.com", "www.comicbus.com"]

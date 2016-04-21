@@ -10,7 +10,6 @@ Ex:
 import re
 
 from ..core import Episode, grabhtml
-from ..safeprint import safeprint
 
 domain = ["comic.sfacg.com"]
 name = "SF"

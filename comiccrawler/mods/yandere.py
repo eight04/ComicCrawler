@@ -12,7 +12,6 @@ from html import unescape
 from urllib.parse import urljoin
 
 from ..core import Episode, grabhtml
-from ..safeprint import safeprint
 
 domain = ["yande.re"]
 name = "yande.re"

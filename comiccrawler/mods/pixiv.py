@@ -14,7 +14,6 @@ from urllib.parse import urljoin
 
 from ..core import Episode, grabhtml
 from ..error import LastPageError, SkipEpisodeError, PauseDownloadError
-from ..safeprint import safeprint
 
 cookie = {}
 domain = ["www.pixiv.net"]

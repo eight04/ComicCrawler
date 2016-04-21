@@ -11,7 +11,6 @@ from re import search, compile
 from html import unescape
 from urllib.parse import urljoin
 
-from ..safeprint import safeprint
 from ..error import PauseDownloadError
 from ..core import Episode, grabhtml
 

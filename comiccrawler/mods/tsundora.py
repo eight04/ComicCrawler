@@ -4,7 +4,6 @@ import re
 from html import unescape
 
 from ..core import Episode, grabhtml
-from ..safeprint import safeprint
 
 domain = ["tsundora.com"]
 name = "tsundora"
