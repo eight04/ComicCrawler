@@ -5,12 +5,19 @@
 Import all downloader modules
 """
 
-from os.path import dirname, realpath, join
+from os.path import dirname, realpath, join, isdir, splitext, expanduser
 from os import listdir
 from importlib import import_module
+from importlib.util import spec_from_file_location, module_from_spec
 from re import search
 
 from ..config import config
+
+def import_module_file(ns, file):
+	spec = spec_from_file_location(ns, file)
+	module = module_from_spec(spec)
+	spec.loader.exec_module(module)
+	return module
 	
 mods = set()
 domain_index = {}
@@ -18,12 +25,21 @@ here = dirname(__file__)
 	
 """Load mods"""	
 for file in listdir(here):
-	if file == "__init__.py":
+	name, ext = splitext(file)
+	if name == "__init__":
 		continue
-	if not file.endswith(".py"):
+	if ext != ".py":
 		continue
-	mod = file.replace(".py", "")
-	mods.add(import_module("comiccrawler.mods." + mod))
+	mods.add(import_module("comiccrawler.mods." + name))
+	
+# Load mods from user mods dir
+user_mods_dir = expanduser("~/comiccrawler/mods")
+if isdir(user_mods_dir):
+	for file in listdir(user_mods_dir):
+		name, ext = splitext(file)
+		if ext != ".py":
+			continue
+		mods.add(import_module_file('comiccrawler.user_mods.' + name, join(user_mods_dir, file)))
 	
 """Regist domain with mod to self.dlHolder"""
 for mod in mods:
