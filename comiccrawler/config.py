@@ -24,12 +24,12 @@ class Config:
 		# this method doesn't raise error
 		self.config.read(self.path, 'utf-8-sig')
 		
-		if 'default' not in self.config:
-			self.config['default'] = {}
-		self.default.update(self.config['default'])
-		self.config['default'].update(self.default)
+		if 'DEFAULT' not in self.config:
+			self.config['DEFAULT'] = {}
+		self.default.update(self.config['DEFAULT'])
+		self.config['DEFAULT'].update(self.default)
 		
-		self.config['default']["savepath"] = normpath(self.config['default']["savepath"])
+		self.config['DEFAULT']["savepath"] = normpath(self.config['DEFAULT']["savepath"])
 		
 	def save(self):
 		if not isdir(dirname(self.path)):
@@ -38,4 +38,4 @@ class Config:
 			self.config.write(f)
 	
 config = Config('~/comiccrawler/setting.ini')
-setting = config.config['default']
+setting = config.config['DEFAULT']
