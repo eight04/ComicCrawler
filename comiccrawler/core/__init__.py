@@ -385,15 +385,11 @@ def error_loop(process, handle_error=None, limit=10):
 		try:
 			process()
 		except Exception as er:
-			print("[error_loop] Process error: ", er)
 			errorcount += 1
 			if errorcount >= limit:
 				raise SkipEpisodeError(always=False)
 			if handle_error:
-				try:
-					handle_error(er)
-				except Exception as er:
-					print("[error_loop] Error handler error: ", er)
+				handle_error(er)
 		except ExitErrorLoop:
 			break
 		else:
