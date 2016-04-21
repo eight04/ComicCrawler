@@ -14,7 +14,7 @@ from worker import current
 from time import time
 
 from .mods import list_domain, get_module, load_config
-from .config import setting
+from .config import setting, config
 from .safeprint import print, printer
 from .core import safefilepath, create_mission
 from .error import ModuleError
@@ -136,6 +136,9 @@ class MainWindow:
 		if (setting.getboolean("libraryautocheck") and
 			time() - setting.getfloat("lastcheckupdate", 0) > 24 * 60 * 60):
 			download_manager.start_check_update()
+			
+		self.tv_refresh("view")
+		self.tv_refresh("library")
 		
 		self.save()
 		self.update()
@@ -186,9 +189,9 @@ class MainWindow:
 
 		@self.thread.listen("MISSION_LIST_REARRANGED")
 		def _(event):
-			if event.data == self.downloader.mission_manager.view:
+			if event.data == mission_manager.view:
 				self.tv_refresh("view")
-			if event.data == self.downloader.mission_manager.library:
+			if event.data == mission_manager.library:
 				self.tv_refresh("library")
 
 		@self.thread.listen("MISSION_ADDED")
@@ -407,6 +410,7 @@ class MainWindow:
 			else:
 				self.pre_url = url
 				if ask_analyze_update(mission):
+					mission.state = 'ANALYZE_INIT'
 					download_manager.start_analyze(mission)
 				return
 					
@@ -429,12 +433,16 @@ class MainWindow:
 
 		def stopdownload():
 			download_manager.stop_download()
+			print("停止下載")
 		self.btn_stop["command"] = stopdownload
 
 		def cleanfinished():
 			# mission_manager.clean_finished()
 			missions = mission_manager.get_by_state("view", ("FINISHED",), all=True)
+			if not missions:
+				return
 			mission_manager.remove("view", *missions)
+			print("移除 " + ", ".join(mission.title for mission in missions))
 		self.btn_clean["command"] = cleanfinished
 
 		def reloadconfig():
@@ -493,7 +501,10 @@ class MainWindow:
 				savepath = setting["savepath"]
 				for mission in missions:
 					folder = os.path.join(savepath, safefilepath(mission.title))
-					os.startfile(os.path.expanduser(folder))
+					folder = os.path.expanduser(folder)
+					if not os.path.isdir(folder):
+						os.makedirs(folder)
+					os.startfile(folder)
 
 			@bind_menu("開啟網頁")
 			def tvOpenBrowser():
