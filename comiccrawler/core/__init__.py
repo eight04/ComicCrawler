@@ -163,9 +163,10 @@ def crawl(mission, savepath):
 			fexp = "{:03}"
 
 		print("Downloading ep {}".format(ep.title))
-
+		
 		try:
-			crawlpage(ep, module, efd, fexp, mission.save)
+			crawler = Crawler(mission, ep, module, efd, fexp)
+			crawlpage(crawler)
 
 		except LastPageError:
 			print("Episode download complete!")
@@ -190,8 +191,9 @@ def extract_filename(file):
 	
 class Crawler:
 	"""Create Crawler object. Contains img url, next page url."""
-	def __init__(self, ep, downloader, savepath, fexp):
+	def __init__(self, mission, ep, downloader, savepath, fexp):
 		"""Construct."""
+		self.mission = mission
 		self.ep = ep
 		self.savepath = savepath
 		self.downloader = downloader
@@ -343,14 +345,13 @@ class Crawler:
 			print("[Crawler] Failed to handle error: {}".format(er))
 
 			
-def crawlpage(ep, downloader, savepath, fexp, page_done):
+def crawlpage(crawler):
 	"""Crawl all pages of an episode.
 
 	To complete current episode, raise LastPageError.
 	To skip current episode, raise SkipEpisodeError.
 	To stop downloading (fatal error), raise PauseDownloadError.
 	"""
-	crawler = Crawler(ep, downloader, savepath, fexp)
 	
 	def download():
 		if not crawler.image:
@@ -358,16 +359,16 @@ def crawlpage(ep, downloader, savepath, fexp, page_done):
 			return
 			
 		if crawler.page_exists():
-			print("page {} already exist".format(ep.total + 1))
+			print("page {} already exist".format(crawler.ep.total + 1))
 			crawler.next_image()
 			return
 			
 		crawler.resolve_image()
 		print("Downloading {} page {}: {}\n".format(
-			ep.title, ep.total + 1, crawler.image))
+			crawler.ep.title, crawler.ep.total + 1, crawler.image))
 		crawler.download_image()
 		crawler.save_image()
-		page_done()
+		mission_ch.pub("MISSION_PROPERTY_CHANGED", crawler.mission)
 		crawler.rest()
 		crawler.next_image()
 
