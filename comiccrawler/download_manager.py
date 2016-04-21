@@ -69,7 +69,7 @@ class DownloadManager:
 			"""After analyze, continue next (library)"""
 			try:
 				err, mission = event.data
-			except ValueError:
+			except Exception:
 				mission = event.data
 
 			if event.target is self.library_thread:
@@ -109,7 +109,7 @@ class DownloadManager:
 			
 	def start_analyze(self, mission):
 		"""Start analyzing"""
-		if mission.state not in "ANALYZE_INIT", "INIT":
+		if mission.state not in ("ANALYZE_INIT", "INIT"):
 			print("Invalid state to analyze: {state}".format(mission.state))
 			return
 		thread = Worker(analyze).start(mission)
@@ -151,3 +151,4 @@ class DownloadManager:
 	def is_downloading(self):
 		return self.download_thread is not None
 		
+download_manager = DownloadManager()		
