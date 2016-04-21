@@ -16,13 +16,6 @@ Todos
 -  Support pool in Sankaku.
 -  Add module.get_episode_id to make the module decide how to compare episodes.
 
-Features
---------
-
--  Extendible module design.
--  Easy to use function grabhtml, grabimg.
--  Auto setup referer and other common headers.
-
 Dependencies
 ------------
 
@@ -30,6 +23,7 @@ Dependencies
 -  pyexecjs - to execute javascript.
 -  pythreadworker - a small threading library.
 -  safeprint - to print unicode chars on Windows.
+-  requests
 
 Development Dependencies
 ------------------------
@@ -229,8 +223,12 @@ Module example
 Changelog
 ---------
 
--  Next
+-  2016.4.21
 
+   -  Big rewrite.
+   -  Move to requests.
+   -  Move to pythreadworker 0.4.0.
+   -  Add the ability to load module from ``~/comiccrawler/mods``
    -  Drop migrate command.
 
 -  2016.4.20
