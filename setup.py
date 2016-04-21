@@ -41,7 +41,9 @@ setup(
 	install_requires = [
 		"docopt~= 0.6.2", 
 		"pyexecjs~= 1.3.1",
-		"pythreadworker~= 0.4.0"
+		"pythreadworker~= 0.4.0",
+		"safeprint~=0.1.1",
+		"requests~=2.9.1"
 	],
 	entry_points = {
 		"console_scripts": [
