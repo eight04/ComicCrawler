@@ -15,6 +15,8 @@ Todos
 -  Need a better error log system.
 -  Support pool in Sankaku.
 -  Add module.get_episode_id to make the module decide how to compare episodes.
+-  Load 3rd party plugin.
+-  Move to requests.
 
 Features
 --------
@@ -29,6 +31,7 @@ Dependencies
 -  docopt - command line interface.
 -  pyexecjs - to execute javascript.
 -  pythreadworker - a small threading library.
+-  safeprint - to print unicode chars on Windows.
 
 Development Dependencies
 ------------------------
@@ -93,14 +96,12 @@ Supported domains
       comiccrawler domains
       comiccrawler download URL [--dest SAVE_FOLDER]
       comiccrawler gui
-      comiccrawler migrate
       comiccrawler (--help | --version)
 
     Commands:
       domains             列出支援的網址
       download URL        下載指定的 url
       gui                 啟動主視窗
-      migrate             轉換當前目錄底下的 save.dat, library.dat 成新格式
 
     Options:
       --dest SAVE_FOLDER  設定下載目錄（預設為 "."）
@@ -229,6 +230,10 @@ Module example
 
 Changelog
 ---------
+
+-  Next
+
+   -  Drop migrate command.
 
 -  2016.4.20
 
