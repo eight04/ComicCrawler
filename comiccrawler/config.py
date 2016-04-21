@@ -1,63 +1,37 @@
 #!python3
 
-"""
-This module provide a global setting object, which will save on exit.
-
-Usage:
-  # Basic
-  import config
-  config.load("some-file")
-  config.setting["key"] = "value"
-  config.save()
-  
-  # Use other section
-  sec1 = config.section("label1")
-  sec1["key"] = "value"
-  
-  # Set default value
-  default = {
-    "key1": "value1",
-	"key2": "value2"
-  }
-  sec2 = config.section("label2", default=default)
-  print(sec2["key1"])
+"""This module provide a global setting object, which will save on exit.
 """
 
-import configparser, atexit
+from configparser import ConfigParser
+from os.path import expanduser, dirname, isdir, normpath
+from os import makedirs
 
-from .io import prepare_file
-
-def section(name, default = None):
-	"""Return the section of the config."""
-	if name not in config:
-		config[name] = {}
-
-	if default:
-		for key in default:
-			if key not in config[name]:
-				config[name][key] = default[key]
-				
-	return config[name]
+class Config:
+    default = {
+        "savepath": "~/comiccrawler/download",
+        "runafterdownload": "",
+        "libraryautocheck": "True"
+    }
+    def __init__(self, path):
+        self.path = expanduser(path)
+        self.config = ConfigParser(interpolation=None)
+        self.load()
+        
+    def load(self):
+        # this method doesn't raise error
+        self.config.read(self.path, 'utf-8-sig')
+        
+        self.default.update(self.config['default'])
+        self.config['default'].update(self.default)
+        
+		self.config['default']["savepath"] = normpath(self.config['default']["savepath"])
+        
+    def save(self):
+        if not isdir(dirname(self.path)):
+            makedirs(dirname(self.path))
+        with open(self.path, 'w', encofing='utf-8') as f:
+            self.config.write(f)
 	
-def load(new_path=None):
-	"""Load config from file."""
-	global path
-	if new_path:
-		path = new_path
-	path = prepare_file(path)
-	config.read(path, "utf-8-sig")
-	
-def save(new_path=None):
-	"""Save config to file."""
-	global path
-	if new_path:
-		path = new_path
-	path = prepare_file(path)
-	with open(path, "w", encoding="utf-8") as file:
-		config.write(file)
-
-path = "~/comiccrawler/setting.ini"
-config = configparser.ConfigParser(interpolation=None)
-load()
-setting = section("DEFAULT")
-atexit.register(save)
+config = Config('~/comiccrawler/setting.ini')
+setting = config.config['default']

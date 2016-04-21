@@ -2,14 +2,18 @@
 
 """Mission Manager"""
 
-import json, traceback, worker
-from os import path
-from collections import OrderedDict
+import json, traceback
 
-from .safeprint import safeprint
+from collections import OrderedDict
+from worker import current
+from threading import Lock
+
+from .safeprint import print
 from .config import setting
-from .core import Mission, Episode
+from .core import Mission, Episode, MissionProxy
 from .io import content_read, content_write, is_file, backup
+
+from .channel import mission_ch
 
 class MissionPoolEncoder(json.JSONEncoder):
 	"""Encode Mission, Episode to json."""
@@ -20,17 +24,24 @@ class MissionPoolEncoder(json.JSONEncoder):
 
 		return vars(object)
 
-class MissionManager(worker.UserWorker):
-	"""Save, load missions from files"""
-
+class MissionManager:
+	"""Since check_update thread might grab mission from mission_manager, we have to make it thread safe."""
 	def __init__(self):
 		"""Construct."""
-		super().__init__()
-
 		self.pool = {}
 		self.view = OrderedDict()
 		self.library = OrderedDict()
 		self.edit = False
+		self.lock = Lock()
+		
+		self.load()
+
+		thread = current()
+		mission_ch.sub(thread)
+		@thread.listen("MISSION_PROPERTY_CHANGED")
+		def _(event):
+			"""Set the edit flag after mission changed."""
+			self.edit = True
 
 	def cleanup(self):
 		"""Cleanup unused missions"""
@@ -40,28 +51,6 @@ class MissionManager(worker.UserWorker):
 
 		for url in main_pool - (view_pool | library_pool):
 			del self.pool[url]
-
-	def worker(self):
-		"""Override. The worker target."""
-		@self.listen("MISSION_PROPERTY_CHANGED")
-		def dummy():
-			"""Set the edit flag after mission changed."""
-			self.edit = True
-
-		@self.listen("WORKER_DONE")
-		def dummy():
-			"""Save missions after the thread terminate."""
-			self.save()
-
-		@self.listen("SAVE_MISSION")
-		def dummy():
-			"""Save mission lately"""
-			self.edit = True
-
-		self.load()
-		while True:
-			self.wait(setting.getint("autosave", 5) * 60)
-			self.save()
 
 	def save(self):
 		"""Save missions to json."""
@@ -94,7 +83,7 @@ class MissionManager(worker.UserWorker):
 			)
 		)
 		self.edit = False
-		safeprint("Session saved")
+		print("Session saved")
 
 	def load(self):
 		"""Load mission from json.
@@ -105,12 +94,13 @@ class MissionManager(worker.UserWorker):
 		try:
 			self._load()
 		except Exception as err:
-			safeprint("Failed to load session!")
-			traceback.print_exc()
+			print("Failed to load session!")
+			# traceback.print_exc()
 			backup("~/comiccrawler/*.json")
-			self.bubble("MISSION_POOL_LOAD_FAILED", err)
+			raise
+			# mission_ch.pub("MISSION_POOL_LOAD_FAILED", err)
 		self.cleanup()
-		self.bubble("MISSION_POOL_LOAD_SUCCESS")
+		# mission_ch.pub("MISSION_POOL_LOAD_SUCCESS")
 
 	def _load(self):
 		"""Load missions from json. Called by MissionManager.load."""
@@ -153,7 +143,7 @@ class MissionManager(worker.UserWorker):
 						
 				episodes.append(Episode(**ep_data))
 			m_data["episodes"] = episodes
-			mission = MissionProxy(Mission(**m_data), self)
+			mission = MissionProxy(Mission(**m_data))
 			# self._add(mission)
 			self.pool[mission.url] = mission
 
@@ -163,25 +153,21 @@ class MissionManager(worker.UserWorker):
 		for url in library:
 			self.library[url] = self.pool[url]
 
-		self.bubble("MISSION_LIST_REARRANGED", self.view)
-		self.bubble("MISSION_LIST_REARRANGED", self.library)
-
-	# def _add(self, mission):
-		"""Add mission to public pool."""
-		# if mission.url not in self.pool:
-			# self.add_child(mission)
-			# self.pool[mission.url] = mission
+		mission_ch.pub("MISSION_LIST_REARRANGED", self.view)
+		mission_ch.pub("MISSION_LIST_REARRANGED", self.library)
 
 	def add(self, pool_name, *missions):
 		"""Add missions to pool."""
 		pool = getattr(self, pool_name)
 
-		for mission in missions:
-			self.pool[mission.url] = mission
-			# self._add(mission)
-			pool[mission.url] = mission
-
-		self.bubble("MISSION_LIST_REARRANGED", pool)
+		with self.lock:
+			for mission in missions:
+				if mission.url not in self.pool:
+					mission_ch.pub("MISSION_ADDED", mission)
+				self.pool[mission.url] = mission					
+				pool[mission.url] = mission
+		
+		mission_ch.pub("MISSION_LIST_REARRANGED", pool)
 		self.edit = True
 
 	def remove(self, pool_name, *missions):
@@ -191,42 +177,46 @@ class MissionManager(worker.UserWorker):
 		# check mission state
 		missions = [m for m in missions if m.state not in ("ANALYZING", "DOWNLOADING")]
 
-		for mission in missions:
-			del pool[mission.url]
-
-		self.cleanup()
-		self.bubble("MISSION_LIST_REARRANGED", pool)
+		with self.lock:
+			for mission in missions:
+				del pool[mission.url]
+			self.cleanup()
+			
+		mission_ch.pub("MISSION_LIST_REARRANGED", pool)
 		self.edit = True
 
 	def lift(self, pool_name, *missions):
 		"""Lift missions to the top."""
 		pool = getattr(self, pool_name)
-		for mission in reversed(missions):
-			pool.move_to_end(mission.url, last=False)
-		self.bubble("MISSION_LIST_REARRANGED", pool)
+		with self.lock:
+			for mission in reversed(missions):
+				pool.move_to_end(mission.url, last=False)
+		mission_ch.pub("MISSION_LIST_REARRANGED", pool)
 		self.edit = True
 
 	def drop(self, pool_name, *missions):
 		"""Drop missions to the bottom."""
 		pool = getattr(self, pool_name)
-		for mission in missions:
-			pool.move_to_end(mission.url)
-		self.bubble("MISSION_LIST_REARRANGED", pool)
+		with self.lock:
+			for mission in missions:
+				pool.move_to_end(mission.url)
+		mission_ch.pub("MISSION_LIST_REARRANGED", pool)
 		self.edit = True
 
 	def get_by_state(self, pool_name, states, all=False):
 		"""Get missions by states."""
-		if not all:
-			for mission in getattr(self, pool_name).values():
-				if mission.state in states:
-					return mission
-			return None
-		else:
-			output = []
-			for mission in getattr(self, pool_name).values():
-				if mission.state in states:
-					output.append(mission)
-			return output
+		with self.lock:
+			if not all:
+				for mission in getattr(self, pool_name).values():
+					if mission.state in states:
+						return mission
+				return None
+			else:
+				output = []
+				for mission in getattr(self, pool_name).values():
+					if mission.state in states:
+						output.append(mission)
+				return output
 
 	def get_by_url(self, url, pool_name=None):
 		"""Get mission by url."""
@@ -234,28 +224,4 @@ class MissionManager(worker.UserWorker):
 			return self.pool[url]
 		return getattr(self, pool_name)[url]
 
-	def create_mission(self, url):
-		"""Create a new mission"""
-		return MissionProxy(Mission(url=url), self)
-
-
-class MissionProxy:
-	"""Send a message to manager when mission state was changed"""
-	def __init__(self, mission, manager):
-		self.__dict__["mission"] = mission
-		self.__dict__["manager"] = manager
-
-	def __getattr__(self, name):
-		return getattr(self.mission, name)
-
-	def __setattr__(self, name, value):
-		setattr(self.mission, name, value)
-		self.manager.message("MISSION_PROPERTY_CHANGED", self, flag="BUBBLE")
-
-	def save(self):
-		self.manager.message("SAVE_MISSION", self)
-
-	def tojson(self):
-		json = vars(self.mission).copy()
-		del json["module"]
-		return json
+mission_manager = MissionManager()

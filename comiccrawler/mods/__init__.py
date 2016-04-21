@@ -10,7 +10,7 @@ from os import listdir
 from importlib import import_module
 from re import search
 
-from ..config import section, setting
+from ..config import config
 	
 mods = set()
 domain_index = {}
@@ -35,7 +35,9 @@ def load_config():
 	"""
 	for mod in mods:
 		if hasattr(mod, "config"):
-			mod.config = section(mod.name, mod.config)
+			if mod.name not in config.config:
+				config.config[mod.name] = mod.config
+			mod.config = config.config[mod.name]
 		if hasattr(mod, "load_config"):
 			mod.load_config()
 			

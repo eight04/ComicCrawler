@@ -5,16 +5,20 @@
 from tkinter import *
 from tkinter.ttk import *
 from functools import partial
+from worker import current
+from time import time
 
 import sys, os, webbrowser, worker, re
 import tkinter.messagebox as messagebox
 
-from .mods import list_domain, get_module
+from .mods import list_domain, get_module, load_config
 from .config import setting
-from .safeprint import safeprint, addcallback as sp_addcallback, removecallback as sp_removecallback
-from .core import safefilepath
+from .safeprint import print, printer
+from .core import safefilepath, create_mission
 from .error import ModuleError
-from .download_manager import DownloadManager
+from .download_manager import download_manager
+from .mission_manager import mission_manager
+from .channel import download_ch, mission_ch, message_ch
 
 # Translate state code to readible text.
 STATE = {
@@ -107,40 +111,42 @@ class Dialog(Toplevel):
 		self.wait_window(self)
 		return self.result
 
-class MainWindow(worker.UserWorker):
+class MainWindow:
 	"""Create main window GUI."""
-
 	def __init__(self):
 		"""Construct."""
-		super().__init__()
-
-		self.downloader = self.create_child(DownloadManager)
+		
+		self.thread = current()
+		
 		self.cid_view = {}
 		self.cid_library = {}
 		self.pre_url = None
 
-	def worker(self):
-		"""Main window worker."""
-		self.register_message()
-		self.init()
 		self.create_view()
+		
 		self.bindevent()
-		self.mainloop()
-		self.uninit()
+		
+		self.register_listeners()
+		
+		printer.add_listener(self.sp_callback)
 
-	def init(self):
-		"""Init safeprint calback and start download manager."""
-		sp_addcallback(self.sp_callback)
-		self.downloader.start()
-
-	def mainloop(self):
-		"""Main loop, including gtk and worker."""
-		self.root.after(100, self.tkloop)
+		if (setting.getboolean("libraryautocheck") and
+			time() - setting.getfloat("lastcheckupdate", 0) > 24 * 60 * 60):
+			download_manager.start_check_update()
+		
+		self.save()
+		self.update()
 		self.root.mainloop()
-
-	def uninit(self):
-		"""Remove safeprint callback."""
-		sp_removecallback(self.sp_callback)
+		
+	def update(self):
+		"""Cleanup message every 100 milliseconds."""
+		self.thread.update()
+		self.root.after(100, self.update)
+		
+	def save(self):
+		"""Save mission periodly"""
+		mission_manager.save()
+		self.root.after(setting.getint("autosave", 5) * 60 * 1000, self.save)
 
 	def get_cid(self, cid_index, mission):
 		"""Get matched cid from cid index."""
@@ -153,64 +159,68 @@ class MainWindow(worker.UserWorker):
 		tv.set(cid, "state", STATE[mission.state])
 		tv.set(cid, "name", safe_tk(mission.title))
 
-	def register_message(self):
+	def register_listeners(self):
 		"""Add listeners."""
-		@self.listen("LOG_MESSAGE")
-		def dummy(text):
-			text = text.splitlines()[0]
+		
+		mission_ch.sub(self.thread)
+		download_ch.sub(self.thread)
+		message_ch.sub(self.thread)
+		
+		@self.thread.listen("LOG_MESSAGE")
+		def _(event):
+			text = event.data.splitlines()[0]
 			self.statusbar["text"] = safe_tk(text)
 
-		@self.listen("MISSION_PROPERTY_CHANGED")
-		def dummy(mission):
-			cid = self.get_cid(self.cid_view, mission)
+		@self.thread.listen("MISSION_PROPERTY_CHANGED")
+		def _(event):
+			cid = self.get_cid(self.cid_view, event.data)
 			if cid is not None:
-				self.update_mission_info(self.tv_view, cid, mission)
+				self.update_mission_info(self.tv_view, cid, event.data)
 
-			cid = self.get_cid(self.cid_library, mission)
+			cid = self.get_cid(self.cid_library, event.data)
 			if cid is not None:
-				self.update_mission_info(self.tv_library, cid, mission)
+				self.update_mission_info(self.tv_library, cid, event.data)
 
-		@self.listen("MISSION_LIST_REARRANGED")
-		def dummy(que):
-			if que == self.downloader.mission_manager.view:
+		@self.thread.listen("MISSION_LIST_REARRANGED")
+		def _(event):
+			if event.data == self.downloader.mission_manager.view:
 				self.tv_refresh("view")
-			if que == self.downloader.mission_manager.library:
+			if event.data == self.downloader.mission_manager.library:
 				self.tv_refresh("library")
 
-		@self.listen("AFTER_ANALYZE")
-		def dummy(mission):
-			if len(mission.episodes) == 1 or select_episodes(self.root, mission):
-				self.downloader.mission_manager.add("view", mission)
+		@self.thread.listen("MISSION_ADDED")
+		def _(event):
+			mission = event.data
+			if len(mission.episodes) == 1:
+				return
+				
+			if not select_episodes(self.root, mission):
+				mission_manager.remove("view", mission)
 
-		@self.listen("AFTER_ANALYZE_FAILED")
-		def dummy(param):
-			mission, error = param
+		@self.thread.listen("ANALYZE_FAILED")
+		def _(event):
+			error, mission = event.data
 			messagebox.showerror(
 				mission.module.name,
 				"解析錯誤！\n{}".format(error)
 			)
-			safeprint("Analyzing failed!")
 
-		@self.listen("MISSION_POOL_LOAD_FAILED")
-		def dummy(param):
+		@self.thread.listen("MISSION_POOL_LOAD_FAILED")
+		def _(event):
 			messagebox.showerror(
 				"Comic Crawler",
-				"讀取存檔失敗！\n{}".format(param)
+				"讀取存檔失敗！\n{}".format(event.data)
 			)
 
-		@self.listen("DOWNLOAD_INVALID")
-		def dummy(mission):
-			messagebox.showerror(
-				mission.module.name,
-				"停止下載！未登入？"
-			)
+		@self.thread.listen("DOWNLOAD_INVALID")
+		def _(event):
+			err, mission = event.data
+			messagebox.showerror(mission.module.name, err)
 
-		@self.listen("ANALYZE_INVALID")
-		def dummy(mission):
-			messagebox.showerror(
-				mission.module.name,
-				"停止分析！未登入？"
-			)
+		@self.thread.listen("ANALYZE_INVALID")
+		def _(event):
+			err, mission = event.data
+			messagebox.showerror(mission.module.name, err)
 
 	def create_view(self):
 		"""Draw the window."""
@@ -346,17 +356,12 @@ class MainWindow(worker.UserWorker):
 		statusbar.pack(anchor="e")
 		self.statusbar = statusbar
 
-	def tkloop(self):
-		"""Cleanup message every 100 milliseconds."""
-		self.cleanup()
-		self.root.after(100, self.tkloop)
-
 	def remove(self, pool_name, *missions):
 		"""Wrap mission_manager.remove."""
 		for mission in missions:
 			if mission.state in ("DOWNLOADING", "ANALYZING"):
 				messagebox.showerror("Comic Crawler", "刪除任務失敗！任務使用中")
-		self.downloader.mission_manager.remove(pool_name, *missions)
+		mission_manager.remove(pool_name, *missions)
 
 	def bindevent(self):
 		"""Bind events."""
@@ -393,40 +398,46 @@ class MainWindow(worker.UserWorker):
 			self.entry_url.delete(0, "end")
 
 			try:
-				mission = self.downloader.mission_manager.get_by_url(url)
-				self.pre_url = url
-				if not ask_analyze_update(mission):
-					return
+				mission = mission_manager.get_by_url(url)
 			except KeyError:
-				try:
-					mission = self.downloader.create_mission(url)
-					self.pre_url = url
-				except ModuleError:
-					messagebox.showerror(
-						"Comic Crawler",
-						"建立任務失敗！不支援的網址！"
-					)
-					return
-
-			self.downloader.start_analyze(mission)
+				pass
+			else:
+				self.pre_url = url
+				if ask_analyze_update(mission):
+					download_manager.start_analyze(mission)
+				return
+					
+			try:
+				mission = create_mission(url)
+			except ModuleError:
+				messagebox.showerror(
+					"Comic Crawler",
+					"建立任務失敗！不支援的網址！"
+				)
+			else:
+				self.pre_url = url
+				download_manager.start_analyze(mission)
 
 		self.btn_addurl["command"] = addurl
 
 		def startdownload():
-			self.downloader.start_download()
+			download_manager.start_download()
 		self.btn_start["command"] = startdownload
 
 		def stopdownload():
-			self.downloader.stop_download()
+			download_manager.stop_download()
 		self.btn_stop["command"] = stopdownload
 
 		def cleanfinished():
-			self.downloader.clean_finished()
+			# mission_manager.clean_finished()
+			missions = mission_manager.get_by_state("view", ("FINISHED",), all=True)
+			mission_manager.remove("view", *missions)
 		self.btn_clean["command"] = cleanfinished
 
 		def reloadconfig():
-			self.downloader.reload_config()
-			safeprint("設定檔重載成功！")
+			config.load()
+			load_config()
+			print("設定檔重載成功！")
 		self.btn_config["command"] = reloadconfig
 
 		def create_menu_set(name):
@@ -452,12 +463,12 @@ class MainWindow(worker.UserWorker):
 			@bind_menu("移至頂部")
 			def tvlift():
 				selected = tv.selection()
-				self.downloader.mission_manager.lift(name, *[cid_index[cid] for cid in selected])
+				mission_manager.lift(name, *[cid_index[cid] for cid in selected])
 
 			@bind_menu("移至底部")
 			def tvdrop():
 				selected = tv.selection()
-				self.downloader.mission_manager.drop(name, *[cid_index[cid] for cid in selected])
+				mission_manager.drop(name, *[cid_index[cid] for cid in selected])
 
 			@bind_menu("改名")
 			def tvchangetitle():
@@ -494,8 +505,8 @@ class MainWindow(worker.UserWorker):
 					s = tv.selection()
 					missions = [ cid_index[i] for i in s ]
 					titles = [ m.title for m in missions ]
-					self.downloader.mission_manager.add("library", *missions)
-					safeprint("已加入圖書館︰{}".format(", ".join(titles)))
+					mission_manager.add("library", *missions)
+					print("已加入圖書館︰{}".format(", ".join(titles)))
 
 			# menu call
 			def tvmenucall(event):
@@ -506,37 +517,48 @@ class MainWindow(worker.UserWorker):
 
 		# library buttons
 		def libCheckUpdate():
-			self.downloader.start_check_update()
+			download_manager.start_check_update()
 		self.btn_update["command"] = libCheckUpdate
 
 		def libDownloadUpdate():
-			if not self.downloader.add_mission_update():
+			missions = mission_manager.get_by_state("library", ("UPDATE",), all=True)
+			if not missions:
 				messagebox.showerror("Comic Crawler", "沒有新更新的任務")
 				return
-			self.downloader.start_download()
+			mission_manager.add("view", *missions)
+			download_manager.start_download()
 			self.notebook.select(0)
 		self.btn_download_update["command"] = libDownloadUpdate
 
 		# library menu
 		create_menu_set("library")
 
-		def is_running(thread):
-			return thread and thread.is_running()
-
 		# close window event
 		def beforequit():
-			if is_running(self.downloader.download_thread):
+			if download_manager.is_downloading():
 				if not messagebox.askokcancel(
 						"Comic Crawler",
 						"任務下載中，確定結束？"):
 					return
-			self.downloader.stop_download()
+					
+			# going to quit
+			printer.remove_listener(self.sp_callback)		
+		
 			self.root.destroy()
+			
+			download_manager.stop_download()
+			download_manager.stop_analyze()
+			download_manager.stop_check_update()
+			
+			mission_manager.save()
+			
+			config.save()
+			
 		self.root.protocol("WM_DELETE_WINDOW", beforequit)
 
 	def sp_callback(self, text):
 		"""Transport text to LOG_MESSAGE event."""
-		self.message("LOG_MESSAGE", text)
+		message_ch.pub("LOG_MESSAGE", text)
 
 	def tv_refresh(self, pool_name):
 		"""Refresh treeview."""
@@ -548,7 +570,7 @@ class MainWindow(worker.UserWorker):
 		tv.delete(*ids)
 		cid_index.clear()
 
-		missions = getattr(self.downloader.mission_manager, pool_name).values()
+		missions = getattr(mission_manager, pool_name).values()
 		for mission in missions:
 			cid = tv.insert(
 				"",
@@ -651,7 +673,6 @@ def select_episodes(parent, mission):
 			# link scrollbar to canvas then show
 			xscrollbar.config(command=canvas.xview)
 			xscrollbar.pack(fill="x")
-
 
 		def create_btn_bar(self, btn_bar):
 			Button(btn_bar, text="反相", command=self.toggle).pack(side="left")

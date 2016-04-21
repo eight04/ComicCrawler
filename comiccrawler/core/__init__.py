@@ -1,30 +1,29 @@
 #! python3
 
-from urllib.parse import quote, urlsplit, urlunsplit
-from urllib.request import Request, urlopen
-from urllib.error import HTTPError
+import traceback
+import imghdr
+import re
+import hashlib
+import json
 
-from http.cookies import SimpleCookie
+from worker import sleep, WorkerExit
+from os import extsep
+from os.path import join as path_join, split as path_split, splitext
 
-from .safeprint import safeprint
-from .error import *
-from .io import content_write, content_read, path_each
-from .config import setting
+from ..safeprint import print
+from ..error import *
+from ..io import content_write, content_read, path_each
+from ..config import setting
+from ..channel import download_ch, mission_ch
 
-import pprint, traceback, os, imghdr, re, time, hashlib, gzip, worker
-
-default_header = {
-	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0",
-	"Accept-Language": "zh-tw,zh;q=0.8,en-us;q=0.5,en;q=0.3",
-	"Accept-Encoding": "gzip, deflate"
-}
+from .grabber import grabhtml, grabimg
 
 class Mission:
 	"""Create Mission object. Contains information of the mission."""
 
 	def __init__(self, title=None, url=None, episodes=None, state="INIT"):
 		"""Construct."""
-		from .mods import get_module
+		from ..mods import get_module
 
 		super().__init__()
 
@@ -35,6 +34,26 @@ class Mission:
 		self.module = get_module(url)
 		if not self.module:
 			raise ModuleError("Get module failed!")
+			
+class MissionProxy:
+	"""Publish MISSION_PROPERTY_CHANGED event when property changed"""
+	def __init__(self, mission):
+		self.__dict__["mission"] = mission
+
+	def __getattr__(self, name):
+		return getattr(self.mission, name)
+
+	def __setattr__(self, name, value):
+		setattr(self.mission, name, value)
+		mission_ch.pub("MISSION_PROPERTY_CHANGED", self)
+
+	def tojson(self):
+		json = vars(self.mission).copy()
+		del json["module"]
+		return json
+		
+def create_mission(url):
+	return MissionProxy(Mission(url=url))
 
 class Episode:
 	"""Create Episode object. Contains information of an episode."""
@@ -86,208 +105,75 @@ def getext(byte):
 		return "mkv"
 
 	return None
-
+	
 def safefilepath(s):
 	"""Return a safe directory name."""
 	return re.sub("[/\\\?\|<>:\"\*]","_",s).strip()
 
-def quote_unicode(s):
-	"""Quote unicode characters only."""
-	return quote(s, safe=r"/ !\"#$%&'()*+,:;<=>?@[\\]^`{|}~")
-
-def quote_loosely(s):
-	"""Quote space and others in path part.
-
-	Reference:
-	  http://stackoverflow.com/questions/120951/how-can-i-normalize-a-url-in-python
-	"""
-	return quote(s, safe="%/:=&?~#+!$,;'@()*[]")
-
-def safeurl(url):
-	"""Return a safe url, quote the unicode characters.
-
-	This function should follow this rule:
-	  safeurl(safeurl(url)) == safe(url)
-	"""
-	scheme, netloc, path, query, fragment = urlsplit(url)
-	return urlunsplit((scheme, netloc, quote_loosely(path), query, ""))
-
-def safeheader(header):
-	"""Return a safe header, quote the unicode characters."""
-	for key, value in header.items():
-		if not isinstance(value, str):
-			raise Exception(
-				"header value must be str!\n" + pprint.pformat(header)
-			)
-		header[key] = quote_unicode(value)
-	return header
-
-cookiejar = {}
-def grabber(url, header=None, *, referer=None, cookie=None, raw=False, errorlog=None):
-	"""Request url, return text or bytes of the content."""
-
-	url = safeurl(url)
-
-	print("[grabber]", url, "\n")
-
-	# Build request
-	request = Request(url)
-
-	# Build header
-	if header is None:
-		header = {}
-
-	# Build default header
-	for key in default_header:
-		if key not in header:
-			header[key] = default_header[key]
-
-	# Referer
-	if referer:
-		header["Referer"] = referer
-
-	# Handle cookie
-	if request.host not in cookiejar:
-		cookiejar[request.host] = SimpleCookie()
-
-	jar = cookiejar[request.host]
-
-	if cookie:
-		jar.load(cookie)
-
-	if "Cookie" in header:
-		jar.load(header["Cookie"])
-
-	if jar:
-		header["Cookie"] = "; ".join([key + "=" + c.value for key, c in jar.items()])
-
-	header = safeheader(header)
-	for key, value in header.items():
-		request.add_header(key, value)
-
-	response = None
-	while not response:
-		try:
-			response = urlopen(request, timeout=20)
-		except HTTPError as err:
-			if err.code == 429:
-				retry = 20
-				for key, value in err.headers.items():
-					if key == "Retry-After":
-						retry = int(value)
-						break
-				time.sleep(retry)
-			else:
-				raise
-
-	jar.load(response.getheader("Set-Cookie", ""))
-	if cookie is not None:
-		for key, c in jar.items():
-			cookie[key] = c.value
-
-	b = response.read()
-
-	# decompress gziped data
-	if response.getheader("Content-Encoding") == "gzip":
-		b = gzip.decompress(b)
-
-	if raw:
-		content = b
-
-	else:
-		# find html defined encoding
-		s = b.decode("utf-8", "replace")
-		match = re.search(r"charset=[\"']?([^\"'>]+)", s)
-		if match:
-			s = b.decode(match.group(1), "replace")
-		content = s
-
-	if errorlog or setting.getboolean("errorlog"):
-		log_object = (
-			url,
-			request.header_items(),
-			response.getheaders()
-		)
-		if not errorlog:
-			errorlog = ""
-		from pprint import pformat
-		content_write("~/comiccrawler/grabber.log", pformat(log_object) + "\n\n", append=True)
-
-	return content
-
-def grabhtml(*args, **kwargs):
-	"""Get html source of given url. Return String."""
-	kwargs["raw"] = False
-	return grabber(*args, **kwargs)
-
-def grabimg(*args, **kwargs):
-	"""Return byte array."""
-	kwargs["raw"] = True
-	return grabber(*args, **kwargs)
-
-def download(mission, savepath, thread=None):
+def download(mission, savepath):
 	"""Download mission to savepath."""
 
 	# warning there is a deadlock,
 	# never do mission.lock.acquire in callback...
-	safeprint("Start downloading " + mission.title)
+	print("Start downloading " + mission.title)
 	mission.state = "DOWNLOADING"
 	try:
-		crawl(mission, savepath, thread)
+		crawl(mission, savepath)
 
 		# Check if mission is complete
 		for ep in mission.episodes:
 			if not ep.complete and not ep.skip:
 				raise Exception("Mission is not completed")
 
-	except worker.WorkerExit:
+	except WorkerExit:
 		mission.state = "PAUSE"
+		download_ch.pub('DOWNLOAD_PAUSE', mission)
 		raise
 
 	except Exception:
 		mission.state = "ERROR"
-		thread.bubble("DOWNLOAD_ERROR", mission)
+		download_ch.pub('DOWNLOAD_ERROR', mission)
 		raise
 
 	except PauseDownloadError:
 		mission.state = "ERROR"
-		thread.bubble("DOWNLOAD_INVALID", mission)
+		download_ch.pub('DOWNLOAD_INVALID', mission)
 
 	else:
 		mission.state = "FINISHED"
-		thread.bubble("DOWNLOAD_FINISHED", mission)
-
-def crawl(mission, savepath, thread):
+		download_ch.pub("DOWNLOAD_FINISHED", mission)	
+	
+def crawl(mission, savepath):
 	"""Crawl each episode."""
 	episodes = mission.episodes
 	module = mission.module
 
-	safeprint("total {} episode.".format(len(episodes)))
+	print("total {} episode.".format(len(episodes)))
 
 	for ep in episodes:
 		if ep.skip or ep.complete:
 			continue
 
 		if getattr(module, "noepfolder", False):
-			efd = os.path.join(savepath, safefilepath(mission.title))
+			efd = path_join(savepath, safefilepath(mission.title))
 			fexp = format_escape(safefilepath(ep.title)) + "_{:03}"
 		else:
-			efd = os.path.join(savepath, safefilepath(mission.title),
+			efd = path_join(savepath, safefilepath(mission.title),
 					safefilepath(ep.title))
 			fexp = "{:03}"
 
-		safeprint("Downloading ep {}".format(ep.title))
+		print("Downloading ep {}".format(ep.title))
 
 		try:
-			crawlpage(ep, module, efd, fexp, thread, mission.save)
+			crawlpage(ep, module, efd, fexp, mission.save)
 
 		except LastPageError:
-			safeprint("Episode download complete!")
+			print("Episode download complete!")
 			ep.complete = True
-			thread.bubble("DOWNLOAD_EP_COMPLETE", (mission, ep))
+			download_ch.pub("DOWNLOAD_EP_COMPLETE", (mission, ep))
 
 		except SkipEpisodeError as err:
-			safeprint("Something bad happened, skip the episode.")
+			print("Something bad happened, skip the episode.")
 			if err.always:
 				ep.skip = True
 
@@ -298,20 +184,18 @@ def get_file_checksum(file):
 	return get_checksum(content_read(file, raw=True))
 
 def extract_filename(file):
-	dir, fn = os.path.split(file)
-	fn, ext = os.path.splitext(fn)
+	dir, fn = path_split(file)
+	fn, ext = splitext(fn)
 	return fn
 	
 class Crawler:
 	"""Create Crawler object. Contains img url, next page url."""
-
-	def __init__(self, ep, downloader, savepath, fexp, thread):
+	def __init__(self, ep, downloader, savepath, fexp):
 		"""Construct."""
 		self.ep = ep
 		self.savepath = savepath
 		self.downloader = downloader
 		self.fexp = fexp
-		self.thread = thread
 		self.exist_pages = None
 		self.checksums = None
 		
@@ -347,8 +231,7 @@ class Crawler:
 
 	def download_image(self):
 		"""Download image"""
-		self.image_bin = self.thread.sync(
-			grabimg,
+		self.image_bin = grabimg(
 			self.image,
 			self.get_header(),
 			referer=self.ep.current_url
@@ -359,9 +242,9 @@ class Crawler:
 		ext = getext(self.image_bin)
 		if not ext:
 			raise TypeError("Invalid image type.")
-		return os.path.join(
+		return path_join(
 			self.savepath,
-			self.get_filename() + os.extsep + ext
+			self.get_filename() + extsep + ext
 		)
 
 	def save_image(self):
@@ -409,23 +292,21 @@ class Crawler:
 	
 	def resolve_image(self):
 		if callable(self.image):
-			self.image = self.thread.sync(self.image)		
+			self.image = self.image()
 		
 	def rest(self):
 		"""Rest some time."""
-		self.thread.wait(getattr(self.downloader, "rest", 0))
+		sleep(getattr(self.downloader, "rest", 0))
 		
 	def get_next_page(self):
 		if hasattr(self.downloader, "get_next_page"):
-			return self.thread.sync(
-				self.downloader.get_next_page,
+			return self.downloader.get_next_page(
 				self.html,
 				self.ep.current_url
 			)
 		
 	def get_html(self):
-		self.html = self.thread.sync(
-			grabhtml,
+		self.html = grabhtml(
 			self.ep.current_url,
 			self.get_header(),
 			cookie=self.get_cookie()
@@ -433,8 +314,7 @@ class Crawler:
 		
 	def get_images(self):
 		"""Get images"""
-		images = self.thread.sync(
-			self.downloader.get_images,
+		images = self.downloader.get_images(
 			self.html, 
 			self.ep.current_url
 		)
@@ -463,14 +343,14 @@ class Crawler:
 			print("[Crawler] Failed to handle error: {}".format(er))
 
 			
-def crawlpage(ep, downloader, savepath, fexp, thread, page_done):
+def crawlpage(ep, downloader, savepath, fexp, page_done):
 	"""Crawl all pages of an episode.
 
 	To complete current episode, raise LastPageError.
 	To skip current episode, raise SkipEpisodeError.
 	To stop downloading (fatal error), raise PauseDownloadError.
 	"""
-	crawler = Crawler(ep, downloader, savepath, fexp, thread)
+	crawler = Crawler(ep, downloader, savepath, fexp)
 	
 	def download():
 		if not crawler.image:
@@ -478,12 +358,12 @@ def crawlpage(ep, downloader, savepath, fexp, thread, page_done):
 			return
 			
 		if crawler.page_exists():
-			safeprint("page {} already exist".format(ep.total + 1))
+			print("page {} already exist".format(ep.total + 1))
 			crawler.next_image()
 			return
 			
 		crawler.resolve_image()
-		safeprint("Downloading {} page {}: {}\n".format(
+		print("Downloading {} page {}: {}\n".format(
 			ep.title, ep.total + 1, crawler.image))
 		crawler.download_image()
 		crawler.save_image()
@@ -493,7 +373,7 @@ def crawlpage(ep, downloader, savepath, fexp, thread, page_done):
 
 	def download_error(er):
 		crawler.handle_error(er)
-		thread.wait(5)
+		sleep(5)
 
 	error_loop(download, download_error)
 
@@ -518,26 +398,26 @@ def error_loop(process, handle_error=None, limit=10):
 		else:
 			errorcount = 0
 
-def analyze(mission, thread=None):
+def analyze(mission):
 	"""Analyze mission."""
 	try:
-		analyze_info(mission, mission.module, thread)
+		analyze_info(mission, mission.module)
 
-	except worker.WorkerExit:
+	except WorkerExit:
 		mission.state = "ERROR"
 		raise
 
-	except Exception as er:
+	except Exception as err:
 		mission.state = "ERROR"
 		traceback.print_exc()
-		thread.bubble("ANALYZE_FAILED", (mission, er))
+		download_ch.pub("ANALYZE_FAILED", (err, mission))
 
-	except PauseDownloadError:
+	except PauseDownloadError as err:
 		mission.state = "ERROR"
-		thread.bubble("ANALYZE_INVALID", mission)
+		download_ch.pub("ANALYZE_INVALID", (err, mission))
 
 	else:
-		thread.bubble("ANALYZE_FINISHED", mission)
+		download_ch.pub("ANALYZE_FINISHED", mission)
 
 def remove_duplicate_episode(mission):
 	"""Remove duplicate episodes."""
@@ -549,16 +429,16 @@ def remove_duplicate_episode(mission):
 			cleanList.append(ep)
 	mission.episodes = cleanList
 
-def analyze_info(mission, downloader, thread):
+def analyze_info(mission, downloader):
 	"""Analyze mission."""
-	safeprint("Start analyzing {}".format(mission.url))
+	print("Start analyzing {}".format(mission.url))
 
 	mission.state = "ANALYZING"
 
 	header = getattr(downloader, "header", None)
 	cookie = getattr(downloader, "cookie", None)
 
-	html = thread.sync(grabhtml, mission.url, header, cookie=cookie)
+	html = grabhtml(mission.url, header, cookie=cookie)
 
 	if not mission.title:
 		mission.title = downloader.get_title(html, mission.url)
@@ -571,7 +451,7 @@ def analyze_info(mission, downloader, thread):
 	url = mission.url
 	episodes = []
 	while True:
-		eps = thread.sync(downloader.get_episodes, html, url)
+		eps = downloader.get_episodes(html, url)
 		episodes = list(eps) + episodes
 		if last_ep and any(ep.url == last_ep.url for ep in eps):
 			break
@@ -579,11 +459,11 @@ def analyze_info(mission, downloader, thread):
 			break
 		if len(episodes) and episodes[0].url == mission.url:
 			break
-		next_url = thread.sync(downloader.get_next_page, html, url)
+		next_url = downloader.get_next_page(html, url)
 		if not next_url:
 			break
 		url = next_url
-		html = thread.sync(grabhtml, url, header, cookie=cookie)
+		html = grabhtml(url, header, cookie=cookie)
 
 	if not episodes:
 		raise Exception("Episode list is empty")
@@ -611,4 +491,4 @@ def analyze_info(mission, downloader, thread):
 	# remove duplicate
 	remove_duplicate_episode(mission)
 
-	safeprint("Analyzing success!")
+	print("Analyzing success!")

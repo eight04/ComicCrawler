@@ -129,3 +129,11 @@ def path_each(folder, callback, mode="f"):
 	for file in files:
 		if path.isfile(file) and "f" in mode or path.isdir(file) and "d" in mode:
 			callback(file)
+			
+def expand(file):
+	"""Expand user"""
+	return path.expanduser(file)
+	
+def dirname(file):
+	"""Get dirname"""
+	return path.dirname(file)
