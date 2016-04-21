@@ -45,15 +45,10 @@ def safeurl(url):
 	scheme, netloc, path, query, fragment = urlsplit(url)
 	return urlunsplit((scheme, netloc, quote_loosely(path), query, ""))
 
-def safeheader(header):
+def quote_unicode_dict(d):
 	"""Return a safe header, quote the unicode characters."""
-	for key, value in header.items():
-		if not isinstance(value, str):
-			raise Exception(
-				"header value must be str!\n" + pformat(header)
-			)
-		header[key] = quote_unicode(value)
-	return header
+	for key, value in d.items():
+		d[key] = quote_unicode(value)
 	
 def grabber_log(*args):
 	content_write("~/comiccrawler/grabber.log", pformat(args) + "\n\n", append=True)
@@ -77,6 +72,7 @@ def grabber(url, header=None, *, referer=None, cookie=None, raw=False):
 		s.headers['referer'] = referer
 
 	if cookie:
+		quote_unicode_dict(cookie)
 		requests.utils.add_dict_to_cookiejar(s.cookies, cookie)
 
 	while True:
