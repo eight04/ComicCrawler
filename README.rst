@@ -23,7 +23,7 @@ Dependencies
 -  pyexecjs - to execute javascript.
 -  pythreadworker - a small threading library.
 -  safeprint - to print unicode chars on Windows.
--  requests
+-  requests - http library.
 
 Development Dependencies
 ------------------------
