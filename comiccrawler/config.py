@@ -11,7 +11,9 @@ class Config:
 	default = {
 		"savepath": "~/comiccrawler/download",
 		"runafterdownload": "",
-		"libraryautocheck": "True"
+		"libraryautocheck": "true",
+		"autosave": "5",
+		"errorlog": "false"
 	}
 	def __init__(self, path):
 		self.path = expanduser(path)
