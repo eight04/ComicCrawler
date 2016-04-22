@@ -14,7 +14,7 @@ def read(file):
 	
 def find_version(file):
 	return re.search(r"__version__ = (\S*)", read(file)).group(1).strip("\"'")
-
+	
 setup(
 	name = "comiccrawler",
 	version = find_version("comiccrawler/__init__.py"),
@@ -37,7 +37,7 @@ setup(
 		"Topic :: Internet"
 	],
 	keywords = 'image crawler',
-	packages = ['comiccrawler'],
+	packages = find_packages(),
 	install_requires = [
 		"docopt~= 0.6.2", 
 		"pyexecjs~= 1.3.1",
