@@ -139,6 +139,8 @@ Supported domains
 Module example
 --------------
 
+Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler/mods/module_name.py``.
+
 .. code:: python
 
     #! python3
@@ -147,8 +149,9 @@ Module example
 
     """
 
-    import re, urllib.parse
-    from ..core import Episode
+    import re
+    from urllib.parse import urljoin
+    from comiccrawler.core import Episode
 
     # The header used in grabber method
     header = {}
@@ -156,13 +159,15 @@ Module example
     # The cookies
     cookie = {}
 
-    # Match domain. Support sub-domain.
+    # Match domain. Support sub-domain, which means "example.com" will match
+    # "*.example.com"
     domain = ["www.example.com", "comic.example.com"]
 
     # Module name
     name = "Example"
 
-    # With noepfolder = True, Comic Crawler won't generate subfolder for each episode.
+    # With noepfolder = True, Comic Crawler won't generate subfolder for each
+    # episode.
     noepfolder = False
 
     # Wait 5 seconds between each download.
@@ -190,22 +195,22 @@ Module example
         """Return episode list.
 
         The episode list should be sorted by date, oldest first.
+        If the episode list is multi-pages, specify the url of next page in
+        get_next_page.
         """
-        match_iter = re.finditer("<a href='(.+?)'>(.+?)</a>", html)
-        episodes = []
-        for match in match_iter:
-            m_url, title = match.groups()
-            episodes.append(Episode(title, urllib.parse.urljoin(url, m_url)))
-        return episodes
+        match_list = re.findall("<a href='(.+?)'>(.+?)</a>", html)
+        return [Episode(title, urljoin(url, ep_url))
+                for ep_url, title in match_list]
 
     def get_images(html, url):
         """Get the URL of all images. Return list, iterator, or string.
         
-        The list and iterator may generate URL string or a callback function to get URL string.
+        The list and iterator may generate URL string or a callback function 
+        to get URL string.
+        If the episode has multi-pages, specify the url of next page in
+        get_next_page.
         """
-
-        match_iter = re.finditer("<img src='(.+?)'>", html)
-        return [match.group(1) for match in match_iter]
+        return re.findall("<img src='(.+?)'>", html)
 
     def get_next_page(html, url):
         """Return the url of the next page."""
