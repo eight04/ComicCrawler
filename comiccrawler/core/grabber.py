@@ -77,6 +77,10 @@ def grabber(url, header=None, *, referer=None, cookie=None, raw=False):
 
 	while True:
 		r = s.get(url, timeout=20)
+
+		if setting.getboolean("errorlog"):
+			grabber_log(url, r.request.headers, r.headers)
+
 		if r.status_code == 200:
 			break
 			
@@ -89,9 +93,6 @@ def grabber(url, header=None, *, referer=None, cookie=None, raw=False):
 		else:
 			r.raise_for_status()
 			
-	if setting.getboolean("errorlog"):
-		grabber_log(url, r.request.headers, r.headers)
-
 	b = r.content
 
 	if raw:
