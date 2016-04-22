@@ -13,7 +13,8 @@ class Config:
 		"runafterdownload": "",
 		"libraryautocheck": "true",
 		"autosave": "5",
-		"errorlog": "false"
+		"errorlog": "false",
+		"lastcheckupdate": "0"
 	}
 	def __init__(self, path):
 		self.path = expanduser(path)
@@ -24,12 +25,24 @@ class Config:
 		# this method doesn't raise error
 		self.config.read(self.path, 'utf-8-sig')
 		
-		if 'DEFAULT' not in self.config:
-			self.config['DEFAULT'] = {}
-		self.default.update(self.config['DEFAULT'])
-		self.config['DEFAULT'].update(self.default)
+		# Replace DEFAULT section with ComicCrawler section to avoid leaking personal data
+		if 'ComicCrawler' not in self.config:
+			self.config['ComicCrawler'] = {}
 		
-		self.config['DEFAULT']["savepath"] = normpath(self.config['DEFAULT']["savepath"])
+		if 'DEFAULT' in self.config:
+			for key in self.default:
+				if key in self.config['DEFAULT']:
+					self.config['ComicCrawler'][key] = self.config['DEFAULT'][key]
+					del self.config['DEFAULT'][key]
+			# if not self.config['DEFAULT']:
+				# del self.config['DEFAULT']
+		
+		# if 'DEFAULT' not in self.config:
+			# self.config['DEFAULT'] = {}
+		self.default.update(self.config['ComicCrawler'])
+		self.config['ComicCrawler'].update(self.default)
+		
+		self.config['ComicCrawler']["savepath"] = normpath(self.config['ComicCrawler']["savepath"])
 		
 	def save(self):
 		if not isdir(dirname(self.path)):
@@ -38,4 +51,4 @@ class Config:
 			self.config.write(f)
 	
 config = Config('~/comiccrawler/setting.ini')
-setting = config.config['DEFAULT']
+setting = config.config['ComicCrawler']
