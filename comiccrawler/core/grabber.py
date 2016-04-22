@@ -85,10 +85,11 @@ def grabber(url, header=None, *, referer=None, cookie=None, raw=False):
 			break
 			
 		if r.status_code == 429:
+			retry = 20
 			if "retry-after" in r.headers:
-				retry = r.headers['retry-after']
-			else:
-				retry = 20
+				retry2 = int(r.headers['retry-after'])
+				if retry2 < retry:
+					retry = retry2
 			sleep(retry)
 		else:
 			r.raise_for_status()
