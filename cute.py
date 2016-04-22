@@ -56,6 +56,7 @@ cute(
 		'twine upload dist/*{version}[.-]*',
 		'git push --follow-tags'
 	],
+	publish_err = 'start https://pypi.python.org/pypi/comiccrawler/',
 	install = 'pip install -e .',
 	install_err = 'elevate -c -w pip install -e .',
 	readme = 'python setup.py --long-description > %temp%/ld && rst2html --no-raw %temp%/ld %temp%/ld.html && start %temp%/ld.html',
