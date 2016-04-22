@@ -223,6 +223,10 @@ Module example
 Changelog
 ---------
 
+-  2016.4.22
+
+   -  Fix setup.py. Use find_packages.
+
 -  2016.4.21
 
    -  Big rewrite.
