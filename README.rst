@@ -223,6 +223,14 @@ Module example
 Changelog
 ---------
 
+-  2016.4.22.3
+
+   -  Fix retry-after hanged bug.
+   -  Fix cnfig override bug. Use ``ComicCrawler`` section to replace ``DEFAULT`` section.
+   -  Support account login in sankaku.
+   -  Support HTTP error log before raising.
+   -  Show next page url while analyzing.
+
 -  2016.4.22.2
 
    -  Move to pythreadworker 0.5.0
