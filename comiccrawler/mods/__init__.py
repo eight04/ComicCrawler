@@ -57,8 +57,9 @@ def load_config():
 	for mod in mods:
 		if hasattr(mod, "config"):
 			if mod.name not in config.config:
-				config.config[mod.name] = mod.config
-			mod.config = config.config[mod.name]
+				config.config[mod.name] = {}
+			mod.config.update(config.config[mod.name])
+			config.config[mod.name].update(mod.config)
 		if hasattr(mod, "load_config"):
 			mod.load_config()
 			
