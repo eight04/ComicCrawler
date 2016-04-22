@@ -11,7 +11,8 @@ domain = ["chan.sankakucomplex.com"]
 name = "Sankaku"
 noepfolder = True
 config = {
-	"cf_clearance": "請輸入Cookie中的cf_clearance"
+	"cf_clearance": "Set cf_clearance",
+	"_sankakucomplex_session": "Set _sankakucomplex_session"
 }
 
 def load_config():
