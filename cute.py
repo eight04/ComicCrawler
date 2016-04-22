@@ -53,7 +53,7 @@ cute(
 		'git tag -a v{version} -m "Release v{version}"'
 	],
 	publish = [
-		'twine upload dist/comiccrawler-{version}.zip dist/comiccrawler-{version}-py3-none-any.whl',
+		'twine upload dist/*{version}[.-]*',
 		'git push --follow-tags'
 	],
 	install = 'pip install -e .',
