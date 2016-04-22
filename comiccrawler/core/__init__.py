@@ -460,6 +460,7 @@ def analyze_info(mission, downloader):
 		if not next_url:
 			break
 		url = next_url
+		print('Analyzing {}...'.format(url))
 		html = grabhtml(url, header, cookie=cookie)
 
 	# Check if re-analyze
