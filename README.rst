@@ -228,6 +228,12 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
 Changelog
 ---------
 
+-  2016.4.26
+
+   -  Fix config bug with upper-case key.
+   -  Check urls of old episodes to avoid unnecessary analyzing.
+   -  Add option to get original image in exh. It will cost 5x of viewing limit.
+
 -  2016.4.22.3
 
    -  Fix retry-after hanged bug.
