@@ -101,7 +101,7 @@ def grabber(url, header=None, *, referer=None, cookie=None, raw=False):
 		
 	match = re.search(br"charset=[\"']?([^\"'>]+)", b)
 	if match:
-		r.encoding = match.group(1)
+		r.encoding = match.group(1).decode("latin-1")
 		
 	return r.text
 
