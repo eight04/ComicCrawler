@@ -5,8 +5,10 @@
 """
 
 import re
+
 from html import unescape
 from urllib.parse import urljoin
+from configparser import ConfigParser
 
 from ..core import Episode
 
@@ -17,13 +19,19 @@ noepfolder = True
 rest = 5
 config = {
 	"ipb_member_id": "請輸入Cookie中的ipb_member_id",
-	"ipb_pass_hash": "請輸入Cookie中的ipb_pass_hash"
+	"ipb_pass_hash": "請輸入Cookie中的ipb_pass_hash",
+	"original": "false"
 }
 
 class BandwidthLimitError(Exception): pass
 
+def get_boolean(s):
+	return ConfigParser.BOOLEAN_STATES.get(s.lower())
+
 def load_config():
-	cookie.update(config)
+	# cookie.update(config)
+	cookie["ipb_member_id"] = config["ipb_member_id"]
+	cookie["ipb_pass_hash"] = config["ipb_pass_hash"]
 
 def get_title(html, url):
 	t = re.findall("<h1 id=\"g(j|n)\">(.+?)</h1>", html)
@@ -39,10 +47,15 @@ def get_episodes(html, url):
 nl = ""
 def get_images(html, url):
 	global nl
+	nl = re.search("nl\('([^)]+)'\)", html).group(1)
+	
+	if get_boolean(config["original"]):
+		match = re.search(r'href="(http://exhentai\.org/fullimg\.php[^"]+)')
+		if match:
+			return unescape(match.group(1))
+
 	i = re.search("<img id=\"img\" src=\"(.+?)\"", html)
 	i = unescape(i.group(1))
-	nl = re.search("nl\('([^)]+)'\)", html).group(1)
-
 	# bandwith limit
 	if re.search("509s?\.gif", i) or re.search("403s?\.gif", i):
 		raise Exception("Bandwidth limit exceeded!")
