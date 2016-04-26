@@ -50,7 +50,7 @@ def get_images(html, url):
 	nl = re.search("nl\('([^)]+)'\)", html).group(1)
 	
 	if get_boolean(config["original"]):
-		match = re.search(r'href="(http://exhentai\.org/fullimg\.php[^"]+)')
+		match = re.search(r'href="(http://exhentai\.org/fullimg\.php[^"]+)', html)
 		if match:
 			return unescape(match.group(1))
 
