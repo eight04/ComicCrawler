@@ -441,16 +441,16 @@ def analyze_info(mission, downloader):
 		mission.title = downloader.get_title(html, mission.url)
 
 	if mission.episodes:
-		last_ep = mission.episodes[-1]
+		old_urls = set(map(lambda e: e.url, mission.episodes))
 	else:
-		last_ep = None
+		old_urls = set()
 		
 	url = mission.url
 	episodes = []
 	while True:
 		eps = downloader.get_episodes(html, url)
 		episodes = list(eps) + episodes
-		if last_ep and any(ep.url == last_ep.url for ep in eps):
+		if any(ep.url in old_urls for ep in eps):
 			break
 		if not hasattr(downloader, "get_next_page"):
 			break
