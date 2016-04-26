@@ -58,8 +58,13 @@ def load_config():
 		if hasattr(mod, "config"):
 			if mod.name not in config.config:
 				config.config[mod.name] = {}
-			mod.config.update(config.config[mod.name])
-			config.config[mod.name].update(mod.config)
+			for key in mod.config:
+				if key in config.config[mod.name]:
+					mod.config[key] = config.config[mod.name]
+				else:
+					config.config[mod.name] = mod.config[key]
+			# mod.config.update(config.config[mod.name])
+			# config.config[mod.name].update(mod.config)
 		if hasattr(mod, "load_config"):
 			mod.load_config()
 			
