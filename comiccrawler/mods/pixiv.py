@@ -27,8 +27,6 @@ def load_config():
 	cookie["PHPSESSID"] = config["SESSID"]
 
 def get_title(html, url):
-	if "pixiv.user.loggedIn = true" not in html:
-		raise PauseDownloadError("you didn't login!")
 	try:
 		user = re.search("class=\"user\">(.+?)</h1>", html).group(1)
 		id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
@@ -38,6 +36,8 @@ def get_title(html, url):
 	return title
 
 def get_episodes(html, url):
+	if "pixiv.user.loggedIn = true" not in html:
+		raise PauseDownloadError("you didn't login!")
 	s = []
 	for m in re.finditer(r'<a href="([^"]+)"><h1 class="title" title="([^"]+)">', html):
 		ep_url, title = m.groups()
