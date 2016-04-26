@@ -60,9 +60,9 @@ def load_config():
 				config.config[mod.name] = {}
 			for key in mod.config:
 				if key in config.config[mod.name]:
-					mod.config[key] = config.config[mod.name]
+					mod.config[key] = config.config[mod.name][key]
 				else:
-					config.config[mod.name] = mod.config[key]
+					config.config[mod.name][key] = mod.config[key]
 			# mod.config.update(config.config[mod.name])
 			# config.config[mod.name].update(mod.config)
 		if hasattr(mod, "load_config"):
