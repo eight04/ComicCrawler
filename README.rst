@@ -228,6 +228,10 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
 Changelog
 ---------
 
+-  2016.4.27
+
+   -  Domain changed in seemh.
+
 -  2016.4.26.1
 
    -  Fix charset encoding bug.
