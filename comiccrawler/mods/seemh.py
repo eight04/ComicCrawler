@@ -14,7 +14,7 @@ from urllib.parse import urljoin
 
 from ..core import Episode, grabhtml
 
-domain = ["tw.seemh.com", "www.seemh.com"]
+domain = ["tw.seemh.com", "www.seemh.com", "ikanman.com"]
 name = "看漫畫"
 
 def get_title(html, url):
@@ -62,5 +62,8 @@ def get_images(html, url):
 
 	ctx = execjs.compile(crypto + info_eval)
 	files, path = ctx.eval("[cInfo.files, cInfo.path]")
-
-	return ["http://i.seemh.com:88" + path + file for file in files]
+	
+	# find server
+	# "http://cpro.baidustatic.com/cpro/ui/c.js"
+	# getpath()
+	return ["http://i.hamreus.com:88" + path + file for file in files]
