@@ -235,6 +235,11 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
 Changelog
 ---------
 
+-  2016.5.1.1
+
+   -  Fix a bug that Comic Crawler doesn't retry when the first connection failed.
+   -  Add `Episode.image`, so the module can supply image list during constructing Episode.
+
 -  2016.5.1
 
    -  Support wix.com.
