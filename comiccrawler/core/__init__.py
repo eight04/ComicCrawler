@@ -104,6 +104,11 @@ def getext(byte):
 
 	if h[:4] == b"\x1A\x45\xDF\xA3":
 		return "mkv"
+		
+	# FIXME: maybe we should see http header content type for file extension
+	# http://www.garykessler.net/library/file_sigs.html
+	if h[4:8] == b"ftyp":
+		return "mp4"
 
 	return None
 	
