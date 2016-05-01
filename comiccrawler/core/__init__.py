@@ -200,7 +200,9 @@ class Crawler:
 		self.fexp = fexp
 		self.exist_pages = None
 		self.checksums = None
+		self.is_init = False
 		
+	def init(self):
 		if not self.ep.current_url:
 			self.ep.current_url = self.ep.url
 			self.ep.current_page = 1
@@ -216,6 +218,8 @@ class Crawler:
 		except StopIteration:
 			# cannot find the page?
 			self.image = None
+			
+		is_init = True
 			
 	def page_exists(self):
 		"""Check if current page exists in savepath."""
@@ -354,6 +358,9 @@ def crawlpage(crawler):
 	"""
 	
 	def download():
+		if not crawler.is_init:
+			crawler.init()
+	
 		if not crawler.image:
 			crawler.next_page()
 			return
