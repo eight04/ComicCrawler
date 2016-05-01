@@ -58,7 +58,7 @@ def create_mission(url):
 class Episode:
 	"""Create Episode object. Contains information of an episode."""
 
-	def __init__(self, title=None, url=None, current_url=None, current_page=0, skip=False, complete=False, total=0):
+	def __init__(self, title=None, url=None, current_url=None, current_page=0, skip=False, complete=False, total=0, image=None):
 		"""Construct."""
 		self.title = title
 		self.url = url
@@ -69,6 +69,7 @@ class Episode:
 		self.complete = complete
 		# total number of images in this episode
 		self.total = total
+		self.image = image
 
 def format_escape(s):
 	"""Escape {} to {{}}"""
@@ -201,10 +202,13 @@ class Crawler:
 		self.exist_pages = None
 		self.checksums = None
 		self.is_init = False
+		self.html = None
+		self.image = None
 		
 	def init(self):
 		if not self.ep.current_url:
 			self.ep.current_url = self.ep.url
+		if not self.ep.current_page:
 			self.ep.current_page = 1
 			
 		self.get_html()
@@ -312,6 +316,8 @@ class Crawler:
 			)
 		
 	def get_html(self):
+		if self.ep.image:
+			return
 		self.html = grabhtml(
 			self.ep.current_url,
 			self.get_header(),
@@ -320,10 +326,13 @@ class Crawler:
 		
 	def get_images(self):
 		"""Get images"""
-		images = self.downloader.get_images(
-			self.html, 
-			self.ep.current_url
-		)
+		if self.ep.image:
+			images = self.ep.image
+		else:
+			images = self.downloader.get_images(
+				self.html,
+				self.ep.current_url
+			)
 		if isinstance(images, str):
 			images = [images]
 		self.images = iter(images)
