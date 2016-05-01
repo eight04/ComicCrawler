@@ -11,6 +11,7 @@ from ..core import Episode, grabhtml
 
 domain = ["wix.com"]
 name = "Wix"
+noepfolder = True
 
 def get_title(html, url):
 	return "[Wix.com] " + re.search("<title>([^<]+)", html).group(1)
