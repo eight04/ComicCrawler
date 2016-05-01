@@ -56,6 +56,8 @@ def get_images(html, url):
 	data = json.loads(data)
 	data = data["data"]["document_data"]
 	
-	for item in data.values():
-		if item["type"] == "Image":
-			yield "https://static.wixstatic.com/media/" + item["uri"]
+	return [
+		"https://static.wixstatic.com/media/" + item["uri"] 
+			for item in data.values()
+				if item["type"] == "Image"
+	]
