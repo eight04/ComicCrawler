@@ -209,6 +209,13 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         to get URL string.
         If the episode has multi-pages, specify the url of next page in
         get_next_page.
+        
+        Use generator in caution! If your generator raised any error between
+        two images, next call to the generator will always result in
+        StopIteration, which means that Comic Crawler will think it had crawled
+        all images and navigate to next page. If you need to use grabhtml()
+        between each pages (i.e. may raise HTTPError), you should return a list
+        of callback!
         """
         return re.findall("<img src='(.+?)'>", html)
 
