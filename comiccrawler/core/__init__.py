@@ -74,6 +74,15 @@ class Episode:
 def format_escape(s):
 	"""Escape {} to {{}}"""
 	return re.sub("([{}])", r"\1\1", s)
+	
+VALID_FILE_TYPES = (
+	# images
+	".jpg", ".jpeg", ".gif", ".png", ".svg", ".psd",
+	# zips
+	".zip", ".rar",
+	# videos
+	".mp4", ".mkv", ".swf"
+)
 
 def getext(byte):
 	"""Return extension by testing the byte stream.
@@ -209,6 +218,8 @@ class Crawler:
 		self.is_init = False
 		self.html = None
 		self.image = None
+		self.image_bin = None
+		self.image_ext = None
 		
 	def init(self):
 		if not self.ep.current_url:
@@ -246,7 +257,7 @@ class Crawler:
 
 	def download_image(self):
 		"""Download image"""
-		self.image_bin = grabimg(
+		self.image_ext, self.image_bin = grabimg(
 			self.image,
 			self.get_header(),
 			referer=self.ep.current_url
@@ -254,12 +265,21 @@ class Crawler:
 
 	def get_full_filename(self):
 		"""Generate full filename including extension"""
+		
+		# try to get proper ext for image
 		ext = getext(self.image_bin)
-		if not ext:
-			raise TypeError("Invalid image type.")
+		if ext:
+			self.image_ext = extsep + ext
+			
+		if not self.image_ext:
+			raise Exception("Can't determine file type.")
+			
+		if self.image_ext not in VALID_FILE_TYPES:
+			raise Exception("Bad file type: " + self.image_ext)
+			
 		return path_join(
 			self.savepath,
-			self.get_filename() + extsep + ext
+			self.get_filename() + self.image_ext
 		)
 
 	def save_image(self):
