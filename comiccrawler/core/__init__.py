@@ -84,42 +84,42 @@ VALID_FILE_TYPES = (
 	".mp4", ".mkv", ".swf"
 )
 
-def getext(byte):
+def getext(h):
 	"""Return extension by testing the byte stream.
 
 	imghdr issue: http://bugs.python.org/issue16512
 	"""
-	r = imghdr.what("", byte)
+	r = imghdr.what("", h)
 	if r:
-		if r.lower() == "jpeg":
+		if r == "jpeg":
 			return "jpg"
-		return r.lower()
+		return r
 
-	h = byte
+	h = h
 	if h[:2] == b"\xff\xd8":
 		return "jpg"
 
-	if h[:3] == b"CWS" or h[:3] == b"FWS":
-		return "swf"
+	# if h[:3] == b"CWS" or h[:3] == b"FWS":
+		# return "swf"
 
-	if h[:4] == b"8BPS":
-		return "psd"
+	# if h[:4] == b"8BPS":
+		# return "psd"
 
-	if h[:7] == b"Rar!\x1a\x07\x00":
-		return "rar"
+	# if h[:7] == b"Rar!\x1a\x07\x00":
+		# return "rar"
 
-	if h[:4] == b"PK\x03\x04":
-		return "zip"
+	# if h[:4] == b"PK\x03\x04":
+		# return "zip"
 
-	if h[:4] == b"\x1A\x45\xDF\xA3":
-		return "mkv"
+	# if h[:4] == b"\x1A\x45\xDF\xA3":
+		# return "mkv"
 		
 	# FIXME: maybe we should see http header content type for file extension
 	# http://www.garykessler.net/library/file_sigs.html
-	if h[4:8] == b"ftyp":
-		return "mp4"
+	# if h[4:8] == b"ftyp":
+		# return "mp4"
 
-	return None
+	# return None
 	
 def safefilepath(s):
 	"""Return a safe directory name."""
