@@ -125,7 +125,7 @@ def grabimg(*args, **kwargs):
 	# find extension
 	ext = None
 	if "Content-Type" in r.headers:
-		mime = re.search("^(.*?)(;|$)", r.headers("Content-Type")).group(1)
+		mime = re.search("^(.*?)(;|$)", r.headers["Content-Type"]).group(1)
 		mime = mime.strip()
 		ext = guess_extension(mime)
 	return ext, r.content
