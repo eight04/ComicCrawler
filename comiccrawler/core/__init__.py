@@ -426,6 +426,7 @@ def error_loop(process, handle_error=None, limit=10):
 		try:
 			process()
 		except Exception as er:
+			traceback.print_exc()
 			errorcount += 1
 			if errorcount >= limit:
 				raise SkipEpisodeError(always=False)
