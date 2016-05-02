@@ -50,20 +50,19 @@ def get_images(html, url):
 	global nl
 	nl = re.search("nl\('([^)]+)'\)", html).group(1)
 	
+	image = re.search("<img id=\"img\" src=\"(.+?)\"", html)
+	image = unescape(image.group(1))
+	# bandwith limit
+	if re.search("509s?\.gif", image) or re.search("403s?\.gif", image):
+		# pause the download since retry doesn't help
+		raise PauseDownloadError("Bandwidth limit exceeded!")
+
 	if get_boolean(config["original"]):
 		match = re.search(r'href="(http://exhentai\.org/fullimg\.php[^"]+)', html)
 		if match:
 			return unescape(match.group(1))
 
-	i = re.search("<img id=\"img\" src=\"(.+?)\"", html)
-	i = unescape(i.group(1))
-	# bandwith limit
-	if re.search("509s?\.gif", i) or re.search("403s?\.gif", i):
-		# we should pause the download since every request to the image will 
-		# increase view limit.
-		raise PauseDownloadError("Bandwidth limit exceeded!")
-
-	return i
+	return image
 
 def errorhandler(er, ep):
 	global nl
