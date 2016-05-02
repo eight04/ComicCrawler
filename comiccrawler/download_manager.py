@@ -63,6 +63,13 @@ class DownloadManager:
 			if event.target is self.download_thread:
 				self.download_thread = None
 				self.start_download()
+				
+		@thread.listen("DOWNLOAD_INVALID")
+		def _(event):
+			"""Something bad happened"""
+			if event.target is self.download_thread:
+				self.download_thread = None
+				print("停止下載")
 
 		@thread.listen("ANALYZE_FAILED")
 		@thread.listen("ANALYZE_FINISHED")
