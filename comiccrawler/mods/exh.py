@@ -11,6 +11,7 @@ from urllib.parse import urljoin
 from configparser import ConfigParser
 
 from ..core import Episode
+from ..error import PauseDownloadError
 
 cookie = {}
 domain = ["exhentai.org", "g.e-hentai.org"]
@@ -58,7 +59,9 @@ def get_images(html, url):
 	i = unescape(i.group(1))
 	# bandwith limit
 	if re.search("509s?\.gif", i) or re.search("403s?\.gif", i):
-		raise Exception("Bandwidth limit exceeded!")
+		# we should pause the download since every request to the image will 
+		# increase view limit.
+		raise PauseDownloadError("Bandwidth limit exceeded!")
 
 	return i
 
