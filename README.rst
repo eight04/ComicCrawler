@@ -235,6 +235,13 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
 Changelog
 ---------
 
+-  2016.5.2
+
+   -  Use `Conten-Type` header to guess file extension.
+   -  Fix a bug that the thread is not removed when recived DOWNLOAD_INVALID.
+   -  Pause download when meeting 509 error in exh.
+   -  Add .mp4 to valid file types.
+
 -  2016.5.1.1
 
    -  Fix a bug that Comic Crawler doesn't retry when the first connection failed.
