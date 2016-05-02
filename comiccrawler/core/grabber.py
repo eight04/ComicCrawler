@@ -6,7 +6,7 @@ import requests
 
 from urllib.parse import quote, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
-# from urllib.error import HTTPError
+from mimetypes import guess_extension
 
 from http.cookies import SimpleCookie
 
@@ -54,7 +54,7 @@ def grabber_log(*args):
 	content_write("~/comiccrawler/grabber.log", pformat(args) + "\n\n", append=True)
 
 sessions = {}
-def grabber(url, header=None, *, referer=None, cookie=None, raw=False):
+def grabber(url, header=None, *, referer=None, cookie=None):
 	"""Request url, return text or bytes of the content."""
 	scheme, netloc, path, query, frag = urlsplit(url)
 	
@@ -94,6 +94,8 @@ def grabber(url, header=None, *, referer=None, cookie=None, raw=False):
 		else:
 			r.raise_for_status()
 			
+	return r
+			
 	b = r.content
 
 	if raw:
@@ -107,10 +109,23 @@ def grabber(url, header=None, *, referer=None, cookie=None, raw=False):
 
 def grabhtml(*args, **kwargs):
 	"""Get html source of given url. Return String."""
-	kwargs["raw"] = False
-	return sync(grabber, *args, **kwargs)
+	r = sync(grabber, *args, **kwargs)
+	
+	# decode to text
+	match = re.search(br"charset=[\"']?([^\"'>]+)", r.content)
+	if match:
+		r.encoding = match.group(1).decode("latin-1")
+		
+	return r.text
 
 def grabimg(*args, **kwargs):
 	"""Return byte array."""
-	kwargs["raw"] = True
-	return sync(grabber, *args, **kwargs)
+	r = sync(grabber, *args, **kwargs)
+	
+	# find extension
+	ext = None
+	if "Content-Type" in r.headers:
+		mime = re.search("^(.*?)(;|$)", r.headers("Content-Type")).group(1)
+		mime = mime.strip()
+		ext = guess_extension(mime)
+	return ext, r.content
