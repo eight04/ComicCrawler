@@ -136,14 +136,14 @@ def download(mission, savepath):
 		download_ch.pub('DOWNLOAD_PAUSE', mission)
 		raise
 
-	except Exception:
+	except PauseDownloadError as err:
 		mission.state = "ERROR"
-		download_ch.pub('DOWNLOAD_ERROR', mission)
-		raise
+		download_ch.pub('DOWNLOAD_INVALID', (err, mission))
 
-	except PauseDownloadError:
+	except Exception as err:
 		mission.state = "ERROR"
-		download_ch.pub('DOWNLOAD_INVALID', mission)
+		download_ch.pub('DOWNLOAD_ERROR', (err, mission))
+		raise
 
 	else:
 		mission.state = "FINISHED"

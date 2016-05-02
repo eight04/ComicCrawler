@@ -31,7 +31,8 @@ class DownloadManager:
 		
 		@thread.listen("DOWNLOAD_ERROR")
 		def _(event):
-			mission_manager.drop("view", event.data)
+			err, mission = event.data
+			mission_manager.drop("view", mission)
 
 		@thread.listen("DOWNLOAD_FINISHED")
 		def _(event):
