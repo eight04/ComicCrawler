@@ -54,7 +54,7 @@ def get_images(html, url):
 	image = unescape(image.group(1))
 	# bandwith limit
 	if re.search("509s?\.gif", image) or re.search("403s?\.gif", image):
-		# pause the download since retry doesn't help
+		# pause the download since retry doesn't help but increase view limit.
 		raise PauseDownloadError("Bandwidth limit exceeded!")
 
 	if get_boolean(config["original"]):
