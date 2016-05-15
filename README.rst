@@ -115,7 +115,7 @@ Supported domains
 
 ::
 
-    [DEFAULT]
+    [ComicCrawler]
     ; 設定下載完成後要執行的程式，會傳入下載資料夾的位置
     runafterdownload =
 
@@ -181,8 +181,13 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
 
     def load_config():
         """This function will be called each time the config reloaded.
+        
+        The user might put additional info into config, so it is not recommended
+        to use dict.update directly, which will leak personal info to the 
+        website.
         """
-        cookie.update(config)
+        cookie["user"] = config["user"]
+        cookie["hash"] = config["hash"]
 
     def get_title(html, url):
         """Return mission title.
