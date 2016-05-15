@@ -38,12 +38,13 @@ setup(
 	],
 	keywords = 'image crawler',
 	packages = find_packages(),
+	# https://pythonhosted.org/setuptools/setuptools.html#declaring-dependencies
 	install_requires = [
-		"docopt~= 0.6.2", 
-		"pyexecjs~= 1.3.1",
-		"pythreadworker~= 0.5.0",
-		"safeprint~=0.1.1",
-		"requests~=2.9.1"
+		"docopt >=0.6.2, <0.7",
+		"pyexecjs >=1.3.1, <2",
+		"pythreadworker >=0.5, <0.6",
+		"safeprint >=0.1.1, <1",
+		"requests >=2.9.1, <3"
 	],
 	entry_points = {
 		"console_scripts": [
