@@ -235,6 +235,10 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
 Changelog
 ---------
 
+-  2016.5.15
+
+   -  Fix dependency scheme.
+
 -  2016.5.2
 
    -  Use `Conten-Type` header to guess file extension.
