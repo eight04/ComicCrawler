@@ -240,6 +240,10 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
 Changelog
 ---------
 
+-  2016.5.20
+
+   -  Find server by executing js in seemh.
+
 -  2016.5.15
 
    -  Fix dependency scheme.
