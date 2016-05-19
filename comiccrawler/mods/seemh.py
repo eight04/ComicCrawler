@@ -46,6 +46,8 @@ def get_episodes(html, url):
 
 	episodes = [Episode(v[0].strip(), urljoin(url, v[1])) for v in episodes]
 	return episodes[::-1]
+	
+cache = {}
 
 def get_images(html, url):
 	configjs_url = re.search(
@@ -64,6 +66,14 @@ def get_images(html, url):
 	files, path = ctx.eval("[cInfo.files, cInfo.path]")
 	
 	# find server
-	# "http://cpro.baidustatic.com/cpro/ui/c.js"
+	# "http://c.3qfm.com/scripts/core_5C348B32A78647FF4208EACA42FC5F84.js"
 	# getpath()
-	return ["http://i.hamreus.com:88" + path + file for file in files]
+	corejs_url = re.search(
+		r'src="(http://[^"]+?/core_\w+?\.js)"',
+		html
+	).group(1)
+	corejs = grabhtml(corejs_url, referer=url)
+	utils = re.search(r"SMH\.(utils=.+?),SMH\.imgData=", corejs).group(1)
+	ctx = execjs.compile(utils)
+	
+	return [ctx.call("utils.getPath", "i", path + file) for file in files]
