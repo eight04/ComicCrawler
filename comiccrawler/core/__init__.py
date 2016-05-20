@@ -298,7 +298,11 @@ class Crawler:
 			else:
 				self.checksums.add(checksum)
 
-		content_write(self.get_full_filename(), self.image_bin)
+		try:
+			content_write(self.get_full_filename(), self.image_bin)
+		except OSError as er:
+			traceback.print_exc()
+			raise PauseDownloadError("Failed to write file!")
 
 	def next_page(self):
 		"""Iter to next page."""
@@ -372,9 +376,6 @@ class Crawler:
 
 	def handle_error(self, error):
 		"""Send error to error handler."""
-		if isinstance(error, OSError):
-			raise PauseDownloadError(error.strerror)
-		
 		handler = getattr(self.downloader, "errorhandler", None)
 		if not handler:
 			return
