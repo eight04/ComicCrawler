@@ -208,10 +208,17 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
                 for ep_url, title in match_list]
 
     def get_images(html, url):
-        """Get the URL of all images. Return list, iterator, or string.
+        """Get the URL of all images.
         
-        The list and iterator may generate URL string or a callback function 
-        to get URL string.
+        The result could be:
+
+        -  A list of image URL.
+        -  A generator yielding image URL.
+        -  An image URL, when there is only one image in current page.
+        
+        An `image URL` means the URL string of the image or a callback function
+        which returns the URL of the image.
+        
         If the episode has multi-pages, specify the url of next page in
         get_next_page.
         
