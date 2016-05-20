@@ -372,6 +372,9 @@ class Crawler:
 
 	def handle_error(self, error):
 		"""Send error to error handler."""
+		if isinstance(error, OSError):
+			raise PauseDownloadError(error.strerror)
+		
 		handler = getattr(self.downloader, "errorhandler", None)
 		if not handler:
 			return
