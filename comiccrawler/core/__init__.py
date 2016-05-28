@@ -267,15 +267,20 @@ class Crawler:
 		else:
 			self.image_bin = json.dumps(self.image, indent="\t").encode("utf-8")
 			self.image_ext = ".json"
+			
+		# try to get proper ext for image
+		ext = getext(self.image_bin)
+		if ext:
+			self.image_ext = extsep + ext			
+			
+	def handle_image(self):
+		"""Post processing"""
+		if hasattr(self.downloader, "imagehandler"):
+			self.downloader.imagehandler(self.image_ext, self.image_bin)
 
 	def get_full_filename(self):
 		"""Generate full filename including extension"""
 		
-		# try to get proper ext for image
-		ext = getext(self.image_bin)
-		if ext:
-			self.image_ext = extsep + ext
-			
 		if not self.image_ext:
 			raise Exception("Can't determine file type.")
 			
@@ -417,6 +422,7 @@ def crawlpage(crawler):
 		print("Downloading {} page {}: {}\n".format(
 			crawler.ep.title, crawler.ep.total + 1, crawler.image))
 		crawler.download_image()
+		crawler.handle_image()
 		crawler.save_image()
 		mission_ch.pub("MISSION_PROPERTY_CHANGED", crawler.mission)
 		crawler.rest()
