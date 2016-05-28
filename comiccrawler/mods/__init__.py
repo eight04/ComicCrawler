@@ -58,13 +58,15 @@ def load_config():
 		if hasattr(mod, "config"):
 			if mod.name not in config.config:
 				config.config[mod.name] = {}
-			for key in mod.config:
-				if key in config.config[mod.name]:
-					mod.config[key] = config.config[mod.name][key]
-				else:
-					config.config[mod.name][key] = mod.config[key]
-		else:
+			for key, value in mod.config.items():
+				if key not in config.config[mod.name]:
+					config.config[mod.name][key] = value
+			
+		if mod.name not in config.config:
 			mod.config = config.config["DEFAULT"]
+		else:
+			mod.config = config.config[mod.name]
+			
 		if hasattr(mod, "load_config"):
 			mod.load_config()
 			
