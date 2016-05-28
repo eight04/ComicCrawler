@@ -247,6 +247,13 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
 Changelog
 ---------
 
+-  2016.5.28
+
+   -  Change how config work. Now you can specify different setting in each sections. (e.g. use different savepath with different module)
+   -  Save frame info about ugoku in pixiv.
+   -  Drop config.update in module.load_config.
+   -  Try to support additional info in get_images.
+
 -  2016.5.24
 
    -  Support buka.
