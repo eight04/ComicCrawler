@@ -11,6 +11,8 @@ import re, execjs
 from html import unescape
 from urllib.error import HTTPError
 from urllib.parse import urljoin
+from io import BytesIO
+from zipfile import ZipFile
 
 from ..core import Episode, grabhtml
 from ..error import LastPageError, SkipEpisodeError, PauseDownloadError
@@ -20,7 +22,8 @@ domain = ["www.pixiv.net"]
 name = "Pixiv"
 noepfolder = True
 config = {
-	"SESSID": "請輸入Cookie中的PHPSESSID"
+	"SESSID": "請輸入Cookie中的PHPSESSID",
+	"ugoku2apng": "false"
 }
 
 def load_config():
@@ -45,6 +48,8 @@ def get_episodes(html, url):
 		e = Episode("{} - {}".format(uid, unescape(title)), urljoin(url, ep_url))
 		s.append(e)
 	return s[::-1]
+	
+cache = {}
 
 def get_images(html, url):
 	if "pixiv.user.loggedIn = true" not in html:
@@ -57,7 +62,8 @@ def get_images(html, url):
 	if rs:
 		json = rs.group(1)
 		o = execjs.eval(json)
-		return [o["src"], o["frames"]]
+		cache["frames"] = o["frames"]
+		return [o["src"]]
 
 	# new image layout (2014/12/14)
 	rs = re.search(r'class="big" data-src="([^"]+)"', html)
@@ -122,6 +128,22 @@ def errorhandler(er, ep):
 		# Private page?
 		if er.code == 403:
 			raise SkipEpisodeError
+			
+def imagehandler(ext, bin):
+	"""Convert ugoku zip to apng if possible"""
+	if ext == ".zip":
+		# TODO: support apng
+		if config.getboolean("ugoku2apng") and False:
+			pass
+		else:
+			bin = BytesIO(bin)
+			zip = ZipFile(bin, "a")
+			data = "\n".join(
+				["{file}\t{delay}".format_map(f) for f in cache["frames"]])
+			zip.writestr("index", data.encode("utf-8"))
+			zip.close()
+			
+			return ext, bin.getvalue()
 
 def get_next_page(html, url):
 	match = re.search("href=\"([^\"]+)\" rel=\"next\"", html)
