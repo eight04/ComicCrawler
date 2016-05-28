@@ -63,8 +63,8 @@ def load_config():
 					mod.config[key] = config.config[mod.name][key]
 				else:
 					config.config[mod.name][key] = mod.config[key]
-			# mod.config.update(config.config[mod.name])
-			# config.config[mod.name].update(mod.config)
+		else:
+			mod.config = config.config["DEFAULT"]
 		if hasattr(mod, "load_config"):
 			mod.load_config()
 			

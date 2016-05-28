@@ -9,7 +9,6 @@ from worker import current
 from threading import Lock
 
 from .safeprint import print
-from .config import setting
 from .core import Mission, Episode, MissionProxy
 from .io import content_read, content_write, is_file, backup
 

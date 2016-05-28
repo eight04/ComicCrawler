@@ -498,8 +498,8 @@ class MainWindow:
 			def tvOpen():
 				s = tv.selection()
 				missions = [ cid_index[i] for i in s ]
-				savepath = setting["savepath"]
 				for mission in missions:
+					savepath = mission.module.config["savepath"]
 					folder = os.path.join(savepath, safefilepath(mission.title))
 					folder = os.path.expanduser(folder)
 					if not os.path.isdir(folder):

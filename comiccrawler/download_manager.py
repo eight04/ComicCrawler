@@ -41,9 +41,9 @@ class DownloadManager:
 				return
 
 			command = (
-				setting.get("runafterdownload"),
+				event.data.module.config.get("runafterdownload"),
 				path_join(
-					setting["savepath"],
+					event.data.module.config["savepath"],
 					safefilepath(event.data.title)
 				)
 			)
@@ -104,7 +104,7 @@ class DownloadManager:
 		mission = mission_manager.get_by_state("view", ("ANALYZED", "PAUSE", "ERROR", "UPDATE"))
 		if mission:
 			print("Start download " + mission.title)
-			self.download_thread = Worker(download).start(mission, setting["savepath"])
+			self.download_thread = Worker(download).start(mission, mission.module.config["savepath"])
 		else:
 			print("所有任務已下載完成")
 

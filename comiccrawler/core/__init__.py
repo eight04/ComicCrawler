@@ -13,7 +13,6 @@ from os.path import join as path_join, split as path_split, splitext
 from ..safeprint import print
 from ..error import *
 from ..io import content_write, content_read, path_each
-from ..config import setting
 from ..channel import download_ch, mission_ch
 
 from .grabber import grabhtml, grabimg
