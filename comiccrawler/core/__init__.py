@@ -80,7 +80,9 @@ VALID_FILE_TYPES = (
 	# zips
 	".zip", ".rar",
 	# videos
-	".mp4", ".mkv", ".swf"
+	".mp4", ".mkv", ".swf",
+	# json
+	".json"
 )
 
 def getext(h):
@@ -256,11 +258,15 @@ class Crawler:
 
 	def download_image(self):
 		"""Download image"""
-		self.image_ext, self.image_bin = grabimg(
-			self.image,
-			self.get_header(),
-			referer=self.ep.current_url
-		)
+		if isinstance(self.image, str):
+			self.image_ext, self.image_bin = grabimg(
+				self.image,
+				self.get_header(),
+				referer=self.ep.current_url
+			)
+		else:
+			self.image_bin = json.dumps(self.image, indent="\t").encode("utf-8")
+			self.image_ext = ".json"
 
 	def get_full_filename(self):
 		"""Generate full filename including extension"""
@@ -275,7 +281,7 @@ class Crawler:
 			
 		if self.image_ext not in VALID_FILE_TYPES:
 			raise Exception("Bad file type: " + self.image_ext)
-			
+				
 		return path_join(
 			self.savepath,
 			self.get_filename() + self.image_ext
