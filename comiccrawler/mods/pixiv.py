@@ -57,7 +57,7 @@ def get_images(html, url):
 	if rs:
 		json = rs.group(1)
 		o = execjs.eval(json)
-		return [o["src"]]
+		return [o["src"], o["frames"]]
 
 	# new image layout (2014/12/14)
 	rs = re.search(r'class="big" data-src="([^"]+)"', html)
