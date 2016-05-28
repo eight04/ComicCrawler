@@ -30,7 +30,6 @@ def get_boolean(s):
 	return ConfigParser.BOOLEAN_STATES.get(s.lower())
 
 def load_config():
-	# cookie.update(config)
 	cookie["ipb_member_id"] = config["ipb_member_id"]
 	cookie["ipb_pass_hash"] = config["ipb_pass_hash"]
 

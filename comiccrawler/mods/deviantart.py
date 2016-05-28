@@ -24,7 +24,8 @@ config = {
 }
 
 def load_config():
-	cookie.update(config)
+	cookie["auth"] = config["auth"]
+	cookie["userinfo"] = config["userinfo"]
 
 def get_title(html, url):
 	return unescape(search("<title>(.+?)</title>", html).group(1))

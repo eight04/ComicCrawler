@@ -16,7 +16,8 @@ config = {
 }
 
 def load_config():
-	cookie.update(config)
+	cookie["cf_clearance"] = config["cf_clearance"]
+	cookie["_sankakucomplex_session"] = config["_sankakucomplex_session"]
 
 def get_title(html, url):
 	title = re.search(r"<title>/?(.+?) \|", html).group(1)
