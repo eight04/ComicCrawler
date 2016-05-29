@@ -8,14 +8,6 @@ Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管�
 
 -  "www.comicvip.com" 被 "www.comicbus.com" 取代。詳細請參考 `#7 <https://github.com/eight04/ComicCrawler/issues/7>`__
 
-Todos
------
-
--  Make grabber be able to return verbose info?
--  Need a better error log system.
--  Support pool in Sankaku.
--  Add module.get_episode_id to make the module decide how to compare episodes.
-
 Dependencies
 ------------
 
@@ -82,6 +74,8 @@ Supported domains
 使用說明
 --------
 
+As a CLI tool:
+
 ::
 
     Usage:
@@ -99,7 +93,25 @@ Supported domains
       --dest SAVE_FOLDER  設定下載目錄（預設為 "."）
       --help              顯示幫助訊息
       --version           顯示版本
+      
+or you can use it in your python script:
 
+.. code:: python
+
+    from comiccrawler.core import Mission, analyze, download
+    
+    # create a mission
+    m = Mission(url="http://example.com")
+    analyze(m)
+    
+    # select the episodes you want
+    for ep in m.episodes:
+        if ep.title != "chapter 123":
+            ep.skip = True
+    
+    # download to savepath
+    download(m, "path/to/save")
+    
 圖形介面
 --------
 
@@ -254,6 +266,14 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         """
         return (ext, b)
         
+Todos
+-----
+
+-  Make grabber be able to return verbose info?
+-  Need a better error log system.
+-  Support pool in Sankaku.
+-  Add module.get_episode_id to make the module decide how to compare episodes.
+
 Changelog
 ---------
 
