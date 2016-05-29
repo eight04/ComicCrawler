@@ -22,8 +22,7 @@ domain = ["www.pixiv.net"]
 name = "Pixiv"
 noepfolder = True
 config = {
-	"SESSID": "請輸入Cookie中的PHPSESSID",
-	"ugoku2apng": "false"
+	"SESSID": "請輸入Cookie中的PHPSESSID"
 }
 
 def load_config():
@@ -130,19 +129,15 @@ def errorhandler(er, ep):
 			raise SkipEpisodeError
 			
 def imagehandler(ext, bin):
-	"""Convert ugoku zip to apng if possible"""
+	"""Append index info to ugoku zip"""
 	if ext == ".zip":
-		# TODO: support apng
-		if config.getboolean("ugoku2apng") and False:
-			pass
-		else:
-			bin = BytesIO(bin)
+		# add frame info
+		with BytesIO(bin) as bin:
 			zip = ZipFile(bin, "a")
 			data = "\n".join(
 				["{file}\t{delay}".format_map(f) for f in cache["frames"]])
 			zip.writestr("index", data.encode("utf-8"))
 			zip.close()
-			
 			return ext, bin.getvalue()
 
 def get_next_page(html, url):
