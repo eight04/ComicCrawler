@@ -242,10 +242,25 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         downloading image. Normally you can just ignore this function.
         """
         pass
+        
+    def imagehandler(ext, b):
+        """If this function exist, Comic Crawler will call it before saving
+        image to disk, letting the module be able to edit the image.
+        
+        @ext  A str of image extension. Including "." (e.g. ".jpg")
+        @b    The bytes object of the image.
 
-
+        It should return a (result_ext, result_b) tuple.
+        """
+        return (ext, b)
+        
 Changelog
 ---------
+
+-  2016.5.30
+
+   -  Add module.imagehandler, which can edit the image file before saving to disk.
+   -  Write frame info into ugoku zip in pixiv.
 
 -  2016.5.28
 
