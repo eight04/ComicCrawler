@@ -138,7 +138,8 @@ def imagehandler(ext, bin):
 				["{file}\t{delay}".format_map(f) for f in cache["frames"]])
 			zip.writestr("index", data.encode("utf-8"))
 			zip.close()
-			return ext, bin.getvalue()
+			bin = bin.getvalue()
+	return ext, bin
 
 def get_next_page(html, url):
 	match = re.search("href=\"([^\"]+)\" rel=\"next\"", html)
