@@ -39,22 +39,29 @@ class DownloadManager:
 			"""After download, execute command."""
 			if event.target is not self.download_thread:
 				return
-
-			command = (
-				event.data.module.config.get("runafterdownload"),
-				path_join(
-					event.data.module.config["savepath"],
-					safefilepath(event.data.title)
+				
+			r1 = event.data.module.config.get("runafterdownload")
+			r2 = setting.get("runafterdownload")
+			
+			if r1 == r2 and r1:
+				commands = [r1]
+			elif r1:
+				commands = [r1, r2]
+			else:
+				commands = []
+				
+			for command in commands:
+				command = (
+					command,
+					path_join(
+						event.data.module.config["savepath"],
+						safefilepath(event.data.title)
+					)
 				)
-			)
-
-			if not command[0]:
-				return
-
-			try:
-				subprocess.call(command)
-			except Exception as er:
-				print("Failed to run process: {}\n{}".format(command, traceback.format_exc()))
+				try:
+					subprocess.call(command)
+				except Exception:
+					print("Failed to run process: {}".format(command))
 
 		@thread.listen("DOWNLOAD_FINISHED")
 		@thread.listen("DOWNLOAD_ERROR")
