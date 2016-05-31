@@ -148,9 +148,10 @@ or you can use it in your python script:
 -  各別的網站會有自己的設定，通常是要填入一些登入相關資訊
 -  設定檔會在重新啟動後生效。若 ComicCrawler 正在執行中，可以點「重載設定檔」來載入新設定
 
-### runafterdownload
+runafterdownload
+~~~~~~~~~~~~~~~~
 
-* [Pixiv Ugoku to MP4](https://github.com/eight04/bunch-of-shells/tree/master/Pixiv%20Ugoku%20to%20MP4)
+-  `Pixiv Ugoku to MP4 <https://github.com/eight04/bunch-of-shells/tree/master/Pixiv%20Ugoku%20to%20MP4>`__
 
 Module example
 --------------
