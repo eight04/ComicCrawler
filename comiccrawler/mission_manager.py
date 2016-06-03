@@ -7,10 +7,11 @@ import json, traceback
 from collections import OrderedDict
 from worker import current
 from threading import Lock
+from contextlib import suppress
 
 from .safeprint import print
 from .core import Mission, Episode, MissionProxy
-from .io import content_read, content_write, is_file, backup
+from .io import content_read, content_write, is_file, backup, open
 
 from .channel import mission_ch
 
@@ -56,31 +57,31 @@ class MissionManager:
 		if not self.edit:
 			return
 
-		content_write(
-			"~/comiccrawler/pool.json",
-			json.dumps(
+		with open("~/comiccrawler/pool.json", "w") as fp:
+			json.dump(
 				list(self.pool.values()),
+				fp,
 				cls=MissionPoolEncoder,
 				indent=4,
 				ensure_ascii=False
 			)
-		)
-		content_write(
-			"~/comiccrawler/view.json",
-			json.dumps(
+		
+		with open("~/comiccrawler/view.json", "w") as fp:
+			json.dump(
 				list(self.view),
+				fp,
 				indent=4,
 				ensure_ascii=False
 			)
-		)
-		content_write(
-			"~/comiccrawler/library.json",
-			json.dumps(
+			
+		with open("~/comiccrawler/library.json", "w") as fp:
+			json.dump(
 				list(self.library),
+				fp,
 				indent=4,
 				ensure_ascii=False
 			)
-		)
+			
 		self.edit = False
 		print("Session saved")
 
@@ -107,14 +108,17 @@ class MissionManager:
 		view = []
 		library = []
 
-		if is_file("~/comiccrawler/pool.json"):
-			pool = json.loads(content_read("~/comiccrawler/pool.json"))
+		with suppress(OSError):
+			with open("~/comiccrawler/pool.json") as fp:
+				pool = json.load(fp)
 
-		if is_file("~/comiccrawler/view.json"):
-			view = json.loads(content_read("~/comiccrawler/view.json"))
+		with suppress(OSError):
+			with open("~/comiccrawler/view.json") as fp:
+				view = json.load(fp)
 
-		if is_file("~/comiccrawler/library.json"):
-			library = json.loads(content_read("~/comiccrawler/library.json"))
+		with suppress(OSError):
+			with open("~/comiccrawler/library.json") as fp:
+				library = json.load(fp)
 
 		for m_data in pool:
 			# reset state
