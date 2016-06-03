@@ -282,6 +282,11 @@ Todos
 Changelog
 ---------
 
+-  2016.6.3
+
+   -  Minor change to save/load file function to avoid unnecessary copy.
+   -  Comic Crawler will now execute `runafterdownload` command both from the default section and the module section.
+
 -  2016.5.30
 
    -  Add module.imagehandler, which can edit the image file before saving to disk.
