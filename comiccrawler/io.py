@@ -3,6 +3,9 @@
 """Simple io module depressing exceptions"""
 
 import os, os.path as path, pprint, glob, time, shutil
+import io
+
+from contextlib import contextmanager
 
 CHUNK_LIMIT = 500 * 1000 * 1000
 
@@ -33,14 +36,14 @@ def content_write(file, content, append=False):
 
 	if isinstance(content, bytes):
 		mode += "b"
-		with open(file, mode) as f:
+		with io.open(file, mode) as f:
 			write_big(f, content)
 
 	else:
 		if not isinstance(content, str):
 			content = pprint.pformat(content)
 
-		with open(file, mode, encoding="utf-8") as f:
+		with io.open(file, mode, encoding="utf-8") as f:
 			write_big(f, content)
 
 	if file != original:
@@ -54,10 +57,10 @@ def content_read(file, raw=False):
 		return ""
 
 	if raw:
-		with open(file, "rb") as f:
+		with io.open(file, "rb") as f:
 			return f.read()
 	else:
-		with open(file, "r", encoding="utf-8-sig") as f:
+		with io.open(file, "r", encoding="utf-8-sig") as f:
 			return f.read()
 
 def prepare_folder(folder):
@@ -76,7 +79,7 @@ def prepare_file(file):
 	prepare_folder(path.dirname(file))
 
 	if not path.isfile(file):
-		open(file, "w").close()
+		io.open(file, "w").close()
 
 	return file
 
@@ -137,3 +140,18 @@ def expand(file):
 def dirname(file):
 	"""Get dirname"""
 	return path.dirname(file)
+
+@contextmanager	
+def open(file, mode="r"):
+	file = path.expanduser(file)
+	prepare_folder(path.dirname(file))
+	
+	original = file
+	if "w" in mode and is_file(file):
+		file = file + time.strftime("@%Y-%m-%d_%H%M%S")
+		
+	with io.open(file, mode, encoding="utf-8") as fp:
+		yield fp
+	
+	if file != original:
+		os.replace(file, original)
