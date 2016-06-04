@@ -3,6 +3,7 @@
 """Mission Manager"""
 
 import json, traceback
+import hashlib
 
 from collections import OrderedDict
 from worker import current
@@ -10,10 +11,57 @@ from threading import Lock
 from contextlib import suppress
 
 from .safeprint import print
-from .core import Mission, Episode, MissionProxy
-from .io import content_read, content_write, is_file, backup, open
+from .core import Mission, Episode, MissionProxy, safefilepath
+from .io import content_read, content_write, is_file, backup, open, remove
 
 from .channel import mission_ch
+
+def get_mission_id(mission):
+	"""Use title and sha1 of URL as mission id"""
+	return "{title} [{sha1}]".format(
+		title=mission.title,
+		sha1=hashlib.sha1(mission.url).hexdigest()[:6]
+	)
+	
+def get_ep_path(mission):
+	"""Return episode save file path"""
+	return "~/comiccrawler/pool/" + safefilepath(get_mission_id(mission))
+
+def init_episode(mission):
+	"""Construct mission.episodes"""
+	if not mission.episodes:
+		file = get_ep_path(mission)
+		mission.episodes = load(file)
+
+def uninit_episode(mission):
+	"""Destruct mission.episodes to save memory"""
+	if mission.episodes:
+		file = get_ep_path(mission)
+		dump(mission.episodes, file)
+		mission.episodes = None
+		
+def cleanup_episode(mission):
+	"""Remove episode save file. (probably because the mission is removed from
+	the mission manager)
+	"""
+	remove(get_ep_path(mission))
+		
+def load(file):
+	"""My json.load"""
+	with suppress(OSError):
+		with open(file) as fp:
+			return json.load(fp)
+				
+def dump(data, file):
+	"""My json.dump"""
+	with open(file, "w") as fp:
+		json.dump(
+			data,
+			fp,
+			cls=MissionPoolEncoder,
+			indent=4,
+			ensure_ascii=False
+		)
 
 class MissionPoolEncoder(json.JSONEncoder):
 	"""Encode Mission, Episode to json."""
@@ -50,6 +98,7 @@ class MissionManager:
 		library_pool = set(self.library)
 
 		for url in main_pool - (view_pool | library_pool):
+			cleanup_episode(self.pool[url])
 			del self.pool[url]
 
 	def save(self):
@@ -57,30 +106,9 @@ class MissionManager:
 		if not self.edit:
 			return
 
-		with open("~/comiccrawler/pool.json", "w") as fp:
-			json.dump(
-				list(self.pool.values()),
-				fp,
-				cls=MissionPoolEncoder,
-				indent=4,
-				ensure_ascii=False
-			)
-		
-		with open("~/comiccrawler/view.json", "w") as fp:
-			json.dump(
-				list(self.view),
-				fp,
-				indent=4,
-				ensure_ascii=False
-			)
-			
-		with open("~/comiccrawler/library.json", "w") as fp:
-			json.dump(
-				list(self.library),
-				fp,
-				indent=4,
-				ensure_ascii=False
-			)
+		dump(list(self.pool.values()), "~/comiccrawler/pool.json")
+		dump(list(self.view), "~/comiccrawler/view.json")
+		dump(list(self.library), "~/comiccrawler/library.json")
 			
 		self.edit = False
 		print("Session saved")
@@ -95,30 +123,15 @@ class MissionManager:
 			self._load()
 		except Exception as err:
 			print("Failed to load session!")
-			# traceback.print_exc()
 			backup("~/comiccrawler/*.json")
 			raise
-			# mission_ch.pub("MISSION_POOL_LOAD_FAILED", err)
 		self.cleanup()
-		# mission_ch.pub("MISSION_POOL_LOAD_SUCCESS")
 
 	def _load(self):
 		"""Load missions from json. Called by MissionManager.load."""
-		pool = []
-		view = []
-		library = []
-
-		with suppress(OSError):
-			with open("~/comiccrawler/pool.json") as fp:
-				pool = json.load(fp)
-
-		with suppress(OSError):
-			with open("~/comiccrawler/view.json") as fp:
-				view = json.load(fp)
-
-		with suppress(OSError):
-			with open("~/comiccrawler/library.json") as fp:
-				library = json.load(fp)
+		pool = load("~/comiccrawler/pool.json") or []
+		view = load("~/comiccrawler/view.json") or []
+		library = load("~/comiccrawler/library.json") or []
 
 		for m_data in pool:
 			# reset state
