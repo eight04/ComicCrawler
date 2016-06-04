@@ -20,7 +20,7 @@ from .core import safefilepath, create_mission
 from .error import ModuleError
 
 from .download_manager import download_manager
-from .mission_manager import mission_manager
+from .mission_manager import mission_manager, init_episode, uninit_episode
 from .channel import download_ch, mission_ch, message_ch
 
 # Translate state code to readible text.
@@ -197,7 +197,10 @@ class MainWindow:
 		@self.thread.listen("MISSION_ADDED")
 		def _(event):
 			mission = event.data
-			if len(mission.episodes) == 1:
+			
+			init_episode(mission)
+			if len(mission.episodes) > 1:
+				uninit_episode(mission)
 				return
 				
 			if not select_episodes(self.root, mission):
@@ -618,6 +621,8 @@ def select_title(parent, mission):
 
 def select_episodes(parent, mission):
 	"""Create dialog to select episodes."""
+	
+	init_episode(mission)
 
 	class Provider(DialogProvider):
 		def create_body(self, body):
@@ -704,4 +709,8 @@ def select_episodes(parent, mission):
 				else:
 					ck.state(("selected", ))
 
-	return Dialog(parent, title="選擇集數", cls=Provider).wait()
+	ret = Dialog(parent, title="選擇集數", cls=Provider).wait()
+	
+	uninit_episode(mission)
+	
+	return ret

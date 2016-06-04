@@ -13,7 +13,7 @@ from .safeprint import print
 from .config import setting
 from .core import download, analyze, safefilepath
 
-from .mission_manager import mission_manager
+from .mission_manager import mission_manager, init_episode, uninit_episode
 from .channel import download_ch
 
 class DownloadManager:
@@ -32,6 +32,7 @@ class DownloadManager:
 		@thread.listen("DOWNLOAD_ERROR")
 		def _(event):
 			err, mission = event.data
+			uninit_episode(mission)
 			mission_manager.drop("view", mission)
 
 		@thread.listen("DOWNLOAD_FINISHED")
@@ -62,6 +63,8 @@ class DownloadManager:
 					subprocess.call(command)
 				except Exception:
 					print("Failed to run process: {}".format(command))
+					
+			uninit_episode(event.data)
 
 		@thread.listen("DOWNLOAD_FINISHED")
 		@thread.listen("DOWNLOAD_ERROR")
@@ -75,6 +78,7 @@ class DownloadManager:
 		def _(event):
 			"""Something bad happened"""
 			if event.target is self.download_thread:
+				uninit_episode(event.data[1])
 				self.download_thread = None
 				print("停止下載")
 
@@ -86,8 +90,9 @@ class DownloadManager:
 				err, mission = event.data
 			except Exception:
 				mission = event.data
-
+				
 			if event.target is self.library_thread:
+				uninit_episode(mission)
 				if mission.state == "UPDATE":
 					mission_manager.lift("library", mission)
 				self.do_check_update()
@@ -95,6 +100,7 @@ class DownloadManager:
 		@thread.listen("ANALYZE_FINISHED")
 		def _(event):
 			if event.target in self.analyze_threads:
+				uninit_episode(mission)
 				mission_manager.add("view", event.data)
 
 		@thread.listen("ANALYZE_FINISHED")
@@ -111,6 +117,7 @@ class DownloadManager:
 		mission = mission_manager.get_by_state("view", ("ANALYZED", "PAUSE", "ERROR", "UPDATE"))
 		if mission:
 			print("Start download " + mission.title)
+			init_episode(mission)
 			self.download_thread = Worker(download).start(mission, mission.module.config["savepath"])
 		else:
 			print("所有任務已下載完成")
@@ -127,6 +134,7 @@ class DownloadManager:
 		if mission.state not in ("ANALYZE_INIT", "INIT"):
 			print("Invalid state to analyze: {state}".format(mission.state))
 			return
+		init_episode(mission)
 		thread = Worker(analyze).start(mission)
 		self.analyze_threads.add(thread)
 		
@@ -151,6 +159,7 @@ class DownloadManager:
 		"""Check library update"""
 		mission = mission_manager.get_by_state("library", ("ANALYZE_INIT",))
 		if mission:
+			init_episode(mission)
 			self.library_thread = Worker(analyze).start(mission)
 		else:
 			self.library_thread = None
