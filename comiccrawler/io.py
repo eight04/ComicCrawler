@@ -5,7 +5,7 @@
 import os, os.path as path, pprint, glob, time, shutil
 import io
 
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 
 CHUNK_LIMIT = 500 * 1000 * 1000
 
@@ -155,3 +155,7 @@ def open(file, mode="r"):
 	
 	if file != original:
 		os.replace(file, original)
+		
+def remove(file):
+	with suppress(FileNotFoundError):
+		os.remove(file)
