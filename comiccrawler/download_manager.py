@@ -34,13 +34,12 @@ class DownloadManager:
 		@thread.listen("DOWNLOAD_ERROR")
 		@thread.listen("DOWNLOAD_FINISHED")
 		def _(event):
-			if event.target is not self.download_thread:
-				return
 			try:
 				err, mission = event.data
 			except Exception:
 				mission = event.data
-			uninit_episode(mission)
+			if mission.url in mission_manager.pool:
+				uninit_episode(mission)
 		
 		@thread.listen("DOWNLOAD_ERROR")
 		def _(event):
