@@ -199,7 +199,7 @@ class MainWindow:
 			mission = event.data
 			
 			init_episode(mission)
-			if len(mission.episodes) > 1:
+			if len(mission.episodes) == 1:
 				uninit_episode(mission)
 				return
 				
