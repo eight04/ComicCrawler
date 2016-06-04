@@ -3,6 +3,15 @@ Comic Crawler
 
 Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管理員、圖書館功能、 與方便的擴充能力。
 
+2016.6.4 更新
+--------------
+
+-  此版本修改了存檔的運作方式，建議在更新前先將存檔備份
+-  改版後，所有「未使用中」的任務資料會存到 ``~/comiccrawler/pool/`` 資料夾
+-  ``~/comiccrawler/pool.json`` 不再儲存 episode 相關資訊
+-  任務下載時，會再從 pool 資料夾中讀出 episode 相關資訊
+-  目的為減少不必要的記憶體使用量
+
 2016.2.27 更新
 --------------
 
@@ -281,6 +290,12 @@ Todos
 
 Changelog
 ---------
+
+-  2016.6.4
+
+   -  Change how saved data work. Comic Crawler will write inactive mission data into ``~/comiccrawler/pool/`` folder to save the memory.
+   -  Fix regex in dA.
+   -  Fix sankaku's hang. Do not suppress 429 error in grabber.
 
 -  2016.6.3
 
