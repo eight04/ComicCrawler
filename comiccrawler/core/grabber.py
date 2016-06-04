@@ -75,38 +75,25 @@ def grabber(url, header=None, *, referer=None, cookie=None):
 		quote_unicode_dict(cookie)
 		requests.utils.add_dict_to_cookiejar(s.cookies, cookie)
 
-	while True:
-		r = s.get(url, timeout=20)
+	r = s.get(url, timeout=20)
 
-		if setting.getboolean("errorlog"):
-			grabber_log(url, r.request.headers, r.headers)
+	if setting.getboolean("errorlog"):
+		grabber_log(url, r.request.headers, r.headers)
 
-		if r.status_code == 200:
-			break
-			
+	if r.status_code != 200:
 		if r.status_code == 429:
-			retry = 20
+			# let server take a breath
+			rest = 20
 			if "retry-after" in r.headers:
-				retry2 = int(r.headers['retry-after'])
-				if retry2 < retry:
-					retry = retry2
-			sleep(retry)
-		else:
-			r.raise_for_status()
+				rest = int(r.headers['retry-after'])
+				if rest2 < rest:
+					rest = rest2
+			sleep(rest)
+			
+		r.raise_for_status()
 			
 	return r
 			
-	b = r.content
-
-	if raw:
-		return b
-		
-	match = re.search(br"charset=[\"']?([^\"'>]+)", b)
-	if match:
-		r.encoding = match.group(1).decode("latin-1")
-		
-	return r.text
-
 def grabhtml(*args, **kwargs):
 	"""Get html source of given url. Return String."""
 	r = sync(grabber, *args, **kwargs)
