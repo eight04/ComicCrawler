@@ -29,10 +29,22 @@ class DownloadManager:
 		
 		download_ch.sub(thread)
 		
+		@thread.listen("DOWNLOAD_PAUSE")
+		@thread.listen("DOWNLOAD_INVALID")
+		@thread.listen("DOWNLOAD_ERROR")
+		@thread.listen("DOWNLOAD_FINISHED")
+		def _(event):
+			if event.target is not self.download_thread:
+				return
+			try:
+				err, mission = event.data
+			except Exception:
+				mission = event.data
+			uninit_episode(mission)
+		
 		@thread.listen("DOWNLOAD_ERROR")
 		def _(event):
 			err, mission = event.data
-			uninit_episode(mission)
 			mission_manager.drop("view", mission)
 
 		@thread.listen("DOWNLOAD_FINISHED")
@@ -64,8 +76,6 @@ class DownloadManager:
 				except Exception:
 					print("Failed to run process: {}".format(command))
 					
-			uninit_episode(event.data)
-
 		@thread.listen("DOWNLOAD_FINISHED")
 		@thread.listen("DOWNLOAD_ERROR")
 		def _(event):
@@ -78,7 +88,6 @@ class DownloadManager:
 		def _(event):
 			"""Something bad happened"""
 			if event.target is self.download_thread:
-				uninit_episode(event.data[1])
 				self.download_thread = None
 				print("停止下載")
 
@@ -99,6 +108,7 @@ class DownloadManager:
 
 		@thread.listen("ANALYZE_FINISHED")
 		def _(event):
+			"""After analyze, add to view (view analyzer)"""
 			if event.target in self.analyze_threads:
 				uninit_episode(mission)
 				mission_manager.add("view", event.data)
@@ -175,4 +185,4 @@ class DownloadManager:
 	def is_downloading(self):
 		return self.download_thread is not None
 		
-download_manager = DownloadManager()		
+download_manager = DownloadManager()
