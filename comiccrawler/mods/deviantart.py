@@ -63,7 +63,7 @@ def get_images(html, url):
 		return [unescape(i)]
 	except Exception:
 		pass
-	i = search('<img[^>]+src="([^"]+)"[^>]+class="dev-content-full">', html).group(1)
+	i = search('<img[^>]+?src="([^"]+)"[^>]+?class="dev-content-full[^"]*">', html).group(1)
 	return [i]
 	
 def get_next_page(html, url):
