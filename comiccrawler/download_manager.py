@@ -110,8 +110,9 @@ class DownloadManager:
 		def _(event):
 			"""After analyze, add to view (view analyzer)"""
 			if event.target in self.analyze_threads:
+				mission = event.data
 				uninit_episode(mission)
-				mission_manager.add("view", event.data)
+				mission_manager.add("view", mission)
 
 		@thread.listen("ANALYZE_FINISHED")
 		@thread.listen("ANALYZE_FAILED")
