@@ -20,12 +20,12 @@ def get_mission_id(mission):
 	"""Use title and sha1 of URL as mission id"""
 	return "{title} [{sha1}]".format(
 		title=mission.title,
-		sha1=hashlib.sha1(mission.url).hexdigest()[:6]
+		sha1=hashlib.sha1(mission.url.encode("utf-8")).hexdigest()[:6]
 	)
 	
 def get_ep_path(mission):
 	"""Return episode save file path"""
-	return "~/comiccrawler/pool/" + safefilepath(get_mission_id(mission))
+	return "~/comiccrawler/pool/" + safefilepath(get_mission_id(mission) + ".json")
 
 def init_episode(mission):
 	"""Construct mission.episodes"""
