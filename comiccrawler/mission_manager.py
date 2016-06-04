@@ -31,7 +31,7 @@ def init_episode(mission):
 	"""Construct mission.episodes"""
 	if not mission.episodes:
 		file = get_ep_path(mission)
-		mission.episodes = load(file)
+		mission.episodes = [Episode(**e) for e in load(file)]
 
 def uninit_episode(mission):
 	"""Destruct mission.episodes to save memory"""
@@ -138,29 +138,34 @@ class MissionManager:
 			if m_data["state"] in ("DOWNLOADING", "ANALYZING"):
 				m_data["state"] = "ERROR"
 			# build episodes
-			episodes = []
-			for ep_data in m_data["episodes"]:
-				# compatible 2916.4.3
-				if "total" not in ep_data:
-					if not ep_data["current_url"]:
-						ep_data["total"] = 0
+			# compatible 2016.6.4
+			if m_data["episodes"]:
+				episodes = []
+				for ep_data in m_data["episodes"]:
+					# compatible 2016.4.3
+					if "total" not in ep_data:
+						if not ep_data["current_url"]:
+							ep_data["total"] = 0
+							
+						elif ep_data["url"] == ep_data["current_url"]:
+							# first page crawler
+							ep_data["total"] = ep_data["current_page"] - 1
+							
+						else:
+							# per page crawler
+							ep_data["total"] = ep_data["current_page"] - 1
+							ep_data["current_page"] = 1
 						
-					elif ep_data["url"] == ep_data["current_url"]:
-						# first page crawler
-						ep_data["total"] = ep_data["current_page"] - 1
-						
-					else:
-						# per page crawler
-						ep_data["total"] = ep_data["current_page"] - 1
-						ep_data["current_page"] = 1
-					
-					if ep_data["complete"]:
-						ep_data["total"] += 1
-						
-				episodes.append(Episode(**ep_data))
-			m_data["episodes"] = episodes
+						if ep_data["complete"]:
+							ep_data["total"] += 1
+							
+					episodes.append(Episode(**ep_data))
+				m_data["episodes"] = episodes
 			mission = MissionProxy(Mission(**m_data))
-			# self._add(mission)
+			
+			if mission.episodes:
+				uninit_episode(mission)
+				
 			self.pool[mission.url] = mission
 
 		for url in view:
