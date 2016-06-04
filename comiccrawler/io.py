@@ -157,5 +157,6 @@ def open(file, mode="r"):
 		os.replace(file, original)
 		
 def remove(file):
+	file = path.expanduser(file)
 	with suppress(FileNotFoundError):
 		os.remove(file)
