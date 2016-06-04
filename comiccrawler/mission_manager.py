@@ -30,8 +30,9 @@ def get_ep_path(mission):
 def init_episode(mission):
 	"""Construct mission.episodes"""
 	if not mission.episodes:
-		file = get_ep_path(mission)
-		mission.episodes = [Episode(**e) for e in load(file)]
+		eps = load(get_ep_path(mission))
+		if eps:
+			mission.episodes = [Episode(**e) for e in eps]
 
 def uninit_episode(mission):
 	"""Destruct mission.episodes to save memory"""
