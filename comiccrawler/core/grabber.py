@@ -3,6 +3,7 @@
 import gzip
 import re
 import requests
+import imghdr
 
 from urllib.parse import quote, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
@@ -120,7 +121,7 @@ def get_ext(mime, b):
 		return ".jpg"
 		
 	# http://www.garykessler.net/library/file_sigs.html
-	if b[:4] == b"\x1a\x45\xdf\xa3"
+	if b[:4] == b"\x1a\x45\xdf\xa3":
 		return ".webm"
 
 def grabimg(*args, **kwargs):
