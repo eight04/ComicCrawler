@@ -295,6 +295,7 @@ Changelog
 
    -  Change how to handle HTTP 429 error. Let the mission drop.
    -  Add login check in sankaku.
+   -  Support .jpe(.jpg), .webm file types.
 
 -  2016.6.4
 
