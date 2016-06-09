@@ -80,48 +80,11 @@ VALID_FILE_TYPES = (
 	# zips
 	".zip", ".rar",
 	# videos
-	".mp4", ".mkv", ".swf",
+	".mp4", ".mkv", ".swf", ".webm",
 	# json
 	".json"
 )
 
-def getext(h):
-	"""Return extension by testing the byte stream.
-
-	imghdr issue: http://bugs.python.org/issue16512
-	"""
-	r = imghdr.what("", h)
-	if r:
-		if r == "jpeg":
-			return "jpg"
-		return r
-
-	h = h
-	if h[:2] == b"\xff\xd8":
-		return "jpg"
-
-	# if h[:3] == b"CWS" or h[:3] == b"FWS":
-		# return "swf"
-
-	# if h[:4] == b"8BPS":
-		# return "psd"
-
-	# if h[:7] == b"Rar!\x1a\x07\x00":
-		# return "rar"
-
-	# if h[:4] == b"PK\x03\x04":
-		# return "zip"
-
-	# if h[:4] == b"\x1A\x45\xDF\xA3":
-		# return "mkv"
-		
-	# FIXME: maybe we should see http header content type for file extension
-	# http://www.garykessler.net/library/file_sigs.html
-	# if h[4:8] == b"ftyp":
-		# return "mp4"
-
-	# return None
-	
 def safefilepath(s):
 	"""Return a safe directory name."""
 	return re.sub("[/\\\?\|<>:\"\*]","_",s).strip()
@@ -267,11 +230,6 @@ class Crawler:
 		else:
 			self.image_bin = json.dumps(self.image, indent="\t").encode("utf-8")
 			self.image_ext = ".json"
-			
-		# try to get proper ext for image
-		ext = getext(self.image_bin)
-		if ext:
-			self.image_ext = extsep + ext			
 			
 	def handle_image(self):
 		"""Post processing"""

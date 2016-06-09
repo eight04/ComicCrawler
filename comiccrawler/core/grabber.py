@@ -101,15 +101,36 @@ def grabhtml(*args, **kwargs):
 		r.encoding = match.group(1).decode("latin-1")
 		
 	return r.text
+	
+def get_ext(mime, b):
+	"""Get file extension"""
+	if mime:
+		ext = guess_extension(mime)
+		if ext:
+			return ext
+			
+	ext = imghdr.what("", b)
+	if ext:
+		if ext == "jpeg":
+			ext = "jpg"
+		return "." + ext
+
+	# imghdr issue: http://bugs.python.org/issue16512
+	if b[:2] == b"\xff\xd8":
+		return ".jpg"
+		
+	# http://www.garykessler.net/library/file_sigs.html
+	if b[:4] == b"\x1a\x45\xdf\xa3"
+		return ".webm"
 
 def grabimg(*args, **kwargs):
 	"""Return byte array."""
 	r = sync(grabber, *args, **kwargs)
 	
 	# find extension
-	ext = None
+	mime = None
+	b = r.content
 	if "Content-Type" in r.headers:
 		mime = re.search("^(.*?)(;|$)", r.headers["Content-Type"]).group(1)
 		mime = mime.strip()
-		ext = guess_extension(mime)
-	return ext, r.content
+	return get_ext(mime, b), b
