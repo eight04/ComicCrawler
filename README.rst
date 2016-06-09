@@ -291,7 +291,7 @@ Todos
 Changelog
 ---------
 
--  2016.6.9
+-  2016.6.10
 
    -  Change how to handle HTTP 429 error. Let the mission drop.
    -  Add login check in sankaku.
