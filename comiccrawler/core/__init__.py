@@ -1,7 +1,6 @@
 #! python3
 
 import traceback
-import imghdr
 import re
 import hashlib
 import json
