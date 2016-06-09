@@ -291,9 +291,14 @@ Todos
 Changelog
 ---------
 
+-  2016.6.9
+
+   -  Change how to handle HTTP 429 error. Let the mission drop.
+   -  Add login check in sankaku.
+
 -  2016.6.4
 
-   -  Change how saved data work. Comic Crawler will write inactive mission data into ``~/comiccrawler/pool/`` folder to save the memory.
+   -  Change how saved data works. Comic Crawler will write inactive mission data into ``~/comiccrawler/pool/`` folder to save the memory.
    -  Fix regex in dA.
    -  Fix sankaku's hang. Do not suppress 429 error in grabber.
 
