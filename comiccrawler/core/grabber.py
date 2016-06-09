@@ -81,19 +81,15 @@ def grabber(url, header=None, *, referer=None, cookie=None):
 		grabber_log(url, r.request.headers, r.headers)
 
 	if r.status_code != 200:
-		if r.status_code == 429:
-			# let server take a breath
-			rest = 20
-			if "retry-after" in r.headers:
-				try:
-					rest = int(r.headers['retry-after'])
-				except ValueError:
-					pass
-			sleep(rest)
-			
 		r.raise_for_status()
 			
 	return r
+	
+def is_429(err):
+	"""Return True if it is a 429 HTTPError"""
+	if isinstance(err, requests.HTTPError) and hasattr(err, "response"):
+		return err.response.status_code == 429
+	return False
 			
 def grabhtml(*args, **kwargs):
 	"""Get html source of given url. Return String."""

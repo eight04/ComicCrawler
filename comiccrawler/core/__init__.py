@@ -15,7 +15,7 @@ from ..error import *
 from ..io import content_write, content_read, path_each
 from ..channel import download_ch, mission_ch
 
-from .grabber import grabhtml, grabimg
+from .grabber import grabhtml, grabimg, is_429
 
 class Mission:
 	"""Create Mission object. Contains information of the mission."""
@@ -429,8 +429,13 @@ def crawlpage(crawler):
 		crawler.next_image()
 
 	def download_error(er):
-		crawler.handle_error(er)
-		sleep(5)
+		if is_429(er):
+			# retry doesn't work with 429 error
+			sleep(5)
+			raise
+		else:
+			crawler.handle_error(er)
+			sleep(5)
 
 	error_loop(download, download_error)
 
