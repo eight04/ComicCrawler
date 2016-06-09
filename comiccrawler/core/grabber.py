@@ -103,7 +103,7 @@ def grabhtml(*args, **kwargs):
 		
 	return r.text
 	
-def get_ext(mime, b):
+def _get_ext(mime, b):
 	"""Get file extension"""
 	if mime:
 		ext = guess_extension(mime)
@@ -112,8 +112,6 @@ def get_ext(mime, b):
 			
 	ext = imghdr.what("", b)
 	if ext:
-		if ext == "jpeg":
-			ext = "jpg"
 		return "." + ext
 
 	# imghdr issue: http://bugs.python.org/issue16512
@@ -123,6 +121,14 @@ def get_ext(mime, b):
 	# http://www.garykessler.net/library/file_sigs.html
 	if b[:4] == b"\x1a\x45\xdf\xa3":
 		return ".webm"
+		
+def get_ext(mime, b):
+	"""Get file extension"""
+	ext = _get_ext(mime, b)
+	# some mapping
+	if ext in (".jpeg", ".jpe"):
+		return ".jpg"
+	return ext
 
 def grabimg(*args, **kwargs):
 	"""Return byte array."""
