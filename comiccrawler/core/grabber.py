@@ -85,9 +85,10 @@ def grabber(url, header=None, *, referer=None, cookie=None):
 			# let server take a breath
 			rest = 20
 			if "retry-after" in r.headers:
-				rest = int(r.headers['retry-after'])
-				if rest2 < rest:
-					rest = rest2
+				try:
+					rest = int(r.headers['retry-after'])
+				except ValueError:
+					pass
 			sleep(rest)
 			
 		r.raise_for_status()
