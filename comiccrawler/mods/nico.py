@@ -48,9 +48,14 @@ def get_images(html, url):
 
 	source_url = re.search(r'href="(/image/source/\d+)', html)
 	if source_url:
-		source_html = grabhtml(urljoin(url, source_url.group(1)))
-		img = "http://lohas.nicoseiga.jp" + re.search(r'src="(/priv/[^"]+)', source_html).group(1)
-		return [img]
+		source_url = urljoin(url, source_url.group(1))
+		source_html = grabhtml(source_url)
+		image = re.search(r'src="(/priv/[^"]+)', source_html)
+		if image:
+			image = "http://lohas.nicoseiga.jp" + image.group(1)
+		else:
+			image = source_url
+		return [image]
 
 	else:
 		img = re.search(r'href="(/image/source\?id=\d+)', html).group(1)
