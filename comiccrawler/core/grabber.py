@@ -99,7 +99,10 @@ def grabhtml(*args, **kwargs):
 	# decode to text
 	match = re.search(br"charset=[\"']?([^\"'>]+)", r.content)
 	if match:
-		r.encoding = match.group(1).decode("latin-1")
+		encoding = match.group(1).decode("latin-1")
+		if encoding == "gb2312":
+			encoding = "gbk"
+		r.encoding = encoding
 		
 	return r.text
 	
