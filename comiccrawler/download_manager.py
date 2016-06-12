@@ -104,6 +104,14 @@ class DownloadManager:
 				if mission.state == "UPDATE":
 					mission_manager.lift("library", mission)
 				self.do_check_update()
+				
+		@thread.listen("ANALYZE_INVALID")
+		def _(event):
+			"""Cleanup library thread with PauseDownloadError"""
+			if event.target is self.library_thread:
+				uninit_episode(mission)
+				self.library_thread = None
+				print("Failed to check update")
 
 		@thread.listen("ANALYZE_FINISHED")
 		def _(event):
