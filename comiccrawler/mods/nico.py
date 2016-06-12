@@ -29,9 +29,13 @@ def load_config():
 	cookie["user_session"] = config["user_session"]
 
 def get_title(html, url):
-	artist = re.search(r'nickname">([^<]+)', html).group(1)
-	id = re.search(r'data-id="(\d+)', html).group(1)
-	return "[Nico] {} - {}".format(id, artist)
+	if "/user/" in url:
+		artist = re.search(r'nickname">([^<]+)', html).group(1)
+		id = re.search(r'data-id="(\d+)', html).group(1)
+		return "[Nico] {} - {}".format(id, artist)
+		
+	title = re.search("<title>([^<]+)", html).group(1).partition(" - ")[0]
+	return "[Nico] {}".format(title)
 
 def get_episodes(html, url):
 	s = []
@@ -48,6 +52,7 @@ def get_images(html, url):
 
 	source_url = re.search(r'href="(/image/source/\d+)', html)
 	if source_url:
+		# FIXME: The image is downloaded twice within redirect!
 		source_url = urljoin(url, source_url.group(1))
 		source_html = grabhtml(source_url)
 		image = re.search(r'src="(/priv/[^"]+)', source_html)
