@@ -2,15 +2,18 @@
 
 """吹雪動漫"""
 
-import re, base64
-from ..core import Episode
+import re
+import base64
+
 from urllib.parse import urljoin
+
+from ..core import Episode
 
 domain = ["www.chuixue.com"]
 name = "吹雪"
 
 def get_title(html, url):
-	return re.search("wdname='([^']+)'", html).group(1)
+	return re.search("<h1>([^<]+)", html).group(1)
 
 def get_episodes(html, url):
 	id = re.search("manhua/(\d+)", url).group(1)
