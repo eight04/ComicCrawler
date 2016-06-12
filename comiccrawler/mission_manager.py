@@ -8,11 +8,11 @@ import hashlib
 from collections import OrderedDict
 from worker import current
 from threading import Lock
-from contextlib import suppress
+from contextlib import suppress, contextmanager
 
 from .safeprint import print
 from .core import Mission, Episode, MissionProxy, safefilepath
-from .io import content_read, content_write, is_file, backup, open, remove
+from .io import backup, open, remove, move
 
 from .channel import mission_ch
 
@@ -23,9 +23,28 @@ def get_mission_id(mission):
 		sha1=hashlib.sha1(mission.url.encode("utf-8")).hexdigest()[:6]
 	)
 	
+@contextmanager
+def edit_mission_id(mission):
+	"""A contextmanager for changing mission title."""
+	old_id = get_mission_id(mission)
+	yield
+	new_id = get_mission_id(mission)
+	
+	if old_id == new_id:
+		return
+	
+	old_path = make_ep_path(old_id)
+	new_path = make_ep_path(new_id)
+	
+	move(old_path, new_path)
+	
+def make_ep_path(id):
+	"""Construct ep path with id"""
+	return "~/comiccrawler/pool/" + safefilepath(id + ".json")
+	
 def get_ep_path(mission):
 	"""Return episode save file path"""
-	return "~/comiccrawler/pool/" + safefilepath(get_mission_id(mission) + ".json")
+	return make_ep_path(get_mission_id(mission))
 
 def init_episode(mission):
 	"""Construct mission.episodes"""

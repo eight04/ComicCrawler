@@ -20,7 +20,7 @@ from .core import safefilepath, create_mission
 from .error import ModuleError
 
 from .download_manager import download_manager
-from .mission_manager import mission_manager, init_episode, uninit_episode
+from .mission_manager import mission_manager, init_episode, uninit_episode, edit_mission_id
 from .channel import download_ch, mission_ch, message_ch
 
 # Translate state code to readible text.
@@ -617,7 +617,8 @@ def select_title(parent, mission):
 			title = self.entry.get()
 			mission.title = title
 
-	return Dialog(parent, title="重命名", cls=Provider).wait()
+	with edit_mission_id(mission):
+		return Dialog(parent, title="重命名", cls=Provider).wait()
 
 def select_episodes(parent, mission):
 	"""Create dialog to select episodes."""
