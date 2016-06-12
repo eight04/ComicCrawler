@@ -291,6 +291,15 @@ Todos
 Changelog
 ---------
 
+-  2016.6.12
+
+   -  Use GBK instead of GB2312 in grabber.
+   -  Add the ability to get title from non-user page in nico.
+   -  Fix: unable to add mission in chuixue.
+   -  Fix: unable to download image in nico.
+   -  Fix: episode is lost after changing the name of the mission.
+   -  Fix: unable to recheck update after login error.
+
 -  2016.6.10
 
    -  Change how to handle HTTP 429 error. Let the mission drop.
