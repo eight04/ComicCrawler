@@ -293,7 +293,7 @@ Changelog
 
 -  2016.6.14.1
 
-   -  Pass pyflakes and fix abounch of typo.
+   -  Pass pyflakes and fix a bunch of typo.
 
 -  2016.6.14
 
