@@ -291,6 +291,10 @@ Todos
 Changelog
 ---------
 
+-  2016.6.14
+
+   -  Fix: always re-init in crawlpage loop!
+
 -  2016.6.12
 
    -  Use GBK instead of GB2312 in grabber.
