@@ -291,6 +291,10 @@ Todos
 Changelog
 ---------
 
+-  2016.6.14.1
+
+   -  Pass pyflakes and fix abounch of typo.
+
 -  2016.6.14
 
    -  Fix: always re-init in crawlpage loop!
