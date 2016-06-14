@@ -41,7 +41,7 @@ def domains():
 	path.write_text(left + domains + right, 'utf-8')
 
 cute(
-	test = 'readme_build',
+	test = ['pyflakes comiccrawler', 'readme_build'],
 	bump_pre = 'test',
 	bump = bump,
 	bump_post = ['domains', 'dist', 'release', 'publish', 'install'],
