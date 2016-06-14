@@ -13,7 +13,6 @@ from execjs import eval, compile
 from urllib.parse import urljoin
 
 from ..core import Episode, grabhtml
-from ..error import LastPageError
 
 cookie = {
 	"isAdult": "1",

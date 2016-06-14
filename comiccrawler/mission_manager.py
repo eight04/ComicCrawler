@@ -2,7 +2,7 @@
 
 """Mission Manager"""
 
-import json, traceback
+import json
 import hashlib
 
 from collections import OrderedDict

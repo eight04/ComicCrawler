@@ -6,11 +6,10 @@ import hashlib
 import json
 
 from worker import sleep, WorkerExit
-from os import extsep
 from os.path import join as path_join, split as path_split, splitext
 
 from ..safeprint import print
-from ..error import *
+from ..error import ModuleError, PauseDownloadError, LastPageError, SkipEpisodeError
 from ..io import content_write, content_read, path_each
 from ..channel import download_ch, mission_ch
 
@@ -409,8 +408,8 @@ def error_loop(process, handle_error=None, limit=10):
 				raise SkipEpisodeError(always=False)
 			if handle_error:
 				handle_error(er)
-		except ExitErrorLoop:
-			break
+		# except ExitErrorLoop:
+			# break
 		else:
 			errorcount = 0
 

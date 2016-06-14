@@ -7,11 +7,11 @@ Ex:
 
 """
 
-import re, execjs
+import re
 
 from urllib.parse import urljoin
 
-from ..core import Episode, grabhtml
+from ..core import Episode
 
 domain = ["www.buka.cn"]
 name = "布卡"

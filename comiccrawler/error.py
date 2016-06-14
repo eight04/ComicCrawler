@@ -15,9 +15,9 @@ class PauseDownloadError(ComicCrawlerSignal):
 	"""Raise PauseDownloadError to exit crawl mission loop."""
 	pass
 
-class ExitErrorLoop(ComicCrawlerSignal):
-	"""Raise ExitErrorLoop to exit error loop."""
-	pass
+# class ExitErrorLoop(ComicCrawlerSignal):
+	# """Raise ExitErrorLoop to exit error loop."""
+	# pass
 
 class ComicCrawlerError(Exception):
 	"""Extend Exception."""

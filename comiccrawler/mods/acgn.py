@@ -7,7 +7,8 @@ Ex:
 
 """
 
-import re, execjs
+import re
+
 from html import unescape
 
 from ..core import Episode

@@ -34,6 +34,6 @@ def get_images(html, url):
 	base = re.search("(https?://[^/]+)", url).group(1)
 
 	htmljs = grabhtml(base + js)
-	host = "http://coldpic.sfacg.com"
+	# host = "http://coldpic.sfacg.com"
 	pics = re.findall("picAy\[\d+\] = \"(.+?)\"", htmljs)
 	return [base + pic for pic in pics]

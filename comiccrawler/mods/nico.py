@@ -7,13 +7,14 @@ Ex:
 
 """
 
-import re, execjs
+import re
+
 from html import unescape
-from urllib.error import HTTPError
+
 from urllib.parse import urljoin
 
 from ..core import Episode, grabhtml
-from ..error import LastPageError, SkipEpisodeError, PauseDownloadError
+from ..error import PauseDownloadError
 
 cookie = {
 	"skip_fetish_warning": "1"

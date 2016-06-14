@@ -66,7 +66,7 @@ def get_images(html, url):
 
 	try:
 		# before 2014/4/6
-		chs = re.search("chs=(.+?);", html).group(1)
+		# chs = re.search("chs=(.+?);", html).group(1)
 		itemid = re.search("itemid=(.+?);", html).group(1)
 		allcodes = re.search("allcodes=\"(.+?)\"", html).group(1)
 

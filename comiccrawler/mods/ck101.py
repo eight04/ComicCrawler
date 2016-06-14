@@ -9,7 +9,7 @@ Ex:
 
 import re
 
-from ..core import Episode, grabhtml
+from ..core import Episode
 from ..error import SkipEpisodeError
 
 

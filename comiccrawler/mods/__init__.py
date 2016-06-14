@@ -5,7 +5,7 @@
 Import all downloader modules
 """
 
-from os.path import dirname, realpath, join, isdir, splitext, expanduser
+from os.path import dirname, join, isdir, splitext, expanduser
 from os import listdir
 from importlib import import_module
 from re import search

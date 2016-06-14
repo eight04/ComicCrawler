@@ -7,8 +7,8 @@ import webbrowser
 import re
 import tkinter.messagebox as messagebox
 
-from tkinter import *
-from tkinter.ttk import *
+from tkinter import Text, Canvas, Tk, Menu, Toplevel
+from tkinter.ttk import Frame, Scrollbar, Label, Entry, Checkbutton, Button, Notebook, Treeview
 
 from worker import current
 from time import time
@@ -55,7 +55,7 @@ class DialogProvider:
 
 	def create_btn_bar(self, btn_bar):
 		"""Override me."""
-		Button(btn_bar, text="確定", command=self.dialog.ok, default=ACTIVE).pack(side="left")
+		Button(btn_bar, text="確定", command=self.dialog.ok, default="active").pack(side="left")
 		Button(btn_bar, text="取消", command=self.dialog.cancel).pack(side="left")
 
 	def apply(self):

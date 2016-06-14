@@ -11,7 +11,7 @@ import re
 from html import unescape
 from urllib.parse import urljoin
 
-from ..core import Episode, grabhtml
+from ..core import Episode
 
 domain = ["danbooru.donmai.us"]
 name = "Danbooru"
@@ -40,4 +40,4 @@ def get_next_page(html, url):
 	m = (re.search(r'"([^"]+)" rel="next"', html) or
 		re.search(r'<a rel="next" href="([^"]+)', html))
 	if m:		
-		return urljoin(url, unescape(u.group(1)))
+		return urljoin(url, unescape(m.group(1)))

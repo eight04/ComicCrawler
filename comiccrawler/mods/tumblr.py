@@ -10,7 +10,7 @@ Ex:
 import re, json
 from urllib.parse import urljoin
 
-from ..core import Episode, grabhtml
+from ..core import Episode
 
 domain = ["tumblr.com"]
 name = "tumblr"

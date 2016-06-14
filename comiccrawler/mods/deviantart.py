@@ -12,7 +12,7 @@ from html import unescape
 from urllib.parse import urljoin
 
 from ..error import PauseDownloadError
-from ..core import Episode, grabhtml
+from ..core import Episode
 
 cookie = {}
 domain = ["deviantart.com"]

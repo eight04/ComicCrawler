@@ -1,9 +1,8 @@
 #! python3
 
 import re
-from html import unescape
 
-from ..core import Episode, grabhtml
+from ..core import Episode
 
 domain = ["tsundora.com"]
 name = "tsundora"

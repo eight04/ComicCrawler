@@ -1,19 +1,13 @@
 #! python3
 
-import gzip
 import re
 import requests
 import imghdr
 
 from urllib.parse import quote, urlsplit, urlunsplit
-from urllib.request import Request, urlopen
 from mimetypes import guess_extension
 
-from http.cookies import SimpleCookie
-
-from requests.exceptions import HTTPError
-
-from worker import sync, sleep
+from worker import sync
 from pprint import pformat
 
 from ..config import setting

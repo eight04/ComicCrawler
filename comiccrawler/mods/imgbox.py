@@ -1,10 +1,10 @@
 #! python3
 
 import re
-from html import unescape
+
 from urllib.parse import urljoin
 
-from ..core import Episode, grabhtml
+from ..core import Episode
 
 domain = ["imgbox.com"]
 name = "imgbox"

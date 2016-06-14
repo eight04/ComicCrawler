@@ -15,7 +15,7 @@ from io import BytesIO
 from zipfile import ZipFile
 
 from ..core import Episode, grabhtml
-from ..error import LastPageError, SkipEpisodeError, PauseDownloadError
+from ..error import SkipEpisodeError, PauseDownloadError
 
 cookie = {}
 domain = ["www.pixiv.net"]

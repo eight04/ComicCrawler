@@ -3,7 +3,6 @@
 """Download Manager"""
 
 import subprocess
-import traceback
 
 from os.path import join as path_join
 from worker import Worker, current
@@ -108,6 +107,7 @@ class DownloadManager:
 		@thread.listen("ANALYZE_INVALID")
 		def _(event):
 			"""Cleanup library thread with PauseDownloadError"""
+			mission = event.data
 			if event.target is self.library_thread:
 				uninit_episode(mission)
 				self.library_thread = None

@@ -6,7 +6,6 @@
 import re
 import json
 
-from urllib.parse import urljoin
 from ..core import Episode, grabhtml
 
 domain = ["wix.com"]

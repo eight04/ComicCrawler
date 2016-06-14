@@ -7,8 +7,9 @@ Ex:
 
 """
 
-import re, execjs
-from html import unescape
+import re
+import execjs
+
 from functools import partial
 
 from ..core import Episode, grabhtml
@@ -23,7 +24,7 @@ def get_title(html, url):
 def get_episodes(html, url):
 	s = []
 	html = html[html.index('<div class="cVol">'):]
-	base = re.search("(https?://[^/]+)", url).group(1)
+	# base = re.search("(https?://[^/]+)", url).group(1)
 	for match in re.finditer(
 			r"href='(http://www\.iibq\.com/comic/\d+/viewcomic\d+/)'>([^<]+)",
 			html):

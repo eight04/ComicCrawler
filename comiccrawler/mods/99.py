@@ -19,7 +19,7 @@ def get_title(html, url):
 	
 def get_episodes(html, url):
 	s = []
-	base = re.search("(https?://[^/]+)", url).group(1)
+	# base = re.search("(https?://[^/]+)", url).group(1)
 	for m in re.finditer("href='(/comics/[^']+/)'>([^<]+)</a>(?!</li>)", html):
 		ep_url, title = m.groups()
 		s.append(Episode(title, urljoin(url, ep_url)))
