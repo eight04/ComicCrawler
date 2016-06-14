@@ -202,7 +202,7 @@ class Crawler:
 			# cannot find the page?
 			self.image = None
 			
-		is_init = True
+		self.is_init = True
 			
 	def page_exists(self):
 		"""Check if current page exists in savepath."""
