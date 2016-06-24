@@ -230,6 +230,10 @@ class MainWindow:
 		def _(event):
 			err, mission = event.data
 			messagebox.showerror(mission.module.name, err)
+			
+		@self.thread.listen("LIBRARY_CHECK_UPDATE_FAILED")
+		def _(event):
+			messagebox.showerror("檢查更新未完成，已重試 10 次")
 
 	def create_view(self):
 		"""Draw the window."""
