@@ -8,9 +8,12 @@ Ex:
 
 """
 
-import re, execjs
+import re
+import execjs
+import json
 
 from urllib.parse import urljoin
+from itertools import cycle
 
 from ..core import Episode, grabhtml
 
@@ -61,7 +64,7 @@ def get_images(html, url):
 		r'<script type="text/javascript">(eval[^<]+)',
 		html
 	).group(1)
-
+	
 	ctx = execjs.compile(crypto + info_eval)
 	files, path = ctx.eval("[cInfo.files, cInfo.path]")
 	
@@ -73,7 +76,33 @@ def get_images(html, url):
 		html
 	).group(1)
 	corejs = grabhtml(corejs_url, referer=url)
-	utils = re.search(r"SMH\.(utils=.+?),SMH\.imgData=", corejs).group(1)
-	ctx = execjs.compile(utils)
 	
-	return [ctx.call("utils.getPath", "i", path + file) for file in files]
+	# cache server list
+	servs = re.search(r"var servs=(.+?),pfuncs=", corejs).group(1)
+	servs = execjs.eval(servs)
+	servs = [host["h"] for category in servs for host in category["hosts"]]
+	
+	cache["servs"] = cycle(servs)
+	host = next(cache["servs"])
+	
+	utils = re.search(r"SMH\.(utils=.+?),SMH\.imgData=", corejs).group(1)
+	ctx = execjs.compile(utils + """
+	function getFiles(path, files, host) {
+		// lets try if it will be faster in javascript
+		return files.map(function(file){
+			return utils.getPath(host, path + file);
+		});
+	}
+	""")
+	
+	return ctx.call("getFiles", path, files, host)
+	
+def errorhandler(err, crawler):
+	"""Change host"""
+	if crawler.image:
+		host = next(cache["servs"])
+		crawler.image = re.sub(
+			r"://.+?\.",
+			"://{host}.".format(host=host),
+			crawler.image
+		)
