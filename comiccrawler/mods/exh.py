@@ -63,13 +63,14 @@ def get_images(html, url):
 
 	return image
 
-def errorhandler(er, ep):
+def errorhandler(er, crawler):
 	global nl
-	url = urljoin(ep.current_url, "?nl=" + nl)
-	if ep.current_url == url:
-		ep.current_url = url.split("?")[0]
+	url = urljoin(crawler.ep.current_url, "?nl=" + nl)
+	if crawler.ep.current_url == url:
+		crawler.ep.current_url = url.split("?")[0]
 	else:
-		ep.current_url = url
+		crawler.ep.current_url = url
+	crawler.html = None
 
 def get_next_page(html, url):
 	match = re.search('id="next"[^>]+?href="([^"]+)', html)

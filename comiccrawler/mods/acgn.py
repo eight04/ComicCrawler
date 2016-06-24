@@ -34,6 +34,6 @@ def get_episodes(html, url):
 def get_images(html, url):
 	return [match.group(1) for match in re.finditer(r'_src="([^"]+)"', html)]
 
-def errorhandler(err, ep):
-	if "暫缺" in ep.title:
+def errorhandler(err, crawler):
+	if "暫缺" in crawler.ep.title:
 		raise SkipEpisodeError

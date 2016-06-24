@@ -121,7 +121,7 @@ def get_images(html, url):
 	if not rs:
 		raise SkipEpisodeError
 
-def errorhandler(er, ep):
+def errorhandler(er, crawler):
 	# http://i1.pixiv.net/img21/img/raven1109/10841650_big_p0.jpg
 	if isinstance(er, HTTPError):
 		# Private page?

@@ -69,6 +69,6 @@ def get_images(html, url):
 	
 	return s
 
-def errorhandler(err, ep):
+def errorhandler(err, crawler):
 	if first_grabber:
 		first_grabber()
