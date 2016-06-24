@@ -189,19 +189,23 @@ class Crawler:
 		if not self.ep.current_page:
 			self.ep.current_page = 1
 			
+		self.init_images(self.ep.current_page - 1)
+			
+		self.is_init = True
+		
+	def init_images(self, skip_pages=0):
+		"""Grab html, images and move cursor to correct image by skip_pages"""
 		self.get_html()
 		self.get_images()
 		
-		# skip some images
 		try:
-			for i in range(0, self.ep.current_page - 1):
+			# skip some images
+			for i in range(0, skip_pages):
 				next(self.images)
+			# get current image
 			self.image = next(self.images)
 		except StopIteration:
-			# cannot find the page?
 			self.image = None
-			
-		self.is_init = True
 			
 	def page_exists(self):
 		"""Check if current page exists in savepath."""
@@ -279,13 +283,7 @@ class Crawler:
 		self.ep.current_url = next_page
 		self.ep.current_page = 1
 		
-		self.get_html()
-		self.get_images()
-		
-		try:
-			self.image = next(self.images)
-		except StopIteration:
-			self.image = None
+		self.init_images()
 
 	def next_image(self):
 		self.ep.current_page += 1
@@ -304,7 +302,9 @@ class Crawler:
 		sleep(getattr(self.downloader, "rest", 0))
 		
 	def get_next_page(self):
-		if hasattr(self.downloader, "get_next_page"):
+		if (hasattr(self.downloader, "get_next_page") 
+				and isinstance(self.html, str)):
+			# self.html is not a str if self.ep.image is not None
 			return self.downloader.get_next_page(
 				self.html,
 				self.ep.current_url
@@ -312,12 +312,13 @@ class Crawler:
 		
 	def get_html(self):
 		if self.ep.image:
-			return
-		self.html = grabhtml(
-			self.ep.current_url,
-			self.get_header(),
-			cookie=self.get_cookie()
-		)
+			self.html = True
+		else:
+			self.html = grabhtml(
+				self.ep.current_url,
+				self.get_header(),
+				cookie=self.get_cookie()
+			)
 		
 	def get_images(self):
 		"""Get images"""
@@ -347,7 +348,7 @@ class Crawler:
 			return
 
 		try:
-			handler(error, self.ep)
+			handler(error, self)
 
 		except Exception as er:
 			print("[Crawler] Failed to handle error: {}".format(er))
@@ -364,6 +365,9 @@ def crawlpage(crawler):
 	def download():
 		if not crawler.is_init:
 			crawler.init()
+			
+		if not crawler.html:
+			crawler.init_images()
 	
 		if not crawler.image:
 			crawler.next_page()
