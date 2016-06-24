@@ -10,7 +10,6 @@ Ex:
 
 import re
 import execjs
-import json
 
 from urllib.parse import urljoin
 from itertools import cycle
