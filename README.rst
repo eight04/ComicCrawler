@@ -291,6 +291,12 @@ Todos
 Changelog
 ---------
 
+-  2016.6.25
+
+   -  API changed. Now the errorhandler will recieve ``(error, crawler)`` instead of ``(error, episode)``.
+   -  Add errorhandler in seemh. It will try to use different host if downloading failed.
+   -  Drop mission to the bottom when update checking failed. Update checking process will stop if it had retried 10 times.
+
 -  2016.6.14.1
 
    -  Pass pyflakes and fix a bunch of typo.
