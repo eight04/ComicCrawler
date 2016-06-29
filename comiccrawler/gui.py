@@ -275,8 +275,8 @@ class MainWindow:
 
 		self.root.title("Comic Crawler")
 		self.root.geometry("{w}x{h}".format(
-			w=500 * scale,
-			h=400 * scale
+			w=int(500 * scale),
+			h=int(400 * scale)
 		))
 		
 		if scale != 1:
