@@ -206,8 +206,10 @@ class MainWindow:
 			if not select_episodes(self.root, mission):
 				mission_manager.remove("view", mission)
 
-		@self.thread.listen("ANALYZE_FAILED")
+		@self.thread.listen("ANALYZE_FAILED", priority=100)
 		def _(event):
+			if event.target not in download_manager.analyze_threads:
+				return
 			error, mission = event.data
 			messagebox.showerror(
 				mission.module.name,
