@@ -63,10 +63,8 @@ def get_scale(root):
 	# GNome
 	try:
 		args = ["gsettings", "get", "org.gnome.desktop.interface", "scaling-factor"]
-		scale = ""
-		with subprocess.Popen(args, stdout=subprocess.PIPE) as p:
-			scale += p.stdout.read()
-		return float(scale)
+		with subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True) as p:
+			return float(p.stdout.read())
 	except Exception:
 		traceback.print_exc()
 		
