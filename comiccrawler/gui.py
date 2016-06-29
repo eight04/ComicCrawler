@@ -6,6 +6,8 @@ import os
 import webbrowser
 import re
 import tkinter.messagebox as messagebox
+import subprocess
+import traceback
 
 from tkinter import Text, Canvas, Tk, Menu, Toplevel
 from tkinter.ttk import Frame, Scrollbar, Label, Entry, Checkbutton, Button, Notebook, Treeview
@@ -41,6 +43,34 @@ def safe_tk(text):
 	"""Encode U+FFFF+ characters. Tkinter doesn't allow to display these character. See http://stackoverflow.com/questions/23530080/how-to-print-non-bmp-unicode-characters-in-tkinter-e-g"""
 
 	return re.sub(r"[^\u0000-\uFFFF]", "_", text)
+	
+def get_scale(root):
+	"""To display in high-dpi we need to grab the scale factor from OS"""
+	
+	# Windows
+	# https://github.com/eight04/ComicCrawler/issues/13#issuecomment-229367171
+	try:
+		import ctypes
+		user32 = ctypes.windll.user32
+		user32.SetProcessDPIAware()
+		w = user32.GetSystemMetrics(0)
+		return w / root.winfo_screenwidth()
+	except ImportError:
+		pass
+	except Exception:
+		traceback.print_exc()
+	
+	# GNome
+	try:
+		args = ["gsettings", "get", "org.gnome.desktop.interface", "scaling-factor"]
+		scale = ""
+		with subprocess.Popen(args, stdout=subprocess.PIPE) as p:
+			scale += p.stdout.read()
+		return float(scale)
+	except Exception:
+		traceback.print_exc()
+		
+	return 1.0
 
 class DialogProvider:
 	"""Create dialog elements."""
@@ -240,9 +270,18 @@ class MainWindow:
 	def create_view(self):
 		"""Draw the window."""
 		self.root = Tk()
+		
+		scale = get_scale(self.root)
 
 		self.root.title("Comic Crawler")
-		self.root.geometry("500x400")
+		self.root.geometry("{w}x{h}".format(
+			w=500 * scale,
+			h=400 * scale
+		))
+		
+		if scale != 1:
+			old_scale = self.root.tk.call('tk', 'scaling')
+			self.root.tk.call("tk", "scaling", old_scale * scale)
 
 		Label(self.root,text="輸入連結︰").pack(anchor="w")
 
