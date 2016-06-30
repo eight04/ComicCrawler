@@ -10,7 +10,7 @@ import subprocess
 import traceback
 
 from tkinter import Text, Canvas, Tk, Menu, Toplevel, font
-from tkinter.ttk import Frame, Scrollbar, Label, Entry, Checkbutton, Button, Notebook, Treeview
+from tkinter.ttk import Frame, Scrollbar, Label, Entry, Checkbutton, Button, Notebook, Treeview, Style
 
 from worker import current
 from time import time
@@ -289,6 +289,9 @@ class MainWindow:
 				size = int(-size / 96 * 72)
 				f.config(size=size)
 
+		# Treeview doesn't scale its rowheight
+		Style().configure("Treeview", rowheight=int(20 * scale))
+		
 		Label(self.root,text="輸入連結︰").pack(anchor="w")
 
 		# url entry
