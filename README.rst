@@ -291,6 +291,11 @@ Todos
 Changelog
 ---------
 
+-  2016.6.30
+
+   -  Support high dpi displays.
+   -  Don't show error in library thread. Only warn the user when update checking fails.
+
 -  2016.6.25
 
    -  API changed. Now the errorhandler will recieve ``(error, crawler)`` instead of ``(error, episode)``.
