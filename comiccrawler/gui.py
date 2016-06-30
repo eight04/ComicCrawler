@@ -50,8 +50,8 @@ def get_scale(root):
 	# Windows
 	# https://github.com/eight04/ComicCrawler/issues/13#issuecomment-229367171
 	try:
-		import ctypes
-		user32 = ctypes.windll.user32
+		from ctypes import windll
+		user32 = windll.user32
 		user32.SetProcessDPIAware()
 		w = user32.GetSystemMetrics(0)
 		return w / root.winfo_screenwidth()
