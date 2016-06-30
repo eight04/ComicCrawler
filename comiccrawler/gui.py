@@ -9,7 +9,7 @@ import tkinter.messagebox as messagebox
 import subprocess
 import traceback
 
-from tkinter import Text, Canvas, Tk, Menu, Toplevel
+from tkinter import Text, Canvas, Tk, Menu, Toplevel, font
 from tkinter.ttk import Frame, Scrollbar, Label, Entry, Checkbutton, Button, Notebook, Treeview
 
 from worker import current
@@ -64,7 +64,7 @@ def get_scale(root):
 	try:
 		args = ["gsettings", "get", "org.gnome.desktop.interface", "scaling-factor"]
 		with subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True) as p:
-			return float(p.stdout.read())
+			return float(p.stdout.read().rpartition(" ")[-1])
 	except Exception:
 		traceback.print_exc()
 		
@@ -280,6 +280,14 @@ class MainWindow:
 		if scale != 1:
 			old_scale = self.root.tk.call('tk', 'scaling')
 			self.root.tk.call("tk", "scaling", old_scale * scale)
+			
+		# Use pt for builtin fonts
+		for name in ("TkDefaultFont", "TkTextFont", "TkHeadingFont", "TkMenuFont", "TkFixedFont", "TkTooltipFont", "TkCaptionFont", "TkSmallCaptionFont", "TkIconFont"):
+			f = font.nametofont(name)
+			size = f.config()["size"]
+			if size < 0:
+				size = int(-size / 96 * 72)
+				f.config(size=size)
 
 		Label(self.root,text="輸入連結︰").pack(anchor="w")
 
@@ -399,7 +407,7 @@ class MainWindow:
 		# domains
 		text = Text(frame, height=10, yscrollcommand=scrollbar.set)
 		text.insert("insert", "\n".join(list_domain()))
-		text.pack(side="left", fill="y")
+		text.pack(side="left", fill="both", expand=True)
 
 		scrollbar.config(command=text.yview)
 
