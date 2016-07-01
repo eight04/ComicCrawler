@@ -598,7 +598,7 @@ class MainWindow:
 
 			# menu call
 			def tvmenucall(event):
-				menu.post(event.x_root, event.y_root)
+				menu.tk_popup(event.x_root, event.y_root)
 			tv.bind("<Button-3>", tvmenucall)
 
 		create_menu_set("view")
