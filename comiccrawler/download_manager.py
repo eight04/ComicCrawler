@@ -103,20 +103,23 @@ class DownloadManager:
 				uninit_episode(mission)
 				if mission.state == "UPDATE":
 					mission_manager.lift("library", mission)
-					self.do_check_update()
-				elif mission.state == "ERROR":
+					
+				if mission.state == "ERROR":
 					if self.library_err_count > 10:
 						print("Too many error!")
 						download_ch.pub("LIBRARY_CHECK_UPDATE_FAILED")
-						return
-					self.library_err_count += 1
-					mission_manager.drop("library", mission)
-					later(self.do_check_update, 5)
+					else:
+						self.library_err_count += 1
+						mission_manager.drop("library", mission)
+						later(self.do_check_update, 5)
+					return
+					
+				self.do_check_update()
 				
 		@thread.listen("ANALYZE_INVALID")
 		def _(event):
 			"""Cleanup library thread with PauseDownloadError"""
-			mission = event.data
+			err, mission = event.data
 			if event.target is self.library_thread:
 				uninit_episode(mission)
 				self.library_thread = None
