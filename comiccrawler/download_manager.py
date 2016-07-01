@@ -5,7 +5,7 @@
 import subprocess
 
 from os.path import join as path_join
-from worker import Worker, current, sleep
+from worker import Worker, current, sleep, later
 from time import time
 
 from .safeprint import print
@@ -103,6 +103,7 @@ class DownloadManager:
 				uninit_episode(mission)
 				if mission.state == "UPDATE":
 					mission_manager.lift("library", mission)
+					self.do_check_update()
 				elif mission.state == "ERROR":
 					if self.library_err_count > 10:
 						print("Too many error!")
@@ -110,8 +111,7 @@ class DownloadManager:
 						return
 					self.library_err_count += 1
 					mission_manager.drop("library", mission)
-					sleep(5)
-				self.do_check_update()
+					later(self.do_check_update, 5)
 				
 		@thread.listen("ANALYZE_INVALID")
 		def _(event):
