@@ -291,6 +291,11 @@ Todos
 Changelog
 ---------
 
+-  2016.7.2
+
+   -  Fix context menu popup bug on linux.
+   -  Fix update checking stops after finished mission.
+
 -  2016.7.1
 
    -  Use cross-platform startfile (incomplete).
