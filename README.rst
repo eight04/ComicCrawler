@@ -291,6 +291,15 @@ Todos
 Changelog
 ---------
 
+-  2016.7.1
+
+   -  Use cross-platform startfile (incomplete).
+   -  Use `clam` theme for GUI under linux.
+   -  Fix the error message of update checking failure.
+   -  Update checking won't block GUI thread anymore.
+   -  Update `pythreadworker` to 0.6.
+   -  Fix import syntax in `gui.get_scale`.
+
 -  2016.6.30
 
    -  Support high dpi displays.
