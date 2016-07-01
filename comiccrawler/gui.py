@@ -74,7 +74,12 @@ def get_scale(root):
 	
 def startfile(file):
 	"""Cross platform startfile"""
-	os.startfile(file)
+	if sys.platform == "win32":
+		os.startfile(file)
+	elif sys.platform == "darwin":
+		subprocess.Popen(["open", file])
+	else:
+		subprocess.Popen(["xdg-open", file])
 
 class DialogProvider:
 	"""Create dialog elements."""
