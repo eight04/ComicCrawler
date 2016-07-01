@@ -5,7 +5,7 @@
 import subprocess
 
 from os.path import join as path_join
-from worker import Worker, current, sleep, later
+from worker import Worker, current, later
 from time import time
 
 from .safeprint import print
