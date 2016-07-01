@@ -8,9 +8,11 @@ import re
 import tkinter.messagebox as messagebox
 import subprocess
 import traceback
+import sys
 
-from tkinter import Text, Canvas, Tk, Menu, Toplevel, font
-from tkinter.ttk import Frame, Scrollbar, Label, Entry, Checkbutton, Button, Notebook, Treeview, Style
+import tkinter as tk
+import tkinter.ttk as ttk
+import tkinter.font as font
 
 from worker import current
 from time import time
@@ -69,6 +71,10 @@ def get_scale(root):
 		traceback.print_exc()
 		
 	return 1.0
+	
+def startfile(file):
+	"""Cross platform startfile"""
+	os.startfile(file)
 
 class DialogProvider:
 	"""Create dialog elements."""
@@ -83,14 +89,14 @@ class DialogProvider:
 
 	def create_btn_bar(self, btn_bar):
 		"""Override me."""
-		Button(btn_bar, text="確定", command=self.dialog.ok, default="active").pack(side="left")
-		Button(btn_bar, text="取消", command=self.dialog.cancel).pack(side="left")
+		ttk.Button(btn_bar, text="確定", command=self.dialog.ok, default="active").pack(side="left")
+		ttk.Button(btn_bar, text="取消", command=self.dialog.cancel).pack(side="left")
 
 	def apply(self):
 		"""Override me."""
 		return True
 
-class Dialog(Toplevel):
+class Dialog(tk.Toplevel):
 	"""Create dialog."""
 
 	def __init__(self, parent, title="Dialog", cls=DialogProvider):
@@ -106,12 +112,12 @@ class Dialog(Toplevel):
 		self.title(safe_tk(title))
 
 		# body
-		self.body = Frame(self)
+		self.body = ttk.Frame(self)
 		self.provider.create_body(self.body)
 		self.body.pack()
 
 		# button bar
-		self.btn_bar = Frame(self)
+		self.btn_bar = ttk.Frame(self)
 		self.provider.create_btn_bar(self.btn_bar)
 		self.btn_bar.pack()
 
@@ -267,7 +273,13 @@ class MainWindow:
 
 	def create_view(self):
 		"""Draw the window."""
-		self.root = Tk()
+		self.root = tk.Tk()
+		
+		if sys.platform.startswith("linux"):
+			try:
+				ttk.Style().theme_use("clam")
+			except tk.TclError:
+				pass
 		
 		scale = get_scale(self.root)
 
@@ -290,53 +302,53 @@ class MainWindow:
 				f.config(size=size)
 
 		# Treeview doesn't scale its rowheight
-		Style().configure("Treeview", rowheight=int(20 * scale))
+		ttk.Style().configure("Treeview", rowheight=int(20 * scale))
 		
-		Label(self.root,text="輸入連結︰").pack(anchor="w")
+		tk.Label(self.root,text="輸入連結︰").pack(anchor="w")
 
 		# url entry
-		entry_url = Entry(self.root)
+		entry_url = ttk.Entry(self.root)
 		entry_url.pack(fill="x")
 		self.entry_url = entry_url
 
 		# bunch of buttons
-		buttonbox = Frame(self.root)
+		buttonbox = ttk.Frame(self.root)
 		buttonbox.pack()
 
-		btnaddurl = Button(buttonbox, text="加入連結")
+		btnaddurl = ttk.Button(buttonbox, text="加入連結")
 		btnaddurl.pack(side="left")
 		self.btn_addurl = btnaddurl
 
-		btnstart = Button(buttonbox, text="開始下載")
+		btnstart = ttk.Button(buttonbox, text="開始下載")
 		btnstart.pack(side="left")
 		self.btn_start = btnstart
 
-		btnstop = Button(buttonbox,text="停止下載")
+		btnstop = ttk.Button(buttonbox,text="停止下載")
 		btnstop.pack(side="left")
 		self.btn_stop = btnstop
 
-		btnclean = Button(buttonbox, text="移除已完成")
+		btnclean = ttk.Button(buttonbox, text="移除已完成")
 		btnclean.pack(side="left")
 		self.btn_clean = btnclean
 
-		btnconfig = Button(buttonbox, text="重載設定檔")
+		btnconfig = ttk.Button(buttonbox, text="重載設定檔")
 		btnconfig.pack(side="left")
 		self.btn_config = btnconfig
 
 		# notebook
-		self.notebook = Notebook(self.root)
+		self.notebook = ttk.Notebook(self.root)
 		self.notebook.pack(expand=True, fill="both")
 
 		# download manager
-		frame = Frame(self.notebook)
+		frame = ttk.Frame(self.notebook)
 		self.notebook.add(frame, text="任務列表")
 
 		# mission list scrollbar
-		self.view_scrbar = Scrollbar(frame)
+		self.view_scrbar = ttk.Scrollbar(frame)
 		self.view_scrbar.pack(side="right", fill="y")
 
 		# mission list
-		tv = Treeview(
+		tv = ttk.Treeview(
 			frame,
 			columns=("name","host","state"),
 			yscrollcommand=self.view_scrbar.set
@@ -354,32 +366,32 @@ class MainWindow:
 		self.view_scrbar.config(command=tv.yview)
 
 		# mission context menu
-		self.view_menu = Menu(tv, tearoff=False)
+		self.view_menu = tk.Menu(tv, tearoff=False)
 
 		# library
-		frame = Frame(self.notebook)
+		frame = ttk.Frame(self.notebook)
 		self.notebook.add(frame, text="圖書館")
 
 		# library buttons
-		btnBar = Frame(frame)
+		btnBar = ttk.Frame(frame)
 		btnBar.pack()
 
-		self.btn_update = Button(btnBar, text="檢查更新")
+		self.btn_update = ttk.Button(btnBar, text="檢查更新")
 		self.btn_update.pack(side="left")
 
-		self.btn_download_update = Button(btnBar, text="下載更新")
+		self.btn_download_update = ttk.Button(btnBar, text="下載更新")
 		self.btn_download_update.pack(side="left")
 
 		# library treeview scrollbar container
-		frame_lib = Frame(frame)
+		frame_lib = ttk.Frame(frame)
 		frame_lib.pack(expand=True, fill="both")
 
 		# scrollbar
-		self.lib_scrbar = Scrollbar(frame_lib)
+		self.lib_scrbar = ttk.Scrollbar(frame_lib)
 		self.lib_scrbar.pack(side="right", fill="y")
 
 		# library treeview
-		tv = Treeview(
+		tv = ttk.Treeview(
 			frame_lib,
 			columns=("name","host","state"),
 			yscrollcommand=self.lib_scrbar.set
@@ -397,25 +409,25 @@ class MainWindow:
 		self.lib_scrbar.config(command=self.tv_library.yview)
 
 		# library context menu
-		self.library_menu = Menu(self.tv_library, tearoff=False)
+		self.library_menu = tk.Menu(self.tv_library, tearoff=False)
 
 		# domain list
-		frame = Frame(self.notebook)
+		frame = ttk.Frame(self.notebook)
 		self.notebook.add(frame, text="支援的網域")
 
 		# domains scrollbar
-		scrollbar = Scrollbar(frame)
+		scrollbar = ttk.Scrollbar(frame)
 		scrollbar.pack(side="right", fill="y")
 
 		# domains
-		text = Text(frame, height=10, yscrollcommand=scrollbar.set)
+		text = tk.Text(frame, height=10, yscrollcommand=scrollbar.set)
 		text.insert("insert", "\n".join(list_domain()))
 		text.pack(side="left", fill="both", expand=True)
 
 		scrollbar.config(command=text.yview)
 
 		# status bar
-		statusbar = Label(self.root, text="Comic Crawler", anchor="e")
+		statusbar = ttk.Label(self.root, text="Comic Crawler", anchor="e")
 		statusbar.pack(anchor="e")
 		self.statusbar = statusbar
 
@@ -561,7 +573,7 @@ class MainWindow:
 					folder = os.path.expanduser(folder)
 					if not os.path.isdir(folder):
 						os.makedirs(folder)
-					os.startfile(folder)
+					startfile(folder)
 
 			@bind_menu("開啟網頁")
 			def tvOpenBrowser():
@@ -660,7 +672,7 @@ def select_title(parent, mission):
 
 	class Provider(DialogProvider):
 		def create_body(self, body):
-			entry = Entry(body)
+			entry = ttk.Entry(body)
 			entry.insert(0, safe_tk(mission.title))
 			entry.selection_range(0, "end")
 			entry.pack()
@@ -681,8 +693,8 @@ def select_episodes(parent, mission):
 
 	class Provider(DialogProvider):
 		def create_body(self, body):
-			xscrollbar = Scrollbar(body, orient="horizontal")
-			canvas = Canvas(
+			xscrollbar = ttk.Scrollbar(body, orient="horizontal")
+			canvas = tk.Canvas(
 				body,
 				xscrollcommand=xscrollbar.set,
 				highlightthickness="0"
@@ -708,16 +720,16 @@ def select_episodes(parent, mission):
 
 			left = 0
 			for window in windows:
-				inner = Frame(canvas)
+				inner = ttk.Frame(canvas)
 				for p_i, page in enumerate(window):
 					for e_i, ep in enumerate(page):
-						ck = Checkbutton(inner, text=safe_tk(ep.title))
+						ck = ttk.Checkbutton(inner, text=safe_tk(ep.title))
 						ck.state(("!alternate",))
 						if not ep.skip:
 							ck.state(("selected",))
 						ck.grid(column=p_i, row=e_i, sticky="w")
 						ck_holder[ep] = ck
-					ck = Checkbutton(inner)
+					ck = ttk.Checkbutton(inner)
 					ck.state(("!alternate", "selected"))
 					ck.grid(column=p_i, row=e_i + 1, sticky="w")
 					ck.config(command=set_page(ck, page))
@@ -749,7 +761,7 @@ def select_episodes(parent, mission):
 			xscrollbar.pack(fill="x")
 
 		def create_btn_bar(self, btn_bar):
-			Button(btn_bar, text="反相", command=self.toggle).pack(side="left")
+			ttk.Button(btn_bar, text="反相", command=self.toggle).pack(side="left")
 			super().create_btn_bar(btn_bar)
 
 		def apply(self):
