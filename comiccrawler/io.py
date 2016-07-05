@@ -31,8 +31,7 @@ def content_write(file, content, append=False):
 		mode = "a"
 	else:
 		mode = "w"
-		if is_file(file):
-			file = file + time.strftime("@%Y-%m-%d_%H%M%S")
+		file = file + time.strftime("@%Y-%m-%d_%H%M%S")
 
 	if isinstance(content, bytes):
 		mode += "b"
