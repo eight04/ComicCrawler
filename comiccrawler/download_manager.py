@@ -63,12 +63,9 @@ class DownloadManager:
 				commands = []
 				
 			for command in commands:
-				command = (
-					command,
-					path_join(
-						event.data.module.config["savepath"],
-						safefilepath(event.data.title)
-					)
+				command = command + " " + path_join(
+					event.data.module.config["savepath"],
+					safefilepath(event.data.title)
 				)
 				try:
 					subprocess.call(command)
