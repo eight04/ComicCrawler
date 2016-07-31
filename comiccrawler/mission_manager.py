@@ -11,7 +11,7 @@ from threading import Lock
 from contextlib import suppress, contextmanager
 
 from .safeprint import print
-from .core import Mission, Episode, MissionProxy, safefilepath
+from .core import Mission, Episode, MissionProxy, safefilepath, mission_lock
 from .io import backup, open, remove, move
 
 from .channel import mission_ch
@@ -126,9 +126,10 @@ class MissionManager:
 		if not self.edit:
 			return
 
-		dump(list(self.pool.values()), "~/comiccrawler/pool.json")
-		dump(list(self.view), "~/comiccrawler/view.json")
-		dump(list(self.library), "~/comiccrawler/library.json")
+		with mission_lock:
+			dump(list(self.pool.values()), "~/comiccrawler/pool.json")
+			dump(list(self.view), "~/comiccrawler/view.json")
+			dump(list(self.library), "~/comiccrawler/library.json")
 			
 		self.edit = False
 		print("Session saved")

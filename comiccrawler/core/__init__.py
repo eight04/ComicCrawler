@@ -4,6 +4,7 @@ import traceback
 import re
 import hashlib
 import json
+import threading
 
 from worker import sleep, WorkerExit
 from os.path import join as path_join, split as path_split, splitext
@@ -14,6 +15,8 @@ from ..io import content_write, content_read, path_each
 from ..channel import download_ch, mission_ch
 
 from .grabber import grabhtml, grabimg, is_429
+
+mission_lock = threading.Lock()
 
 class Mission:
 	"""Create Mission object. Contains information of the mission."""
@@ -41,7 +44,8 @@ class MissionProxy:
 		return getattr(self.mission, name)
 
 	def __setattr__(self, name, value):
-		setattr(self.mission, name, value)
+		with mission_lock:
+			setattr(self.mission, name, value)
 		mission_ch.pub("MISSION_PROPERTY_CHANGED", self)
 
 	def tojson(self):
