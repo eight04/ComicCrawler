@@ -291,6 +291,15 @@ Todos
 Changelog
 ---------
 
+-  2016.8.8
+
+   -  Use a safer method in write_file.
+   -  Add mission_lock for thread safe.
+   -  Use str as runafterdownload.
+   -  Use float as autosave.
+   -  Add debug log.
+   -  Rewrite analyzer. Episodes shouldn't have same title.
+
 -  2016.7.2
 
    -  Fix context menu popup bug on linux.
