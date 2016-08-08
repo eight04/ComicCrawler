@@ -191,7 +191,7 @@ class MainWindow:
 	def save(self):
 		"""Save mission periodly"""
 		mission_manager.save()
-		self.root.after(setting.getint("autosave", 5) * 60 * 1000, self.save)
+		self.root.after(int(setting.getfloat("autosave", 5) * 60 * 1000), self.save)
 
 	def get_cid(self, cid_index, mission):
 		"""Get matched cid from cid index."""
