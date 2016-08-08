@@ -46,7 +46,8 @@ def quote_unicode_dict(d):
 		d[key] = quote_unicode(value)
 	
 def grabber_log(*args):
-	content_write("~/comiccrawler/grabber.log", pformat(args) + "\n\n", append=True)
+	if setting.getboolean("errorlog"):
+		content_write("~/comiccrawler/grabber.log", pformat(args) + "\n\n", append=True)
 
 sessions = {}
 def grabber(url, header=None, *, referer=None, cookie=None):
@@ -72,8 +73,7 @@ def grabber(url, header=None, *, referer=None, cookie=None):
 
 	r = s.get(url, timeout=20)
 
-	if setting.getboolean("errorlog"):
-		grabber_log(url, r.request.headers, r.headers)
+	grabber_log(url, r.request.headers, r.headers)
 
 	if r.status_code != 200:
 		r.raise_for_status()

@@ -13,10 +13,15 @@ from ..safeprint import print
 from ..error import ModuleError, PauseDownloadError, LastPageError, SkipEpisodeError
 from ..io import content_write, content_read, path_each
 from ..channel import download_ch, mission_ch
+from ..config import setting
 
 from .grabber import grabhtml, grabimg, is_429
 
 mission_lock = threading.Lock()
+
+def debug_log(*args):
+	if setting.getboolean("errorlog"):
+		content_write("~/comiccrawler/debug.log", ", ".join(args) + "\n", append=True)
 
 class Mission:
 	"""Create Mission object. Contains information of the mission."""
@@ -368,28 +373,39 @@ def crawlpage(crawler):
 	
 	def download():
 		if not crawler.is_init:
+			debug_log("D_INIT")
 			crawler.init()
 			
 		if not crawler.html:
+			debug_log("D_INIT_IMAGE")
 			crawler.init_images()
 	
 		if not crawler.image:
+			debug_log("D_NEXT_PAGE")
 			crawler.next_page()
 			return
 			
 		if crawler.page_exists():
+			debug_log("D_NEXT_IMAGE")
 			print("page {} already exist".format(crawler.ep.total + 1))
 			crawler.next_image()
 			return
 			
+		debug_log("D_RESOLVE")
 		crawler.resolve_image()
 		print("Downloading {} page {}: {}\n".format(
 			crawler.ep.title, crawler.ep.total + 1, crawler.image))
+		debug_log("D_DOWNLOAD")
 		crawler.download_image()
+		debug_log("D_HANDLE")
 		crawler.handle_image()
+		debug_log("D_SAVE")
 		crawler.save_image()
+		debug_log("D_PUB")
 		mission_ch.pub("MISSION_PROPERTY_CHANGED", crawler.mission)
+		debug_log("D_REST")
 		crawler.rest()
+		debug_log("D_NEXT_IMAGE")
 		crawler.next_image()
 
 	def download_error(er):
