@@ -474,6 +474,27 @@ def analyze_info(mission, downloader):
 
 	mission.state = "ANALYZING"
 
+	if mission.episodes:
+		is_new = False
+		
+		# one-time mission
+		if mission.episodes[0].url == mission.url:
+			if mission.episodes[0].skip or mission.episodes[0].complete:
+				mission.state = "FINISHED"
+			else:
+				mission.state = "UPDATE"
+			print("Analyzing success!")
+			return
+			
+		old_urls = set(e.url for e in mission.episodes)
+		old_titles = set(e.title for e in mission.episodes)
+		
+	else:
+		is_new = True
+		old_urls = set()
+		old_titles = set()
+		mission.episodes = []
+		
 	header = getattr(downloader, "header", None)
 	cookie = getattr(downloader, "cookie", None)
 
@@ -482,21 +503,22 @@ def analyze_info(mission, downloader):
 	if not mission.title:
 		mission.title = downloader.get_title(html, mission.url)
 
-	if mission.episodes:
-		old_urls = set(map(lambda e: e.url, mission.episodes))
-	else:
-		old_urls = set()
-		
 	url = mission.url
-	episodes = []
+	new_eps = []
+	
 	while True:
-		eps = downloader.get_episodes(html, url)
-		episodes = list(eps) + episodes
-		if any(ep.url in old_urls for ep in eps):
+		duplicate = False
+		for e in reversed(downloader.get_episodes(html, url)):
+			if ep.url in old_urls or ep.title in old_titles:
+				duplicate = True
+				continue
+			new_eps.append(ep)
+		# one-time mission
+		if new_eps == 1 and new_eps[0].url == mission.url:
+			break
+		if duplicate:
 			break
 		if not hasattr(downloader, "get_next_page"):
-			break
-		if len(episodes) and episodes[0].url == mission.url:
 			break
 		next_url = downloader.get_next_page(html, url)
 		if not next_url:
@@ -504,29 +526,18 @@ def analyze_info(mission, downloader):
 		url = next_url
 		print('Analyzing {}...'.format(url))
 		html = grabhtml(url, header, cookie=cookie)
+		
+	mission.episodes.extend(reversed(new_eps))
+	
+	if not mission.episodes:
+		raise Exception("Episode list is empty")
 
-	# Check if re-analyze
-	if mission.episodes:
-		# Insert new episodes
-		old_eps = set([ep.url for ep in mission.episodes])
-		for ep in episodes:
-			if ep.url not in old_eps:
-				mission.episodes.append(ep)
-
-		# Check update
-		for ep in mission.episodes:
-			if not ep.skip and not ep.complete:
-				mission.state = "UPDATE"
-				break
-		else:
-			mission.state = "FINISHED"
-
-	else:
-		if not episodes:
-			raise Exception("Episode list is empty")
-
-		mission.episodes = episodes
+	if is_new:
 		mission.state = "ANALYZED"
+	elif all(e.complete or e.skip for e in mission.episodes):
+		mission.state = "FINISHED"
+	else:
+		mission.state = "UPDATE"
 
 	# remove duplicate
 	remove_duplicate_episode(mission)
