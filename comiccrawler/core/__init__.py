@@ -461,10 +461,12 @@ def analyze(mission):
 def remove_duplicate_episode(mission):
 	"""Remove duplicate episodes."""
 	s = set()
+	s2 = set()
 	cleanList = []
 	for ep in mission.episodes:
-		if ep.url not in s:
+		if ep.url not in s and ep.title not in s2:
 			s.add(ep.url)
+			s2.add(ep.title)
 			cleanList.append(ep)
 	mission.episodes = cleanList
 
@@ -509,10 +511,10 @@ def analyze_info(mission, downloader):
 	while True:
 		duplicate = False
 		for e in reversed(downloader.get_episodes(html, url)):
-			if ep.url in old_urls or ep.title in old_titles:
+			if e.url in old_urls or e.title in old_titles:
 				duplicate = True
 				continue
-			new_eps.append(ep)
+			new_eps.append(e)
 		# one-time mission
 		if new_eps == 1 and new_eps[0].url == mission.url:
 			break
