@@ -22,7 +22,7 @@ domain = ["www.dm5.com", "tel.dm5.com"]
 name = "動漫屋"
 
 def get_title(html, url):
-	return search("class=\"inbt_title_h2\">([^<]+)</h1>", html).group(1)
+	return search('DM5_COMIC_MNAME="([^"]+)', html).group(1)
 
 def get_episodes(html, url):
 	s = []
