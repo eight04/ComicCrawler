@@ -18,8 +18,10 @@ name = "yande.re"
 noepfolder = True
 
 def get_title(html, url):
-	title = re.search(r"<title>/(.+?)</title>", html, flags=re.DOTALL).group(1)
-	return title.strip("/")
+	title = re.search(r"<title>(.+?)</title>", html, flags=re.DOTALL).group(1)
+	title = title.strip("/")
+	title = title.replace(" | yande.re", "")
+	return "[yande.re] " + title
 	
 def get_episodes(html, url):
 	s = []
