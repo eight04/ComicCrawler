@@ -291,7 +291,7 @@ Todos
 Changelog
 ---------
 
--  2016.8.18
+-  2016.8.19
 
    -  Fix title not found error in dm5.
 
