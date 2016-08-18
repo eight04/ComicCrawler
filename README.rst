@@ -291,6 +291,10 @@ Todos
 Changelog
 ---------
 
+-  2016.8.18
+
+   -  Fix title not found error in dm5.
+
 -  2016.8.8
 
    -  Use a safer method in write_file.
