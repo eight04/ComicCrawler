@@ -7,7 +7,7 @@ import imghdr
 from urllib.parse import quote, urlsplit, urlunsplit
 from mimetypes import guess_extension
 
-from worker import sync
+from worker import sync, sleep
 from pprint import pformat
 
 from ..config import setting
@@ -50,7 +50,7 @@ def grabber_log(*args):
 		content_write("~/comiccrawler/grabber.log", pformat(args) + "\n\n", append=True)
 
 sessions = {}
-def grabber(url, header=None, *, referer=None, cookie=None):
+def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True):
 	"""Request url, return text or bytes of the content."""
 	scheme, netloc, path, query, frag = urlsplit(url)
 	
@@ -70,14 +70,16 @@ def grabber(url, header=None, *, referer=None, cookie=None):
 	if cookie:
 		quote_unicode_dict(cookie)
 		requests.utils.add_dict_to_cookiejar(s.cookies, cookie)
+		
+	while True:
+		r = s.get(url, timeout=20)
+		grabber_log(url, r.request.headers, r.headers)
 
-	r = s.get(url, timeout=20)
-
-	grabber_log(url, r.request.headers, r.headers)
-
-	if r.status_code != 200:
-		r.raise_for_status()
-			
+		if r.status_code == 200:
+			break
+		if r.status_code != 429 or raise_429:
+			r.raise_for_status()
+		sleep(5)
 	return r
 	
 def is_429(err):
