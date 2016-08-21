@@ -527,7 +527,7 @@ def analyze_info(mission, downloader):
 			break
 		url = next_url
 		print('Analyzing {}...'.format(url))
-		html = grabhtml(url, header, cookie=cookie)
+		html = grabhtml(url, header, cookie=cookie, raise_429=False)
 		
 	mission.episodes.extend(reversed(new_eps))
 	
