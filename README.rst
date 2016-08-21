@@ -291,6 +291,13 @@ Todos
 Changelog
 ---------
 
+-  2016.8.22
+
+   -  Support hhxiee.
+   -  Fix get_episodes error in ck101.
+   -  Suppress 429 error when analyzing.
+   -  Change title format in yendere. Support pools.
+
 -  2016.8.19
 
    -  Fix title not found error in dm5.
