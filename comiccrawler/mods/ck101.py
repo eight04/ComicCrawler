@@ -9,9 +9,10 @@ Ex:
 
 import re
 
+from urllib.parse import urljoin
+
 from ..core import Episode
 from ..error import SkipEpisodeError
-
 
 domain = ["comic.ck101.com"]
 name = "卡提諾"
@@ -21,11 +22,12 @@ def get_title(html, url):
 	
 def get_episodes(html, url):
 	s = []
-	base = re.search("(https?://[^/]+)", url).group(1)
-	for m in re.finditer("<a onclick=\"_gaq.push\(\['_trackEvent', '詳情頁-lists','[^']+','[^']+'\]\);\" target=\"_blank\" href=\"([^\"]+)\" title=\"[^\"]+\">(.+?)</a>", html, re.M):
-		url, title = m
-		e = Episode(m.group(2), base + m.group(1))
-		s.append(e)
+	i = html.index("漫畫列表")
+	j = html.index("<!--new upsdate-->")
+	
+	for match in re.finditer('href="(.+?)" title="(.+?)"', html[i:j]):
+		ep_url, title = match.groups()
+		s.append(Episode(title, urljoin(url, ep_url)))
 	return s[::-1]
 			
 def get_images(html, url):
