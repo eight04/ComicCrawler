@@ -65,7 +65,7 @@ def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True):
 		s.headers.update(header)
 
 	if referer:
-		s.headers['referer'] = referer
+		s.headers['referer'] = quote_unicode(referer)
 
 	if cookie:
 		quote_unicode_dict(cookie)
