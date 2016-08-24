@@ -291,6 +291,11 @@ Todos
 Changelog
 ---------
 
+-  2016.8.24
+
+   -  Fix 429 error still raised by analyze_info.
+   -  Fix next page pattern in tumblr.
+
 -  2016.8.22
 
    -  Support hhxiee.
