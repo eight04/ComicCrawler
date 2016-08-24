@@ -291,6 +291,10 @@ Todos
 Changelog
 ---------
 
+-  2016.8.24.1
+
+   -  Use better method to find next page in tumblr.
+
 -  2016.8.24
 
    -  Fix 429 error still raised by analyze_info.
