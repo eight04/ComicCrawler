@@ -38,6 +38,6 @@ def get_images(html, url):
 	return o["image"]["@list"]
 
 def get_next_page(html, url):
-	match = re.search('<a href="([^"]+)" id="next">', html)
+	match = re.search('<a href="([^"]+)" id="(next|past)">', html)
 	if match:
 		return urljoin(url, match.group(1))
