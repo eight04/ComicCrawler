@@ -294,6 +294,9 @@ Changelog
 -  2016.8.24.1
 
    -  Use better method to find next page in tumblr.
+   -  Fix unicode referer bug in grabber.
+   -  Update match pattern to avoid redirect in tumblr. See https://github.com/kennethreitz/requests/issues/3078.
+   -  Fix get_title error in tumblr that the title might be empty.
 
 -  2016.8.24
 
