@@ -24,7 +24,7 @@ def get_title(html, url):
 def get_episodes(html, url):
 	s = []
 	# base = re.search("(https?://[^/]+)", url).group(1)
-	pattern = 'href="(' + re.escape(urljoin(url, "/post/")) + '(\d+))'
+	pattern = 'href="(' + re.escape(urljoin(url, "/post/")) + '(\d+)[^"]*)'
 	for m in re.finditer(pattern, html):
 		url, uid = m.groups()
 		s.append(Episode(uid, url))
