@@ -17,7 +17,7 @@ name = "tumblr"
 noepfolder = True
 
 def get_title(html, url):
-	title = re.search(r"<title>([^<]+)", html).group(1)
+	title = re.search(r"<title>([^<]+)", html).group(1).strip()
 	id = url[url.index("://") + 3: url.index(".tumblr.com")]
 	return "[tumblr] {} ({})".format(title, id)
 	
