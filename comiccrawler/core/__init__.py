@@ -500,7 +500,7 @@ def analyze_info(mission, downloader):
 	header = getattr(downloader, "header", None)
 	cookie = getattr(downloader, "cookie", None)
 
-	html = grabhtml(mission.url, header, cookie=cookie)
+	html = grabhtml(mission.url, header, cookie=cookie, raise_429=False)
 
 	if not mission.title:
 		mission.title = downloader.get_title(html, mission.url)
