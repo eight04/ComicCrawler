@@ -291,6 +291,11 @@ Todos
 Changelog
 ---------
 
+-  2016.9.11
+
+   -  Fix: failed to read file encoded with utf-8-sig.
+   -  Fix: ignore empty posts in tumblr.
+
 -  2016.8.24.1
 
    -  Use better method to find next page in tumblr.
