@@ -11,6 +11,7 @@ import re, json
 from urllib.parse import urljoin
 
 from ..core import Episode
+from ..error import SkipEpisodeError
 
 domain = ["tumblr.com"]
 name = "tumblr"
@@ -33,6 +34,8 @@ def get_episodes(html, url):
 def get_images(html, url):
 	s = re.search('<script type="application/ld\+json">([^<]*)</script>', html).group(1)
 	o = json.loads(s)
+	if "image" not in o:
+		raise SkipEpisodeError
 	if isinstance(o["image"], str):
 		return [o["image"]]
 	return o["image"]["@list"]
