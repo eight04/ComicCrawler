@@ -69,6 +69,13 @@ Install Comic Crawler
 ::
 
     pip install --upgrade comiccrawler
+    
+最後在 cmd 底下輸入以下指令執行 Comic Crawler︰
+
+::
+
+    comiccrawler gui
+    
 
 Supported domains
 -----------------
