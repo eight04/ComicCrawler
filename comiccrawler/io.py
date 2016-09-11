@@ -148,8 +148,11 @@ def open(file, mode="r"):
 	original = file
 	if "w" in mode and is_file(file):
 		file = file + time.strftime("@%Y-%m-%d_%H%M%S")
+		encoding = "utf-8"
+	else:
+		encoding = "utf-8-sig"
 		
-	with io.open(file, mode, encoding="utf-8") as fp:
+	with io.open(file, mode, encoding=encoding) as fp:
 		yield fp
 	
 	if file != original:
