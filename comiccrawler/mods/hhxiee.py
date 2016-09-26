@@ -15,7 +15,7 @@ from urllib.parse import urljoin, urlparse
 
 from ..core import Episode, grabhtml
 
-domain = ["www.hhxiee.com"]
+domain = ["www.hhxiee.com", "www.hhcomic.cc"]
 name = "汗汗"
 
 def get_title(html, url):
