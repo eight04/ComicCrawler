@@ -298,6 +298,11 @@ Todos
 Changelog
 ---------
 
+-  2016.9.27
+
+   -  Fix: image pattern in buka.
+   -  Fix: add hhcomic domain.
+
 -  2016.9.11
 
    -  Fix: failed to read file encoded with utf-8-sig.
