@@ -27,4 +27,4 @@ def get_episodes(html, url):
 	return arr[::-1]
 	
 def get_images(html, url):
-	return re.findall('<img src="(.+?/pics/.+?)"', html)
+	return re.findall('="([^"]+?/pics/[^"]+?)"', html)
