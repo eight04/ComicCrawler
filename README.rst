@@ -298,6 +298,11 @@ Todos
 Changelog
 ---------
 
+-  2016.9.30
+
+   -  Add ``params`` option to grabber.
+   -  Add flickr module.
+
 -  2016.9.27
 
    -  Fix: image pattern in buka.
