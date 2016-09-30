@@ -50,7 +50,7 @@ def grabber_log(*args):
 		content_write("~/comiccrawler/grabber.log", pformat(args) + "\n\n", append=True)
 
 sessions = {}
-def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True):
+def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True, params=None):
 	"""Request url, return text or bytes of the content."""
 	scheme, netloc, path, query, frag = urlsplit(url)
 	
@@ -72,8 +72,8 @@ def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True):
 		requests.utils.add_dict_to_cookiejar(s.cookies, cookie)
 		
 	while True:
-		r = s.get(url, timeout=20)
-		grabber_log(url, r.request.headers, r.headers)
+		r = s.get(url, timeout=20, params=params)
+		grabber_log(url, r.url, r.request.headers, r.headers)
 
 		if r.status_code == 200:
 			break
