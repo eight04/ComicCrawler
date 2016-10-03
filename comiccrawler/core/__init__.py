@@ -236,7 +236,8 @@ class Crawler:
 			self.image_ext, self.image_bin = grabimg(
 				self.image,
 				self.get_header(),
-				referer=self.ep.current_url
+				referer=self.ep.current_url,
+				cookie=self.get_cookie()
 			)
 		else:
 			self.image_bin = json.dumps(self.image, indent="\t").encode("utf-8")
