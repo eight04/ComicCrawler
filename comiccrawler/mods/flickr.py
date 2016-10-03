@@ -11,6 +11,7 @@ Ex:
 import re
 import json
 import math
+import execjs
 
 from urllib.parse import urljoin
 from html import unescape
@@ -43,7 +44,7 @@ def get_episodes(html, url):
 		ep_url = "{base}/{id}/".format(base=base, id=photo["id"])
 		
 		if photo.get("media") == "video":
-			image = query_video(photo, key)
+			image = None
 		else:
 			image = urljoin(url, find_largest(photo))
 			
@@ -89,10 +90,10 @@ def find_largest(photo):
 			
 	return url
 	
-def query_video(data, key):
+def query_video(id, secret, key):
 	rs = grabhtml("https://api.flickr.com/services/rest", params={
-		"photo_id": data["id"],
-		"secret": data["secret"],
+		"photo_id": id,
+		"secret": secret,
 		"method": "flickr.video.getStreamInfo",
 		"api_key": key,
 		"format": "json",
@@ -113,6 +114,12 @@ def key_func(stream):
 	if isinstance(stream["type"], str):
 		return int(re.match("[\d.]+", stream["type"]).group())
 	return stream["type"]
+	
+def get_images(html, url):
+	key = re.search('root\.YUI_config\.flickr\.api\.site_key = "([^"]+)', html).group(1)
+	model = re.search(r"Y\.ClientApp\.init\(([\s\S]+?)\)\s*\.then", html).group(1)
+	data = execjs.eval("auth = null, reqId = null, model = " + model + ", model.modelExport['photo-models'][0]")
+	return query_video(data["id"], data["secret"], key)
 
 def get_next_page(html, url):
 	match = re.search('rel="next"\s+href="([^"]+)', html)
