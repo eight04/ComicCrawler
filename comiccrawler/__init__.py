@@ -24,7 +24,7 @@ Sub modules:
   comiccrawler.mods   Import download modules.
 """
 
-__version__ = "2016.9.30"
+__version__ = "2016.10.4"
 
 def console_download(url, savepath):
 	"""Download url to savepath."""
