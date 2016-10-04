@@ -298,6 +298,11 @@ Todos
 Changelog
 ---------
 
+-  2016.10.4
+
+   -  Fix: can not download video in flickr.
+   -  Fix: use cookie in grabimg.
+
 -  2016.9.30
 
    -  Add ``params`` option to grabber.
