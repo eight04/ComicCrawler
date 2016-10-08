@@ -9,6 +9,7 @@ import tkinter.messagebox as messagebox
 import subprocess
 import traceback
 import sys
+import platform
 
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -48,6 +49,10 @@ def safe_tk(text):
 	
 def get_scale(root):
 	"""To display in high-dpi we need to grab the scale factor from OS"""
+	
+	# There is no solution on XP
+	if platform.system() == "Windows" and platform.release() == "XP":
+		return 1.0
 	
 	# Windows
 	# https://github.com/eight04/ComicCrawler/issues/13#issuecomment-229367171
