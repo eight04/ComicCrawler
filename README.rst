@@ -298,6 +298,10 @@ Todos
 Changelog
 ---------
 
+-  2016.10.8
+
+   -  Fix: math.inf is only available in python 3.5.
+
 -  2016.10.4
 
    -  Fix: can not download video in flickr.
