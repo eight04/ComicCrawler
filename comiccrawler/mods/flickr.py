@@ -10,7 +10,6 @@ Ex:
 
 import re
 import json
-import math
 import execjs
 
 from urllib.parse import urljoin
@@ -103,7 +102,7 @@ def query_video(id, secret, key):
 	return sorted(rs["streams"]["stream"], key=key_func)[-1]["_content"]
 		
 prior = {
-	"orig": math.inf,
+	"orig": float("inf"),
 	"appletv": 720,
 	"iphone_wifi": 360
 }
