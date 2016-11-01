@@ -41,6 +41,7 @@ def domains():
 	path.write_text(left + domains + right, 'utf-8')
 
 cute(
+	default = "python -m comiccrawler gui",
 	test = ['pyflakes comiccrawler', 'readme_build'],
 	bump_pre = 'test',
 	bump = bump,
