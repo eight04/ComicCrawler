@@ -284,6 +284,8 @@ class MainWindow:
 				pass
 		
 		scale = get_scale(self.root)
+		if scale < 1:
+			scale = 1.0
 
 		self.root.title("Comic Crawler")
 		self.root.geometry("{w}x{h}".format(
