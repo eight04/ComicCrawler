@@ -10,6 +10,7 @@ import subprocess
 import traceback
 import sys
 import platform
+import desktop
 
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -77,15 +78,6 @@ def get_scale(root):
 		
 	return 1.0
 	
-def startfile(file):
-	"""Cross platform startfile"""
-	if sys.platform == "win32":
-		os.startfile(file)
-	elif sys.platform == "darwin":
-		subprocess.Popen(["open", file])
-	else:
-		subprocess.Popen(["xdg-open", file])
-
 class DialogProvider:
 	"""Create dialog elements."""
 
@@ -583,7 +575,7 @@ class MainWindow:
 					folder = os.path.expanduser(folder)
 					if not os.path.isdir(folder):
 						os.makedirs(folder)
-					startfile(folder)
+					desktop.open(folder)
 
 			@bind_menu("開啟網頁")
 			def tvOpenBrowser():

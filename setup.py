@@ -44,7 +44,8 @@ setup(
 		"pyexecjs >=1.3.1, <2",
 		"pythreadworker >=0.6",
 		"safeprint >=0.1.1, <1",
-		"requests >=2.9.1, <3"
+		"requests >=2.9.1, <3",
+		"desktop3 >=0.5.2, <1"
 	],
 	entry_points = {
 		"console_scripts": [
