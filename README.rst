@@ -298,6 +298,13 @@ Todos
 Changelog
 ---------
 
+-  2016.11.2
+
+   -  Fix: scaling issue on Windows XP.
+   -  Fix: login-check in deviantart.
+   -  Use desktop3 to open folder. [#16](https://github.com/eight04/ComicCrawler/issues/16)
+   -  Fix: GUI crahsed if scaling < 1.   
+
 -  2016.10.8
 
    -  Fix: math.inf is only available in python 3.5.
