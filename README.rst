@@ -298,6 +298,10 @@ Todos
 Changelog
 ---------
 
+-  2016.11.25
+
+   -  Support cartoonmad.
+
 -  2016.11.2
 
    -  Fix: scaling issue on Windows XP.
