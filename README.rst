@@ -298,6 +298,10 @@ Todos
 Changelog
 ---------
 
+-  2016.11.27
+
+   -  Fix hhxiee module. Use new domain www.hhssee.com.
+
 -  2016.11.25
 
    -  Support cartoonmad.
