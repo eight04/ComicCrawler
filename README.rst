@@ -298,6 +298,12 @@ Todos
 Changelog
 ---------
 
+-  2016.12.1
+   
+   -  Fix: analyze error in wix.
+   -  Fix: ``mimetypes.guess_extension`` is not reliable with ``application/octet-stream``
+   -  Add ``.webp`` to valid file type.
+
 -  2016.11.27
 
    -  Fix hhxiee module. Use new domain www.hhssee.com.
