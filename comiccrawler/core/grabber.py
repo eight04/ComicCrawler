@@ -104,7 +104,7 @@ def grabhtml(*args, **kwargs):
 	
 def _get_ext(mime, b):
 	"""Get file extension"""
-	if mime:
+	if mime and mime != "application/octet-stream":
 		ext = guess_extension(mime)
 		if ext:
 			return ext
