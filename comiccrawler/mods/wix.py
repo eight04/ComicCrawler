@@ -27,7 +27,10 @@ def get_episodes(html, url):
 	s = []
 	
 	for page in pages:
-		data = grabhtml(page["urls"][0])
+		try:
+			data = grabhtml(page["urls"][0])
+		except KeyError:
+			data = grabhtml("https://static.wixstatic.com/sites/" + page["pageJsonFileName"] + ".z?v=3")
 		
 		data = json.loads(data)
 		data = data["data"]["document_data"]
