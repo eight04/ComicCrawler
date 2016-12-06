@@ -121,6 +121,9 @@ def _get_ext(mime, b):
 	if b[:4] == b"\x1a\x45\xdf\xa3":
 		return ".webm"
 		
+	if b[:4] == b"RIFF" and b[8:12] == b"WEBP":
+		return ".webp"
+		
 def get_ext(mime, b):
 	"""Get file extension"""
 	ext = _get_ext(mime, b)
