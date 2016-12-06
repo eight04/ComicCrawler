@@ -298,6 +298,10 @@ Todos
 Changelog
 ---------
 
+-  2016.12.6
+
+   -  Fix: imghdr can't reconize .webp in Python 3.4.
+
 -  2016.12.1
    
    -  Fix: analyze error in wix.
