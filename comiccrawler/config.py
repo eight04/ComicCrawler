@@ -7,6 +7,9 @@ from configparser import ConfigParser
 from os.path import expanduser, dirname, isdir, normpath
 from os import makedirs
 
+class CaseSensitiveConfigParser(ConfigParser):
+	optionxform = str
+
 class Config:
 	default = {
 		"savepath": "~/comiccrawler/download",
@@ -18,7 +21,7 @@ class Config:
 	}
 	def __init__(self, path):
 		self.path = expanduser(path)
-		self.config = ConfigParser(interpolation=None)
+		self.config = CaseSensitiveConfigParser(interpolation=None)
 		self.load()
 		
 	def load(self):
