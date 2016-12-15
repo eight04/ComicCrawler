@@ -8,6 +8,7 @@ import threading
 
 from worker import sleep, WorkerExit
 from os.path import join as path_join, split as path_split, splitext
+from requests.utils import dict_from_cookiejar
 
 from ..safeprint import print
 from ..error import ModuleError, PauseDownloadError, LastPageError, SkipEpisodeError
@@ -175,14 +176,67 @@ def extract_filename(file):
 	fn, ext = splitext(fn)
 	return fn
 	
+class Downloader:
+	"""Bind grabber with module's header, cookie..."""
+	def __init__(self, mod):
+		self.mod = mod
+		
+	def html(self, url, **kwargs):
+		return grabhtml(
+			url,
+			header=self.get_header(),
+			cookie=self.get_cookie(),
+			done=self.handle_grab,
+			**kwargs
+		)
+	
+	def img(self, url, **kwargs):
+		return grabimg(
+			url,
+			header=self.get_header(),
+			cookie=self.get_cookie(),
+			done=self.handle_grab,
+			**kwargs
+		)
+		
+	def get_header(self):
+		"""Return downloader header."""
+		return getattr(self.mod, "header", None)
+
+	def get_cookie(self):
+		"""Return downloader cookie."""
+		cookie = getattr(self.mod, "cookie", {})
+		config = getattr(self.mod, "config", {})
+		
+		for key, value in config.items():
+			if key.startswith("cookie_"):
+				name = key[7:]
+				cookie[name] = value
+				
+		return cookie
+		
+	def handle_grab(self, s, r):
+		cookie = dict_from_cookiejar(s.cookies)
+		config = getattr(self.mod, "config", None)
+		if not config:
+			return
+			
+		for key in config:
+			if key.startswith("cookie_"):
+				name = key[7:]
+				if name in cookie:
+					config[key] = cookie[name]
+
+
 class Crawler:
 	"""Create Crawler object. Contains img url, next page url."""
-	def __init__(self, mission, ep, downloader, savepath, fexp):
+	def __init__(self, mission, ep, mod, savepath, fexp):
 		"""Construct."""
 		self.mission = mission
 		self.ep = ep
 		self.savepath = savepath
-		self.downloader = downloader
+		self.mod = mod
+		self.downloader = Downloader(mod)
 		self.fexp = fexp
 		self.exist_pages = None
 		self.checksums = None
@@ -233,20 +287,16 @@ class Crawler:
 	def download_image(self):
 		"""Download image"""
 		if isinstance(self.image, str):
-			self.image_ext, self.image_bin = grabimg(
-				self.image,
-				self.get_header(),
-				referer=self.ep.current_url,
-				cookie=self.get_cookie()
-			)
+			self.image_ext, self.image_bin = self.downloader.img(
+				self.image, referer=self.ep.current_url)
 		else:
 			self.image_bin = json.dumps(self.image, indent="\t").encode("utf-8")
 			self.image_ext = ".json"
 			
 	def handle_image(self):
 		"""Post processing"""
-		if hasattr(self.downloader, "imagehandler"):
-			self.downloader.imagehandler(self.image_ext, self.image_bin)
+		if hasattr(self.mod, "imagehandler"):
+			self.mod.imagehandler(self.image_ext, self.image_bin)
 
 	def get_full_filename(self):
 		"""Generate full filename including extension"""
@@ -264,7 +314,7 @@ class Crawler:
 
 	def save_image(self):
 		"""Write image to save path"""
-		if getattr(self.downloader, "circular", False):
+		if getattr(self.mod, "circular", False):
 			if not self.checksums:
 				self.checksums = set()
 				path_each(
@@ -309,13 +359,13 @@ class Crawler:
 		
 	def rest(self):
 		"""Rest some time."""
-		sleep(getattr(self.downloader, "rest", 0))
+		sleep(getattr(self.mod, "rest", 0))
 		
 	def get_next_page(self):
-		if (hasattr(self.downloader, "get_next_page") 
+		if (hasattr(self.mod, "get_next_page") 
 				and isinstance(self.html, str)):
 			# self.html is not a str if self.ep.image is not None
-			return self.downloader.get_next_page(
+			return self.mod.get_next_page(
 				self.html,
 				self.ep.current_url
 			)
@@ -324,18 +374,14 @@ class Crawler:
 		if self.ep.image:
 			self.html = True
 		else:
-			self.html = grabhtml(
-				self.ep.current_url,
-				self.get_header(),
-				cookie=self.get_cookie()
-			)
+			self.html = self.downloader.html(self.ep.current_url)
 		
 	def get_images(self):
 		"""Get images"""
 		if self.ep.image:
 			images = self.ep.image
 		else:
-			images = self.downloader.get_images(
+			images = self.mod.get_images(
 				self.html,
 				self.ep.current_url
 			)
@@ -343,17 +389,9 @@ class Crawler:
 			images = [images]
 		self.images = iter(images)
 		
-	def get_header(self):
-		"""Return downloader header."""
-		return getattr(self.downloader, "header", None)
-
-	def get_cookie(self):
-		"""Return downloader cookie."""
-		return getattr(self.downloader, "cookie", None)
-
 	def handle_error(self, error):
 		"""Send error to error handler."""
-		handler = getattr(self.downloader, "errorhandler", None)
+		handler = getattr(self.mod, "errorhandler", None)
 		if not handler:
 			return
 
@@ -362,7 +400,7 @@ class Crawler:
 
 		except Exception as er:
 			print("[Crawler] Failed to handle error: {}".format(er))
-
+			
 			
 def crawlpage(crawler):
 	"""Crawl all pages of an episode.
@@ -471,7 +509,7 @@ def remove_duplicate_episode(mission):
 			cleanList.append(ep)
 	mission.episodes = cleanList
 
-def analyze_info(mission, downloader):
+def analyze_info(mission, mod):
 	"""Analyze mission."""
 	print("Start analyzing {}".format(mission.url))
 
@@ -498,20 +536,19 @@ def analyze_info(mission, downloader):
 		old_titles = set()
 		mission.episodes = []
 		
-	header = getattr(downloader, "header", None)
-	cookie = getattr(downloader, "cookie", None)
-
-	html = grabhtml(mission.url, header, cookie=cookie, raise_429=False)
+	downloader = Downloader(mod)
+	
+	html = downloader.html(mission.url, raise_429=False)
 
 	if not mission.title:
-		mission.title = downloader.get_title(html, mission.url)
+		mission.title = mod.get_title(html, mission.url)
 
 	url = mission.url
 	new_eps = []
 	
 	while True:
 		duplicate = False
-		for e in reversed(downloader.get_episodes(html, url)):
+		for e in reversed(mod.get_episodes(html, url)):
 			if e.url in old_urls or e.title in old_titles:
 				duplicate = True
 				continue
@@ -521,14 +558,14 @@ def analyze_info(mission, downloader):
 			break
 		if duplicate:
 			break
-		if not hasattr(downloader, "get_next_page"):
+		if not hasattr(mod, "get_next_page"):
 			break
-		next_url = downloader.get_next_page(html, url)
+		next_url = mod.get_next_page(html, url)
 		if not next_url:
 			break
 		url = next_url
 		print('Analyzing {}...'.format(url))
-		html = grabhtml(url, header, cookie=cookie, raise_429=False)
+		html = downloader.html(url, raise_429=False)
 		
 	mission.episodes.extend(reversed(new_eps))
 	
