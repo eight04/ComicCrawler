@@ -15,19 +15,14 @@ from urllib.parse import urljoin
 from ..error import PauseDownloadError
 from ..core import Episode
 
-cookie = {}
 domain = ["deviantart.com"]
 name = "dA"
 noepfolder = True
 config = {
-	"auth": "請輸入Cookie中的auth",
-	"userinfo": "請輸入Cookie中的userinfo"
+	"cookie_auth": "請輸入Cookie中的auth",
+	"cookie_userinfo": "請輸入Cookie中的userinfo"
 }
 
-def load_config():
-	cookie["auth"] = config["auth"]
-	cookie["userinfo"] = config["userinfo"]
-	
 def get_title(html, url):
 	return unescape(re.search("<title>(.+?)</title>", html).group(1))
 	

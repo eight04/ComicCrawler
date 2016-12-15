@@ -17,16 +17,12 @@ from zipfile import ZipFile
 from ..core import Episode, grabhtml
 from ..error import SkipEpisodeError, PauseDownloadError
 
-cookie = {}
 domain = ["www.pixiv.net"]
 name = "Pixiv"
 noepfolder = True
 config = {
-	"SESSID": "請輸入Cookie中的PHPSESSID"
+	"cookie_PHPSESSID": "請輸入Cookie中的PHPSESSID"
 }
-
-def load_config():
-	cookie["PHPSESSID"] = config["SESSID"]
 
 def get_title(html, url):
 	try:
