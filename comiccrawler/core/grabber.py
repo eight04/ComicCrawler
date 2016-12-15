@@ -50,7 +50,7 @@ def grabber_log(*args):
 		content_write("~/comiccrawler/grabber.log", pformat(args) + "\n\n", append=True)
 
 sessions = {}
-def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True, params=None):
+def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True, params=None, done=None):
 	"""Request url, return text or bytes of the content."""
 	scheme, netloc, path, query, frag = urlsplit(url)
 	
@@ -71,6 +71,14 @@ def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True, para
 		quote_unicode_dict(cookie)
 		requests.utils.add_dict_to_cookiejar(s.cookies, cookie)
 		
+	r = sync(do_request, s, url, params, raise_429)
+	
+	if done:
+		done(s, r)
+	
+	return r
+		
+def do_request(s, url, params, raise_429):
 	while True:
 		r = s.get(url, timeout=20, params=params)
 		grabber_log(url, r.url, r.request.headers, r.headers)
@@ -90,7 +98,7 @@ def is_429(err):
 			
 def grabhtml(*args, **kwargs):
 	"""Get html source of given url. Return String."""
-	r = sync(grabber, *args, **kwargs)
+	r = grabber(*args, **kwargs)
 	
 	# decode to text
 	match = re.search(br"charset=[\"']?([^\"'>]+)", r.content)
@@ -134,7 +142,7 @@ def get_ext(mime, b):
 
 def grabimg(*args, **kwargs):
 	"""Return byte array."""
-	r = sync(grabber, *args, **kwargs)
+	r = grabber(*args, **kwargs)
 	
 	# find extension
 	mime = None
