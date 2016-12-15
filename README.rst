@@ -185,6 +185,7 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
     import re
     from urllib.parse import urljoin
     from comiccrawler.core import Episode
+    from configparser import ConfigParser
 
     # The header used in grabber method
     header = {}
@@ -206,21 +207,23 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
     # Wait 5 seconds between each download.
     rest = 5
 
-    # Specific user settings
+    # Specific user settings. The key is case-sensitive.
     config = {
-        "user": "user-default-value",
-        "hash": "hash-default-value"
+        # The config value can only be str
+        "use_largest_image": "true",
+        
+        # These special config starting with `cookie__` will be automatically 
+        # used when grabbing html or image.
+        "cookie_user": "user-default-value",
+        "cookie_hash": "hash-default-value"
     }
+    
+    USE_LARGEST_IMAGE = True
 
     def load_config():
-        """This function will be called each time the config reloaded.
-        
-        The user might put additional info into config, so it is not recommended
-        to use dict.update directly, which will leak personal info to the 
-        website.
+        """This function will be called each time the config reloaded. Optional
         """
-        cookie["user"] = config["user"]
-        cookie["hash"] = config["hash"]
+        USE_LARGE_IMAGE = ConfigParser.BOOLEAN_STATES.get(config["use_largest_image"].lower())
 
     def get_title(html, url):
         """Return mission title.
@@ -297,6 +300,11 @@ Todos
 
 Changelog
 ---------
+
+-  Next
+
+   -  Change how config works. This will affect pixiv and deviantart.
+   -  Comic Crawler can save cookie back to config now!
 
 -  2016.12.6
 
