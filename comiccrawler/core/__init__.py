@@ -93,9 +93,21 @@ VALID_FILE_TYPES = (
 	".json"
 )
 
+escape_table = {
+	"/": "／",
+	"\\": "＼",
+	"?": "？",
+	"|": "｜",
+	"<": "＜",
+	">": "＞",
+	":": "：",
+	"\"": "＂",
+	"*": "＊"
+}
+
 def safefilepath(s):
 	"""Return a safe directory name."""
-	return re.sub("[/\\\?\|<>:\"\*]","_",s).strip()
+	return re.sub("[/\\\?\|<>:\"\*]", lambda m: escape_table[m.group()], s).strip()
 
 def download(mission, savepath):
 	"""Download mission to savepath."""
@@ -132,27 +144,17 @@ def download(mission, savepath):
 	
 def crawl(mission, savepath):
 	"""Crawl each episode."""
-	episodes = mission.episodes
-	module = mission.module
+	
+	print("total {} episode.".format(len(mission.episodes)))
 
-	print("total {} episode.".format(len(episodes)))
-
-	for ep in episodes:
+	for ep in mission.episodes:
 		if ep.skip or ep.complete:
 			continue
-
-		if getattr(module, "noepfolder", False):
-			efd = path_join(savepath, safefilepath(mission.title))
-			fexp = format_escape(safefilepath(ep.title)) + "_{:03}"
-		else:
-			efd = path_join(savepath, safefilepath(mission.title),
-					safefilepath(ep.title))
-			fexp = "{:03}"
 
 		print("Downloading ep {}".format(ep.title))
 		
 		try:
-			crawler = Crawler(mission, ep, module, efd, fexp)
+			crawler = Crawler(mission, ep, savepath)
 			crawlpage(crawler)
 
 		except LastPageError:
@@ -227,18 +229,61 @@ class Downloader:
 				if name in cookie:
 					config[key] = cookie[name]
 
+class SavePath:
+	def __init__(self, root, mission, ep, escape=safefilepath):
+		self.root = root
+		self.mission_title = escape(mission.title)
+		self.ep_title = escape(ep.title)
+		self.noepfolder = getattr(mission.module, "noepfolder", False)
+		self.files = None
+		
+	def parent(self):
+		if self.noepfolder:
+			return path_join(self.root, self.mission_title)
+		return path_join(self.root, self.mission_title, self.ep_title)
+		
+	def fn(self, page, ext=""):
+		if self.noepfolder:
+			return "{ep_title}_{page:03d}{ext}".format(
+				ep_title=self.ep_title,
+				page=page,
+				ext=ext
+			)
+		return "{page:03d}{ext}".format(
+			page=page,
+			ext=ext
+		)
+		
+	def full_fn(self, page, ext=""):
+		return path_join(self.parent(), self.fn(page, ext))
+
+	def exists(self, page):
+		"""Check if current page exists in savepath."""
+		if self.files is None:
+		
+			self.files = {}
+			
+			def build_file_table(file):
+				dir, fn = path_split(file)
+				fn, ext = splitext(fn)
+				self.files[fn] = ext
+				
+			path_each(
+				self.parent(),
+				build_file_table
+			)
+			
+		return self.files.get(self.fn(page))
 
 class Crawler:
 	"""Create Crawler object. Contains img url, next page url."""
-	def __init__(self, mission, ep, mod, savepath, fexp):
+	def __init__(self, mission, ep, savepath):
 		"""Construct."""
 		self.mission = mission
 		self.ep = ep
-		self.savepath = savepath
-		self.mod = mod
-		self.downloader = Downloader(mod)
-		self.fexp = fexp
-		self.exist_pages = None
+		self.savepath = SavePath(savepath, mission, ep)
+		self.mod = mission.module
+		self.downloader = Downloader(mission.module)
 		self.checksums = None
 		self.is_init = False
 		self.html = None
@@ -271,46 +316,30 @@ class Crawler:
 			self.image = None
 			
 	def page_exists(self):
-		"""Check if current page exists in savepath."""
-		if self.exist_pages is None:
-			self.exist_pages = set()
-			path_each(
-				self.savepath,
-				lambda file: self.exist_pages.add(extract_filename(file))
-			)
-		return self.get_filename() in self.exist_pages
-
-	def get_filename(self):
-		"""Get current page file name."""
-		return self.fexp.format(self.ep.total + 1)
-
+		return self.savepath.exists(self.ep.total + 1)
+			
 	def download_image(self):
 		"""Download image"""
 		if isinstance(self.image, str):
-			self.image_ext, self.image_bin = self.downloader.img(
+			ext, bin = self.downloader.img(
 				self.image, referer=self.ep.current_url)
 		else:
-			self.image_bin = json.dumps(self.image, indent="\t").encode("utf-8")
-			self.image_ext = ".json"
+			bin = json.dumps(self.image, indent="\t").encode("utf-8")
+			ext = ".json"
+			
+		if not ext:
+			raise Exception("Can't determine file type.")
+			
+		if ext not in VALID_FILE_TYPES:
+			raise Exception("Bad file type: " + ext)
+			
+		self.image_bin = bin
+		self.image_ext = ext
 			
 	def handle_image(self):
 		"""Post processing"""
 		if hasattr(self.mod, "imagehandler"):
 			self.mod.imagehandler(self.image_ext, self.image_bin)
-
-	def get_full_filename(self):
-		"""Generate full filename including extension"""
-		
-		if not self.image_ext:
-			raise Exception("Can't determine file type.")
-			
-		if self.image_ext not in VALID_FILE_TYPES:
-			raise Exception("Bad file type: " + self.image_ext)
-				
-		return path_join(
-			self.savepath,
-			self.get_filename() + self.image_ext
-		)
 
 	def save_image(self):
 		"""Write image to save path"""
@@ -329,7 +358,7 @@ class Crawler:
 				self.checksums.add(checksum)
 
 		try:
-			content_write(self.get_full_filename(), self.image_bin)
+			content_write(self.savepath.full_fn(self.ep.total + 1, self.image_ext), self.image_bin)
 		except OSError as er:
 			traceback.print_exc()
 			raise PauseDownloadError("Failed to write file!")
