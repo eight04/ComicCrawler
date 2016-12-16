@@ -13,6 +13,11 @@ def write_big(file, content):
 	for piece in range(0, len(content), CHUNK_LIMIT):
 		file.write(content[piece:piece + CHUNK_LIMIT])
 
+def exists(file):
+	file = path.expanduser(file)
+	
+	return path.exists(file)
+
 def is_file(file):
 	"""Check if the file is file."""
 	file = path.expanduser(file)
@@ -81,7 +86,7 @@ def prepare_file(file):
 		io.open(file, "w").close()
 
 	return file
-
+	
 def move(src, dest):
 	"""Move src files to dest. Should support wildcard."""
 	src = path.expanduser(src)
@@ -95,7 +100,7 @@ def move(src, dest):
 			os.rename(file, path.join(dest, path.basename(file)))
 	else:
 		# just a rename
-		if not is_file(src):
+		if not exists(src):
 			return
 
 		prepare_folder(path.dirname(dest))
