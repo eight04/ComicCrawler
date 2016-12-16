@@ -7,24 +7,18 @@ from urllib.parse import urljoin
 from ..core import Episode
 from ..error import PauseDownloadError
 
-cookie = {}
 domain = ["chan.sankakucomplex.com"]
 name = "Sankaku"
 noepfolder = True
 config = {
-	"cf_clearance": "Set cf_clearance",
-	"_sankakucomplex_session": "Set _sankakucomplex_session",
-	"pass_hash": "Set pass_hash"
+	"cookie_cf_clearance": "Set cf_clearance",
+	"cookie__sankakucomplex_session": "Set _sankakucomplex_session",
+	"cookie_pass_hash": "Set pass_hash"
 }
 
 def login_check(html):
 	if '<a href="/user/login">' in html:
 		raise PauseDownloadError("You didn't login")
-
-def load_config():
-	cookie["cf_clearance"] = config["cf_clearance"]
-	cookie["_sankakucomplex_session"] = config["_sankakucomplex_session"]
-	cookie["pass_hash"] = config["pass_hash"]
 
 def get_title(html, url):
 	title = re.search(r"<title>/?(.+?) \|", html).group(1)

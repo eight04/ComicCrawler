@@ -13,14 +13,13 @@ from configparser import ConfigParser
 from ..core import Episode
 from ..error import PauseDownloadError
 
-cookie = {}
 domain = ["exhentai.org", "g.e-hentai.org"]
 name = "e紳士"
 noepfolder = True
 rest = 5
 config = {
-	"ipb_member_id": "請輸入Cookie中的ipb_member_id",
-	"ipb_pass_hash": "請輸入Cookie中的ipb_pass_hash",
+	"cookie_ipb_member_id": "請輸入Cookie中的ipb_member_id",
+	"cookie_ipb_pass_hash": "請輸入Cookie中的ipb_pass_hash",
 	"original": "false"
 }
 
@@ -28,10 +27,6 @@ class BandwidthLimitError(Exception): pass
 
 def get_boolean(s):
 	return ConfigParser.BOOLEAN_STATES.get(s.lower())
-
-def load_config():
-	cookie["ipb_member_id"] = config["ipb_member_id"]
-	cookie["ipb_pass_hash"] = config["ipb_pass_hash"]
 
 def get_title(html, url):
 	t = re.findall("<h1 id=\"g(j|n)\">(.+?)</h1>", html)

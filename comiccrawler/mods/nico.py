@@ -23,11 +23,8 @@ domain = ["seiga.nicovideo.jp"]
 name = "Nico"
 noepfolder = True
 config = {
-	"user_session": "請輸入Cookie中的user_session"
+	"cookie_user_session": "請輸入Cookie中的user_session"
 }
-
-def load_config():
-	cookie["user_session"] = config["user_session"]
 
 def get_title(html, url):
 	if "/user/" in url:
