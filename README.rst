@@ -3,8 +3,8 @@ Comic Crawler
 
 Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管理員、圖書館功能、 與方便的擴充能力。
 
-Beta
-----
+2016.12.20 更新
+----------------
 
 -  此版本修改了檔案的命名規則
 
@@ -160,7 +160,7 @@ or you can use it in your python script:
 
 ::
 
-    [ComicCrawler]
+    [DEFAULT]
     ; 設定下載完成後要執行的程式，會傳入下載資料夾的位置
     runafterdownload =
 
@@ -175,11 +175,15 @@ or you can use it in your python script:
 
     ; 每隔 5 分鐘自動存檔
     autosave = 5
+    
+    ; 存檔時使用原始檔名而不用頁碼
+    originalfilename = false
 
 -  設定檔位於 ``%USERPROFILE%\comiccrawler\setting.ini``
 -  執行一次 ``comiccrawler gui`` 後關閉，設定檔會自動產生
 -  各別的網站會有自己的設定，通常是要填入一些登入相關資訊
 -  設定檔會在重新啟動後生效。若 ComicCrawler 正在執行中，可以點「重載設定檔」來載入新設定
+-  各別網站的設定不會互相影響。假如在 [DEFAULT] 設 savepath = a；在 [Pixiv] 設 savepath = b，那麼從 pixiv 下載的都會存到 b 資料夾，其它的就用預設值，存到 a 資料夾。
 
 runafterdownload
 ~~~~~~~~~~~~~~~~
@@ -318,14 +322,15 @@ Todos
 Changelog
 ---------
 
--  Next
+-  2016.12.20
 
-   -  Change how config works. This will affect pixiv and deviantart.
-   -  Change how safefilepath works. Use escape table.
+   -  Change how config works. This will affect the sites requiring cookie information.
    -  Comic Crawler can save cookie back to config now!
+   -  Change how safefilepath works. Use escape table.
    -  Make io.move support folders.
    -  Add io.exists.
    -  Add migrate command.
+   -  Add originalfilename option.
 
 -  2016.12.6
 
