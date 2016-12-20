@@ -41,6 +41,7 @@ def domains():
 	path.write_text(left + domains + right, 'utf-8')
 
 cute(
+	pkg_name = "comiccrawler",
 	default = "python -m comiccrawler gui",
 	test = ['pyflakes comiccrawler', 'readme_build'],
 	bump_pre = 'test',
@@ -64,6 +65,5 @@ cute(
 	readme_build_err = ['readme_show', Exc()],
 	readme_show = 'start %temp%/ld.html',
 	readme = 'readme_build',
-	readme_post = 'readme_show',
-	version = [Version('comiccrawler/__init__.py'), 'echo {version}']
+	readme_post = 'readme_show'
 )

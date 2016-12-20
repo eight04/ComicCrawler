@@ -1,4 +1,4 @@
 docutils~=0.12
 twine~=1.6.5
-pyxcute~=0.1.1
+pyxcute~=0.3.0
 -e git+https://github.com/eight04/pyflakes.git@f9b26db7d269626770bb033154b435a42f4d88a6#egg=pyflakes
