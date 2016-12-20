@@ -236,6 +236,7 @@ class SavePath:
 		self.ep_title = escape(ep.title)
 		self.noepfolder = getattr(mission.module, "noepfolder", False)
 		self.files = None
+		self.escape = escape
 		
 	def parent(self):
 		if self.noepfolder:
@@ -243,13 +244,18 @@ class SavePath:
 		return path_join(self.root, self.mission_title, self.ep_title)
 		
 	def fn(self, page, ext=""):
+		if not isinstance(page, str):
+			page = "{:03d}".format(page)
+			
+		page = self.escape(page)
+			
 		if self.noepfolder:
-			return "{ep_title}_{page:03d}{ext}".format(
+			return "{ep_title}_{page}{ext}".format(
 				ep_title=self.ep_title,
 				page=page,
 				ext=ext
 			)
-		return "{page:03d}{ext}".format(
+		return "{page}{ext}".format(
 			page=page,
 			ext=ext
 		)
@@ -259,6 +265,9 @@ class SavePath:
 
 	def exists(self, page):
 		"""Check if current page exists in savepath."""
+		if page is None:
+			return False
+		
 		if self.files is None:
 		
 			self.files = {}
@@ -290,6 +299,7 @@ class Crawler:
 		self.image = None
 		self.image_bin = None
 		self.image_ext = None
+		self.filename = None
 		
 	def init(self):
 		if not self.ep.current_url:
@@ -316,7 +326,7 @@ class Crawler:
 			self.image = None
 			
 	def page_exists(self):
-		return self.savepath.exists(self.ep.total + 1)
+		return self.savepath.exists(self.ep.total + 1) or self.savepath.exists(self.filename)
 			
 	def download_image(self):
 		"""Download image"""
@@ -356,9 +366,14 @@ class Crawler:
 				raise LastPageError
 			else:
 				self.checksums.add(checksum)
+				
+		if self.mission.module.config.getboolean("originalfilename"):
+			page = self.filename
+		else:
+			page = self.ep.total + 1
 
 		try:
-			content_write(self.savepath.full_fn(self.ep.total + 1, self.image_ext), self.image_bin)
+			content_write(self.savepath.full_fn(page, self.image_ext), self.image_bin)
 		except OSError as er:
 			traceback.print_exc()
 			raise PauseDownloadError("Failed to write file!")
@@ -377,10 +392,23 @@ class Crawler:
 	def next_image(self):
 		self.ep.current_page += 1
 		self.ep.total += 1
+		self.filename = None
 		try:
 			self.image = next(self.images)
 		except StopIteration:
 			self.image = None
+			
+	def resolve_filename(self):
+		if self.filename:
+			return
+			
+		if not isinstance(self.image, str):
+			return
+			
+		filename = self.image.rpartition("/")[2]
+		filename = re.sub(r"\.\w{3,4}$", "", filename)
+		
+		self.filename = filename
 	
 	def resolve_image(self):
 		if callable(self.image):
@@ -453,6 +481,9 @@ def crawlpage(crawler):
 			crawler.next_page()
 			return
 			
+		if isinstance(crawler.image, str):
+			crawler.resolve_filename()
+			
 		if crawler.page_exists():
 			debug_log("D_NEXT_IMAGE")
 			print("page {} already exist".format(crawler.ep.total + 1))
@@ -461,6 +492,7 @@ def crawlpage(crawler):
 			
 		debug_log("D_RESOLVE")
 		crawler.resolve_image()
+		crawler.resolve_filename()
 		print("Downloading {} page {}: {}\n".format(
 			crawler.ep.title, crawler.ep.total + 1, crawler.image))
 		debug_log("D_DOWNLOAD")
