@@ -244,6 +244,7 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
     def load_config():
         """This function will be called each time the config reloaded. Optional
         """
+        global USE_LARGE_IMAGE
         USE_LARGE_IMAGE = ConfigParser.BOOLEAN_STATES.get(config["use_largest_image"].lower())
 
     def get_title(html, url):
