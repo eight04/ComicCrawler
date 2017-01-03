@@ -59,6 +59,43 @@ class MissionProxy:
 		del json["module"]
 		return json
 		
+class Image:
+	"""Image container"""
+	def __init__(self, url=None, get_url=None, data=None, filename=None):
+		self.url = url
+		self.get_url = get_url
+		self.data = data
+		self.filename = filename
+		
+		if not self.filename and self.url:
+			self.resolve_filename(self.url)
+			
+	def resolve_filename(self, url):
+		filename = url.rpartition("/")[2]
+		filename = re.sub(r"\.\w{3,4}$", "", filename)
+		
+		self.filename = filename
+		
+	def resolve(self):
+		if not self.url and self.get_url:
+			self.url = self.get_url()
+		
+		if not self.filename and self.url:
+			self.resolve_filename(self.url)
+	
+	@classmethod
+	def create(cls, data):
+		if isinstance(data, Image):
+			return data
+			
+		if isinstance(data, str):
+			return Image(url=data)
+			
+		if callable(data):
+			return Image(get_url=data)
+			
+		return Image(data=data)
+		
 def create_mission(url):
 	return MissionProxy(Mission(url=url))
 
@@ -321,20 +358,20 @@ class Crawler:
 			for i in range(0, skip_pages):
 				next(self.images)
 			# get current image
-			self.image = next(self.images)
+			self.image = Image.create(next(self.images))
 		except StopIteration:
 			self.image = None
 			
 	def page_exists(self):
-		return self.savepath.exists(self.ep.total + 1) or self.savepath.exists(self.filename)
+		return self.savepath.exists(self.ep.total + 1) or self.savepath.exists(self.image.filename)
 			
 	def download_image(self):
 		"""Download image"""
-		if isinstance(self.image, str):
+		if self.image.url:
 			ext, bin = self.downloader.img(
-				self.image, referer=self.ep.current_url)
+				self.image.url, referer=self.ep.current_url)
 		else:
-			bin = json.dumps(self.image, indent="\t").encode("utf-8")
+			bin = json.dumps(self.image.data, indent="\t").encode("utf-8")
 			ext = ".json"
 			
 		if not ext:
@@ -368,7 +405,7 @@ class Crawler:
 				self.checksums.add(checksum)
 				
 		if self.mission.module.config.getboolean("originalfilename"):
-			page = self.filename
+			page = self.image.filename
 		else:
 			page = self.ep.total + 1
 
@@ -392,27 +429,13 @@ class Crawler:
 	def next_image(self):
 		self.ep.current_page += 1
 		self.ep.total += 1
-		self.filename = None
 		try:
-			self.image = next(self.images)
+			self.image = Image.create(next(self.images))
 		except StopIteration:
 			self.image = None
 			
-	def resolve_filename(self):
-		if self.filename:
-			return
-			
-		if not isinstance(self.image, str):
-			return
-			
-		filename = self.image.rpartition("/")[2]
-		filename = re.sub(r"\.\w{3,4}$", "", filename)
-		
-		self.filename = filename
-	
 	def resolve_image(self):
-		if callable(self.image):
-			self.image = self.image()
+		self.image.resolve()
 		
 	def rest(self):
 		"""Rest some time."""
@@ -481,9 +504,6 @@ def crawlpage(crawler):
 			crawler.next_page()
 			return
 			
-		if isinstance(crawler.image, str):
-			crawler.resolve_filename()
-			
 		if crawler.page_exists():
 			debug_log("D_NEXT_IMAGE")
 			print("page {} already exist".format(crawler.ep.total + 1))
@@ -492,7 +512,6 @@ def crawlpage(crawler):
 			
 		debug_log("D_RESOLVE")
 		crawler.resolve_image()
-		crawler.resolve_filename()
 		print("Downloading {} page {}: {}\n".format(
 			crawler.ep.title, crawler.ep.total + 1, crawler.image))
 		debug_log("D_DOWNLOAD")

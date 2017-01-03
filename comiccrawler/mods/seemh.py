@@ -98,10 +98,10 @@ def get_images(html, url):
 	
 def errorhandler(err, crawler):
 	"""Change host"""
-	if crawler.image:
+	if crawler.image and crawler.image.url:
 		host = next(cache["servs"])
-		crawler.image = re.sub(
+		crawler.image.url = re.sub(
 			r"://.+?\.",
 			"://{host}.".format(host=host),
-			crawler.image
+			crawler.image.url
 		)
