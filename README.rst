@@ -280,7 +280,7 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         -  callable - return an url when called
         -  comiccrawler.core.Image - use it to provide customized filename.
         
-        While receiving the value, it is converted to a Image instance. See `comiccrawler.core.Image.create()`.
+        While receiving the value, it is converted to a Image instance. See ``comiccrawler.core.Image.create()``.
         
         If the episode has multi-pages, specify the url of next page in
         get_next_page.
@@ -327,6 +327,12 @@ Todos
 
 Changelog
 ---------
+
+-  2017.1.3.1
+
+   -  Fix: schema error (konachan).
+   -  Fix: original filename should be extracted from final url instead of request url.
+   -  Add: now the module can specify image filename with ``comiccrawler.core.Image``.
 
 -  2017.1.3
 
