@@ -40,7 +40,7 @@ def get_images(html, url):
 			raise SkipEpisodeError
 		else:
 			raise
-	return [img]
+	return urljoin(url, img)
 
 def get_next_page(html, url):
 	match = re.search('<a class="next_page" rel="next" href="([^"]+)">', html)
