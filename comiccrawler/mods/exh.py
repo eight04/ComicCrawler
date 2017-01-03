@@ -52,7 +52,7 @@ def get_images(html, url):
 		raise PauseDownloadError("Bandwidth limit exceeded!")
 
 	if get_boolean(config["original"]):
-		match = re.search(r'href="(http://exhentai\.org/fullimg\.php[^"]+)', html)
+		match = re.search(r'href="([^"]+?/fullimg\.php[^"]+)', html)
 		if match:
 			return unescape(match.group(1))
 
