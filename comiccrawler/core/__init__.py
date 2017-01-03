@@ -522,7 +522,7 @@ def crawlpage(crawler):
 		debug_log("D_RESOLVE")
 		crawler.resolve_image()
 		print("Downloading {} page {}: {}\n".format(
-			crawler.ep.title, crawler.ep.total + 1, crawler.image))
+			crawler.ep.title, crawler.ep.total + 1, crawler.image.url))
 		debug_log("D_DOWNLOAD")
 		crawler.download_image()
 		debug_log("D_HANDLE")
