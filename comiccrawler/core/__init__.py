@@ -69,20 +69,14 @@ class Image:
 		self.static_filename = bool(filename)
 		
 		if not filename and url:
-			self.resolve_filename(url)
+			self.filename = url_extract_filename(url)
 			
-	def resolve_filename(self, url):
-		filename = url.rpartition("/")[2]
-		filename = re.sub(r"\.\w{3,4}$", "", filename)
-		
-		self.filename = filename
-		
 	def resolve(self):
 		if not self.url and self.get_url:
 			self.url = self.get_url()
 		
 		if not self.filename and self.url:
-			self.resolve_filename(self.url)
+			self.filename = url_extract_filename(self.url)
 	
 	@classmethod
 	def create(cls, data):
@@ -96,6 +90,11 @@ class Image:
 			return Image(get_url=data)
 			
 		return Image(data=data)
+		
+def url_extract_filename(url):
+	filename = url.rpartition("/")[2]
+	filename = re.sub(r"\.\w{3,4}$", "", filename)
+	return filename
 		
 def create_mission(url):
 	return MissionProxy(Mission(url=url))
@@ -372,8 +371,9 @@ class Crawler:
 			r = self.downloader.img(
 				self.image.url, referer=self.ep.current_url)
 				
+			# redirected and url changed
 			if r.r.history and not self.image.static_filename:
-				self.image.resolve_filename(r.r.url)
+				self.image.filename = url_extract_filename(r.r.url)
 			bin = r.bin
 			ext = r.ext
 		else:

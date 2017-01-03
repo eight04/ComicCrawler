@@ -10,7 +10,7 @@ from html import unescape
 from urllib.parse import urljoin
 from configparser import ConfigParser
 
-from ..core import Episode
+from ..core import Episode, Image, url_extract_filename
 from ..error import PauseDownloadError
 
 domain = ["exhentai.org", "g.e-hentai.org"]
@@ -50,13 +50,15 @@ def get_images(html, url):
 	if re.search("509s?\.gif", image) or re.search("403s?\.gif", image):
 		# pause the download since retry doesn't help but increase view limit.
 		raise PauseDownloadError("Bandwidth limit exceeded!")
+		
+	filename = url_extract_filename(image)
 
 	if get_boolean(config["original"]):
 		match = re.search(r'href="([^"]+?/fullimg\.php[^"]+)', html)
 		if match:
-			return unescape(match.group(1))
+			image = unescape(match.group(1))
 
-	return image
+	return Image(image, filename=filename)
 
 def errorhandler(er, crawler):
 	global nl
