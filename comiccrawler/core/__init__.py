@@ -473,7 +473,10 @@ class Crawler:
 			)
 		if isinstance(images, str):
 			images = [images]
-		self.images = iter(images)
+		try:
+			self.images = iter(images)
+		except TypeError:
+			self.images = iter([images])
 		
 	def handle_error(self, error):
 		"""Send error to error handler."""
