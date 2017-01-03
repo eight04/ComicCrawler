@@ -323,6 +323,10 @@ Todos
 Changelog
 ---------
 
+-  2017.1.3
+
+   -  Fix: original option doesn't work (exh).
+
 -  2016.12.20
 
    -  Change how config works. This will affect the sites requiring cookie information.
