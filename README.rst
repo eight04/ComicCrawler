@@ -176,7 +176,7 @@ or you can use it in your python script:
     ; 每隔 5 分鐘自動存檔
     autosave = 5
     
-    ; 存檔時使用原始檔名而不用頁碼
+    ; 存檔時使用下載時的原始檔名而不用頁碼
     originalfilename = false
 
 -  設定檔位於 ``%USERPROFILE%\comiccrawler\setting.ini``
@@ -268,14 +268,19 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
     def get_images(html, url):
         """Get the URL of all images.
         
-        The result could be:
+        The return value could be:
 
-        -  A list of image URL.
-        -  A generator yielding image URL.
-        -  An image URL, when there is only one image in current page.
+        -  A list of image.
+        -  A generator yielding image.
+        -  An image, when there is only one image in current page.
         
-        An `image URL` means the URL string of the image or a callback function
-        which returns the URL of the image.
+        Comic Crawler treats following types as an image:
+        
+        -  str - the url of the image
+        -  callable - return an url when called
+        -  comiccrawler.core.Image - use it to provide customized filename.
+        
+        While receiving the value, it is converted to a Image instance. See `comiccrawler.core.Image.create()`.
         
         If the episode has multi-pages, specify the url of next page in
         get_next_page.
