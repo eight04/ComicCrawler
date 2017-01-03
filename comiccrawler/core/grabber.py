@@ -95,11 +95,14 @@ def is_429(err):
 	if isinstance(err, requests.HTTPError) and hasattr(err, "response"):
 		return err.response.status_code == 429
 	return False
-			
+	
 def grabhtml(*args, **kwargs):
 	"""Get html source of given url. Return String."""
 	r = grabber(*args, **kwargs)
-	
+	guess_encoding(r)
+	return r.text
+
+def guess_encoding(r):
 	# decode to text
 	match = re.search(br"charset=[\"']?([^\"'>]+)", r.content)
 	if match:
@@ -107,16 +110,19 @@ def grabhtml(*args, **kwargs):
 		if encoding == "gb2312":
 			encoding = "gbk"
 		r.encoding = encoding
-		
-	return r.text
 	
-def _get_ext(mime, b):
+def _get_ext(r):
 	"""Get file extension"""
-	if mime and mime != "application/octet-stream":
-		ext = guess_extension(mime)
-		if ext:
-			return ext
+	if "Content-Type" in r.headers:
+		mime = re.search("^(.*?)(;|$)", r.headers["Content-Type"]).group(1)
+		mime = mime.strip()
+
+		if mime and mime != "application/octet-stream":
+			ext = guess_extension(mime)
+			if ext:
+				return ext
 			
+	b = r.content
 	ext = imghdr.what("", b)
 	if ext:
 		return "." + ext
@@ -132,9 +138,9 @@ def _get_ext(mime, b):
 	if b[:4] == b"RIFF" and b[8:12] == b"WEBP":
 		return ".webp"
 		
-def get_ext(mime, b):
+def get_ext(r):
 	"""Get file extension"""
-	ext = _get_ext(mime, b)
+	ext = _get_ext(r)
 	# some mapping
 	if ext in (".jpeg", ".jpe"):
 		return ".jpg"
@@ -143,11 +149,10 @@ def get_ext(mime, b):
 def grabimg(*args, **kwargs):
 	"""Return byte array."""
 	r = grabber(*args, **kwargs)
-	
-	# find extension
-	mime = None
-	b = r.content
-	if "Content-Type" in r.headers:
-		mime = re.search("^(.*?)(;|$)", r.headers["Content-Type"]).group(1)
-		mime = mime.strip()
-	return get_ext(mime, b), b
+	return ImgResult(r)
+
+class ImgResult:
+	def __init__(self, r):
+		self.r = r
+		self.ext = get_ext(r)
+		self.bin = r.content

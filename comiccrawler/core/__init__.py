@@ -66,9 +66,10 @@ class Image:
 		self.get_url = get_url
 		self.data = data
 		self.filename = filename
+		self.static_filename = bool(filename)
 		
-		if not self.filename and self.url:
-			self.resolve_filename(self.url)
+		if not filename and url:
+			self.resolve_filename(url)
 			
 	def resolve_filename(self, url):
 		filename = url.rpartition("/")[2]
@@ -368,8 +369,13 @@ class Crawler:
 	def download_image(self):
 		"""Download image"""
 		if self.image.url:
-			ext, bin = self.downloader.img(
+			r = self.downloader.img(
 				self.image.url, referer=self.ep.current_url)
+				
+			if r.r.history and not self.image.static_filename:
+				self.image.resolve_filename(r.r.url)
+			bin = r.bin
+			ext = r.ext
 		else:
 			bin = json.dumps(self.image.data, indent="\t").encode("utf-8")
 			ext = ".json"
