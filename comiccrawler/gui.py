@@ -19,7 +19,7 @@ import tkinter.font as font
 from worker import current
 from time import time
 
-from .mods import list_domain, get_module, load_config
+from .mods import list_domain, get_module, load_config, domain_index
 from .config import setting, config
 from .safeprint import print, printer
 from .core import safefilepath, create_mission
@@ -149,6 +149,29 @@ class Dialog(tk.Toplevel):
 		"""Wait the dialog to close."""
 		self.wait_window(self)
 		return self.result
+		
+def create_mission_table(parent):
+	return Table(
+		parent,
+		columns = [{
+			"id": "#0",
+			"text": "#",
+			"width": 25
+		}, {
+			"id": "name",
+			"text": "任務"
+		}, {
+			"id": "host",
+			"text": "主機",
+			"width": 50,
+			"anchor": "center"
+		}, {
+			"id": "state",
+			"text": "狀態",
+			"width": 70,
+			"anchor": "center"
+		}]
+	)
 
 class MainWindow:
 	"""Create main window GUI."""
@@ -156,12 +179,14 @@ class MainWindow:
 		"""Construct."""
 		
 		self.thread = current()
-		
-		self.cid_view = {}
-		self.cid_library = {}
 		self.pre_url = None
 
 		self.create_view()
+		
+		self.pool_index = {
+			id(mission_manager.view): self.view_table,
+			id(mission_manager.library): self.library_table
+		}
 		
 		self.bindevent()
 		
@@ -173,8 +198,8 @@ class MainWindow:
 			time() - setting.getfloat("lastcheckupdate", 0) > 24 * 60 * 60):
 			download_manager.start_check_update()
 			
-		self.tv_refresh("view")
-		self.tv_refresh("library")
+		self.update_table(mission_manager.view)
+		self.update_table(mission_manager.library)
 		
 		self.save()
 		self.update()
@@ -190,16 +215,13 @@ class MainWindow:
 		mission_manager.save()
 		self.root.after(int(setting.getfloat("autosave", 5) * 60 * 1000), self.save)
 
-	def get_cid(self, cid_index, mission):
-		"""Get matched cid from cid index."""
-		for cid, mission2 in cid_index.items():
-			if mission2 is mission:
-				return cid
-
-	def update_mission_info(self, tv, cid, mission):
+	def update_mission_info(self, table, mission):
 		"""Update mission info on treeview."""
-		tv.set(cid, "state", STATE[mission.state])
-		tv.set(cid, "name", safe_tk(mission.title))
+		table.update(
+			mission,
+			name=safe_tk(mission.title),
+			state=STATE[mission.state]
+		)
 
 	def register_listeners(self):
 		"""Add listeners."""
@@ -215,20 +237,12 @@ class MainWindow:
 
 		@self.thread.listen("MISSION_PROPERTY_CHANGED")
 		def _(event):
-			cid = self.get_cid(self.cid_view, event.data)
-			if cid is not None:
-				self.update_mission_info(self.tv_view, cid, event.data)
-
-			cid = self.get_cid(self.cid_library, event.data)
-			if cid is not None:
-				self.update_mission_info(self.tv_library, cid, event.data)
+			self.update_mission_info(self.view_table, event.data)
+			self.update_mission_info(self.library_table, event.data)
 
 		@self.thread.listen("MISSION_LIST_REARRANGED")
 		def _(event):
-			if event.data == mission_manager.view:
-				self.tv_refresh("view")
-			if event.data == mission_manager.library:
-				self.tv_refresh("library")
+			self.update_table(event.data)
 
 		@self.thread.listen("MISSION_ADDED")
 		def _(event):
@@ -346,31 +360,9 @@ class MainWindow:
 		# download manager
 		frame = ttk.Frame(self.notebook)
 		self.notebook.add(frame, text="任務列表")
-
-		# mission list scrollbar
-		self.view_scrbar = ttk.Scrollbar(frame)
-		self.view_scrbar.pack(side="right", fill="y")
-
-		# mission list
-		tv = ttk.Treeview(
-			frame,
-			columns=("name","host","state"),
-			yscrollcommand=self.view_scrbar.set
-		)
-		tv.heading("#0", text="#")
-		tv.heading("name", text="任務")
-		tv.heading("host", text="主機")
-		tv.heading("state", text="狀態")
-		tv.column("#0", width="25")
-		tv.column("host", width="50", anchor="center")
-		tv.column("state", width="70", anchor="center")
-		tv.pack(expand=True, fill="both")
-		self.tv_view = tv
-
-		self.view_scrbar.config(command=tv.yview)
-
-		# mission context menu
-		self.view_menu = tk.Menu(tv, tearoff=False)
+		
+		# mission table
+		self.view_table = create_mission_table(frame)
 
 		# library
 		frame = ttk.Frame(self.notebook)
@@ -389,47 +381,29 @@ class MainWindow:
 		# library treeview scrollbar container
 		frame_lib = ttk.Frame(frame)
 		frame_lib.pack(expand=True, fill="both")
-
-		# scrollbar
-		self.lib_scrbar = ttk.Scrollbar(frame_lib)
-		self.lib_scrbar.pack(side="right", fill="y")
-
-		# library treeview
-		tv = ttk.Treeview(
-			frame_lib,
-			columns=("name","host","state"),
-			yscrollcommand=self.lib_scrbar.set
-		)
-		tv.heading("#0", text="#")
-		tv.heading("name", text="任務")
-		tv.heading("host", text="主機")
-		tv.heading("state", text="狀態")
-		tv.column("#0", width="25")
-		tv.column("host", width="50", anchor="center")
-		tv.column("state", width="70", anchor="center")
-		tv.pack(side="left", expand=True, fill="both")
-		self.tv_library = tv
-
-		self.lib_scrbar.config(command=self.tv_library.yview)
-
-		# library context menu
-		self.library_menu = tk.Menu(self.tv_library, tearoff=False)
+		
+		# library table
+		self.library_table = create_mission_table(frame_lib)
 
 		# domain list
 		frame = ttk.Frame(self.notebook)
 		self.notebook.add(frame, text="支援的網域")
-
-		# domains scrollbar
-		scrollbar = ttk.Scrollbar(frame)
-		scrollbar.pack(side="right", fill="y")
-
-		# domains
-		text = tk.Text(frame, height=10, yscrollcommand=scrollbar.set)
-		text.insert("insert", "\n".join(list_domain()))
-		text.pack(side="left", fill="both", expand=True)
-
-		scrollbar.config(command=text.yview)
-
+		
+		table = Table(frame, columns = [{
+			"id": "host",
+			"text": "域名"
+		}, {
+			"id": "mod",
+			"text": "模組",
+			"anchor": "center"
+		}], tv_opt={"show": "headings"})
+		
+		for domain in list_domain():
+			table.add({
+				"host": domain,
+				"mod": domain_index[domain].name
+			})
+			
 		# status bar
 		statusbar = ttk.Label(self.root, text="Comic Crawler", anchor="e")
 		statusbar.pack(anchor="e")
@@ -524,11 +498,9 @@ class MainWindow:
 			print("設定檔重載成功！")
 		self.btn_config["command"] = reloadconfig
 
-		def create_menu_set(name):
+		def create_menu_set(name, table):
 			"""Create a set of menu"""
-			menu = getattr(self, name + "_menu")
-			tv = getattr(self, "tv_" + name)
-			cid_index = getattr(self, "cid_" + name)
+			menu = tk.Menu(table.tv, tearoff=False)
 
 			# bind menu helper
 			def bind_menu(label):
@@ -541,37 +513,32 @@ class MainWindow:
 			@bind_menu("刪除")
 			def tvdelete():
 				if messagebox.askyesno("Comic Crawler", "確定刪除？"):
-					selected = tv.selection()
-					self.remove(name, *[cid_index[cid] for cid in selected])
+					self.remove(name, *table.selected())
 
 			@bind_menu("移至頂部")
 			def tvlift():
-				selected = tv.selection()
-				mission_manager.lift(name, *[cid_index[cid] for cid in selected])
+				mission_manager.lift(name, *table.selected())
 
 			@bind_menu("移至底部")
 			def tvdrop():
-				selected = tv.selection()
-				mission_manager.drop(name, *[cid_index[cid] for cid in selected])
+				mission_manager.drop(name, *table.selected())
 
 			@bind_menu("改名")
 			def tvchangetitle():
-				selected = tv.selection()
-				mission = cid_index[selected[0]]
+				selected = table.selected()
+				if not selected:
+					return
+				mission = selected[0]
 				select_title(self.root, mission)
 
 			@bind_menu("重新選擇集數")
 			def tvReselectEP():
-				s = tv.selection()
-				missions = [ cid_index[i] for i in s ]
-				for mission in missions:
+				for mission in table.selected():
 					reselect_episodes(self.root, mission)
 
 			@bind_menu("開啟資料夾")
 			def tvOpen():
-				s = tv.selection()
-				missions = [ cid_index[i] for i in s ]
-				for mission in missions:
+				for mission in table.selected():
 					savepath = mission.module.config["savepath"]
 					folder = os.path.join(savepath, safefilepath(mission.title))
 					folder = os.path.expanduser(folder)
@@ -581,16 +548,13 @@ class MainWindow:
 
 			@bind_menu("開啟網頁")
 			def tvOpenBrowser():
-				s = tv.selection()
-				missions = [ cid_index[i] for i in s ]
-				for mission in missions:
+				for mission in table.selected():
 					webbrowser.open(mission.url)
 
 			if name == "view":
 				@bind_menu("加入圖書館")
 				def tvAddToLib():
-					s = tv.selection()
-					missions = [ cid_index[i] for i in s ]
+					missions = table.selected()
 					titles = [ m.title for m in missions ]
 					mission_manager.add("library", *missions)
 					print("已加入圖書館︰{}".format(", ".join(titles)))
@@ -598,9 +562,9 @@ class MainWindow:
 			# menu call
 			def tvmenucall(event):
 				menu.tk_popup(event.x_root, event.y_root)
-			tv.bind("<Button-3>", tvmenucall)
+			table.tv.bind("<Button-3>", tvmenucall)
 
-		create_menu_set("view")
+		create_menu_set("view", self.view_table)
 
 		# library buttons
 		def libCheckUpdate():
@@ -618,7 +582,7 @@ class MainWindow:
 		self.btn_download_update["command"] = libDownloadUpdate
 
 		# library menu
-		create_menu_set("library")
+		create_menu_set("library", self.library_table)
 
 		# close window event
 		def beforequit():
@@ -647,24 +611,22 @@ class MainWindow:
 		"""Transport text to LOG_MESSAGE event."""
 		message_ch.pub("LOG_MESSAGE", text)
 
-	def tv_refresh(self, pool_name):
+	def update_table(self, pool):
 		"""Refresh treeview."""
-
-		# cleanup
-		tv = getattr(self, "tv_" + pool_name)
-		cid_index = getattr(self, "cid_" + pool_name)
-		ids = tv.get_children()
-		tv.delete(*ids)
-		cid_index.clear()
-
-		missions = getattr(mission_manager, pool_name).values()
+		table = self.pool_index[id(pool)]
+		missions = pool.values()
+		
+		table.clear(exclude=missions)
+		
 		for mission in missions:
-			cid = tv.insert(
-				"",
-				"end",
-				values=(safe_tk(mission.title), mission.module.name, STATE[mission.state])
-			)
-			cid_index[cid] = mission
+			if not table.contains(mission):
+				table.add({
+					"name": safe_tk(mission.title),
+					"host": mission.module.name,
+					"state": STATE[mission.state]
+				}, key=mission)
+				
+		table.rearrange(missions)
 
 def reselect_episodes(parent, mission):
 	"""Reselect episode"""
@@ -785,3 +747,73 @@ def select_episodes(parent, mission):
 	uninit_episode(mission)
 	
 	return ret
+
+class Table:
+	def __init__(self, parent, *, tv_opt={}, columns=[]):
+		# scrollbar
+		scrbar = ttk.Scrollbar(parent)
+		scrbar.pack(side="right", fill="y")
+		self.scrbar = scrbar
+		
+		# treeview
+		tv = ttk.Treeview(
+			parent,
+			columns=[c["id"] for c in columns if c["id"] != "#0"],
+			yscrollcommand=scrbar.set,
+			**tv_opt
+		)
+		for c in columns:
+			tv.heading(c["id"], text=c["text"])
+			tv.column(c["id"], **{k: v for k, v in c.items() if k in ("width", "anchor")})
+		tv.pack(expand=True, fill="both")
+		self.tv = tv
+		
+		scrbar.config(command=tv.yview)
+		
+		self.key_index = {}
+		self.iid_index = {}
+		
+	def add(self, row, *, key=None):
+		if key and key in self.key_index:
+			return
+		iid = self.tv.insert("", "end")
+		if not key:
+			key = iid
+		self.key_index[key] = iid
+		self.iid_index[iid] = key
+		self.update(key, **row)
+		return key
+		
+	def remove(self, *rows):
+		self.tv.delete(*[self.key_index[k] for k in rows])
+		for key in rows:
+			if key not in self.key_index:
+				continue
+			iid = self.key_index[key]
+			del self.key_index[key]
+			del self.iid_index[iid]
+		
+	def clear(self, *, exclude=[]):
+		keys = [key for key in self.key_index if key not in exclude]
+		self.remove(*keys)
+		
+	def rearrange(self, rows):
+		count = len(self.key_index)
+		for key in rows:
+			if key not in self.key_index:
+				continue
+			iid = self.key_index[key]
+			self.tv.move(iid, "", count)
+		
+	def update(self, key, **kwargs):
+		if key not in self.key_index:
+			return
+		iid = self.key_index[key]
+		for column, value in kwargs.items():
+			self.tv.set(iid, column, value)
+			
+	def selected(self):
+		return [self.iid_index[i] for i in self.tv.selection()]
+		
+	def contains(self, key):
+		return key in self.key_index
