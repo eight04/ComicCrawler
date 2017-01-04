@@ -637,7 +637,15 @@ def analyze_info(mission, mod):
 	
 	while True:
 		duplicate = False
-		for e in reversed(mod.get_episodes(html, url)):
+		
+		# format title number on analyzed
+		eps = mod.get_episodes(html, url)
+		format = mod.config.get("titlenumberformat")
+		if format:
+			for e in eps:
+				e.title = format_number(e.title, format)
+				
+		for e in reversed(eps):
 			if e.url in old_urls or e.title in old_titles:
 				duplicate = True
 				continue
@@ -673,12 +681,9 @@ def analyze_info(mission, mod):
 
 	print("Analyzing success!")
 
-
-def try_to_format_title_number(title):
+def format_number(title, format):
 	"""第3卷 --> 第003卷"""
-	m = re.search(r"第(\d+?)[話话卷]", title)
-	if not m:
-		return title
-	else:
-		ddd = "{:03d}".format(int(m.group(1)))
-	return title[:m.start(1)] + ddd + title[m.end(1):]
+	def replacer(match):
+		number = match.group()
+		return format.format(int(number))
+	return re.sub("\d+", replacer, title)
