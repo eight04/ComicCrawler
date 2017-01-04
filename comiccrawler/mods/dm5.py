@@ -12,7 +12,7 @@ from execjs import eval, compile
 
 from urllib.parse import urljoin
 
-from ..core import Episode, grabhtml, try_to_format_title_number
+from ..core import Episode, grabhtml
 
 cookie = {
 	"isAdult": "1",
@@ -31,7 +31,7 @@ def get_episodes(html, url):
 
 	for match in finditer("class=\"tg\" href=\"([^\"]+)\" title=\"([^\"]+)\"", html):
 		s.append(Episode(
-			try_to_format_title_number(match.group(2)),
+			match.group(2),
 			urljoin(url, match.group(1))
 		))
 
