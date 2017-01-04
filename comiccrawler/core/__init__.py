@@ -672,3 +672,13 @@ def analyze_info(mission, mod):
 	remove_duplicate_episode(mission)
 
 	print("Analyzing success!")
+
+
+def try_to_format_title_number(title):
+	"""第3卷 --> 第003卷"""
+	m = re.search(r"第(\d+?)[話话卷]", title)
+	if not m:
+		return title
+	else:
+		ddd = "{:03d}".format(int(m.group(1)))
+	return title[:m.start(1)] + ddd + title[m.end(1):]
