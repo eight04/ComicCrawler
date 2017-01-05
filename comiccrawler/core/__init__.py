@@ -637,7 +637,18 @@ def analyze_info(mission, mod):
 	
 	while True:
 		duplicate = False
-		for e in reversed(mod.get_episodes(html, url)):
+		
+		# format title number on analyzed
+		eps = mod.get_episodes(html, url)
+		format = mod.config.get("titlenumberformat")
+		if format:
+			for e in eps:
+				title = list(e.title.partition(mission.title))
+				for i in (0, 2):
+					title[i] = format_number(title[i], format)
+				e.title = "".join(title)
+				
+		for e in reversed(eps):
 			if e.url in old_urls or e.title in old_titles:
 				duplicate = True
 				continue
@@ -672,3 +683,10 @@ def analyze_info(mission, mod):
 	remove_duplicate_episode(mission)
 
 	print("Analyzing success!")
+
+def format_number(title, format):
+	"""第3卷 --> 第003卷"""
+	def replacer(match):
+		number = match.group()
+		return format.format(int(number))
+	return re.sub("\d+", replacer, title)
