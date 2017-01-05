@@ -178,6 +178,11 @@ or you can use it in your python script:
     
     ; 存檔時使用下載時的原始檔名而不用頁碼
     originalfilename = false
+    
+    ; 自動轉換集數名稱中數字的格式，可以用於補0
+    ; 例︰第1集 -> 第001集
+    ; 詳細的格式指定方式請參考 https://docs.python.org/3/library/string.html#format-specification-mini-language
+    titlenumberformat = {:03d}
 
 -  設定檔位於 ``%USERPROFILE%\comiccrawler\setting.ini``
 -  執行一次 ``comiccrawler gui`` 後關閉，設定檔會自動產生
@@ -327,6 +332,12 @@ Todos
 
 Changelog
 ---------
+
+-  2017.1.6
+
+   -  Add: Table class in gui.
+   -  Add: titlenumberformat option in setting.ini. `#30 <https://github.com/eight04/ComicCrawler/pull/30>`__ by `@kuanyui <https://github.com/kuanyui>`__.
+   -  Change: use Table to display domain list.
 
 -  2017.1.3.1
 
