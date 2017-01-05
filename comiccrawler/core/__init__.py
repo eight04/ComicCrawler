@@ -643,7 +643,10 @@ def analyze_info(mission, mod):
 		format = mod.config.get("titlenumberformat")
 		if format:
 			for e in eps:
-				e.title = format_number(e.title, format)
+				title = list(e.title.partition(mission.title))
+				for i in (0, 2):
+					title[i] = format_number(title[i], format)
+				e.title = "".join(title)
 				
 		for e in reversed(eps):
 			if e.url in old_urls or e.title in old_titles:
