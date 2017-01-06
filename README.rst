@@ -329,6 +329,7 @@ Todos
 -  Need a better error log system.
 -  Support pool in Sankaku.
 -  Add module.get_episode_id to make the module decide how to compare episodes.
+-  Use HEAD to grab final URL before requesting the image?
 
 Changelog
 ---------
