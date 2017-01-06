@@ -362,8 +362,13 @@ class Crawler:
 		except StopIteration:
 			self.image = None
 			
+	def get_filename(self):
+		if self.mission.module.config.getboolean("originalfilename"):
+			return self.image.filename
+		return self.ep.total + 1
+		
 	def page_exists(self):
-		return self.savepath.exists(self.ep.total + 1) or self.savepath.exists(self.image.filename)
+		return self.savepath.exists(self.get_filename())
 			
 	def download_image(self):
 		"""Download image"""
@@ -410,13 +415,8 @@ class Crawler:
 			else:
 				self.checksums.add(checksum)
 				
-		if self.mission.module.config.getboolean("originalfilename"):
-			page = self.image.filename
-		else:
-			page = self.ep.total + 1
-
 		try:
-			content_write(self.savepath.full_fn(page, self.image_ext), self.image_bin)
+			content_write(self.savepath.full_fn(self.get_filename(), self.image_ext), self.image_bin)
 		except OSError as er:
 			traceback.print_exc()
 			raise PauseDownloadError("Failed to write file!")
