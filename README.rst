@@ -334,6 +334,14 @@ Todos
 Changelog
 ---------
 
+-  2017.1.10
+
+   -  Add: nowebp option in ikanman. `#31 <https://github.com/eight04/ComicCrawler/issues/31>`__
+   -  Add weibo module.
+   -  Add tuchong module.
+   -  Fix: update table safe_tk error.
+   -  Change: existence check will only check original filename when originalfilename option is true.
+
 -  2017.1.6
 
    -  Add: Table class in gui.
