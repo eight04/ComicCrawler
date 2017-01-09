@@ -98,7 +98,7 @@ Supported domains
 .. DOMAINS
 ..
 
-    chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org g.e-hentai.org ikanman.com imgbox.com konachan.com m.dmzj.com manhua.dmzj.com seiga.nicovideo.jp tel.dm5.com tsundora.com tumblr.com tw.seemh.com wix.com www.8comic.com www.99comic.com www.buka.cn www.cartoonmad.com www.chuixue.com www.comicbus.com www.comicvip.com www.dm5.com www.facebook.com www.flickr.com www.hhcomic.cc www.hhssee.com www.hhxiee.com www.iibq.com www.manhuadao.com www.pixiv.net www.seemh.com yande.re
+    chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com danbooru.donmai.us deviantart.com exhentai.org g.e-hentai.org ikanman.com imgbox.com konachan.com m.dmzj.com manhua.dmzj.com seiga.nicovideo.jp tel.dm5.com tsundora.com tuchong.com tumblr.com tw.seemh.com tw.weibo.com wix.com www.8comic.com www.99comic.com www.buka.cn www.cartoonmad.com www.chuixue.com www.comicbus.com www.comicvip.com www.dm5.com www.facebook.com www.flickr.com www.hhcomic.cc www.hhssee.com www.hhxiee.com www.iibq.com www.manhuadao.com www.pixiv.net www.seemh.com yande.re
 
 .. END DOMAINS
 
