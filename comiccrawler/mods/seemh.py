@@ -18,6 +18,9 @@ from ..core import Episode, grabhtml
 
 domain = ["tw.seemh.com", "www.seemh.com", "ikanman.com"]
 name = "看漫畫"
+config = {
+	"nowebp": "False"
+}
 
 def get_title(html, url):
 	return re.search(r'<h1>([^<]*)', html).group(1)
@@ -94,7 +97,12 @@ def get_images(html, url):
 	}
 	""")
 	
-	return ctx.call("getFiles", path, files, host)
+	images = ctx.call("getFiles", path, files, host)
+	
+	if config.getboolean("nowebp"):
+		images = map(lambda i: i[:-5] if i.endswith(".webp") else i, images)
+	
+	return images
 	
 def errorhandler(err, crawler):
 	"""Change host"""
