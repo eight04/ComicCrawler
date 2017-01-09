@@ -217,6 +217,8 @@ class MainWindow:
 
 	def update_mission_info(self, table, mission):
 		"""Update mission info on treeview."""
+		if not table.contains(mission):
+			return
 		table.update(
 			mission,
 			name=safe_tk(mission.title),
