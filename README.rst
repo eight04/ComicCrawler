@@ -334,6 +334,11 @@ Todos
 Changelog
 ---------
 
+-  2017.2.5
+
+   -  Add www.dmzj.com module. `#33 <https://github.com/eight04/ComicCrawler/issues/33>`__
+   -  Fix: Sometime the title doesn't include chapter number in buka. `#33 <https://github.com/eight04/ComicCrawler/issues/33>`__
+
 -  2017.1.10
 
    -  Add: nowebp option in ikanman. `#31 <https://github.com/eight04/ComicCrawler/issues/31>`__
