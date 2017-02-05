@@ -654,7 +654,7 @@ def analyze_info(mission, mod):
 				continue
 			new_eps.append(e)
 		# one-time mission
-		if new_eps == 1 and new_eps[0].url == mission.url:
+		if len(new_eps) == 1 and new_eps[0].url == mission.url:
 			break
 		if duplicate:
 			break
