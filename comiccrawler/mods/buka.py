@@ -21,9 +21,10 @@ def get_title(html, url):
 
 def get_episodes(html, url):
 	arr = []
-	for match in re.finditer(r"payChapter\('(.+?)','(.+?)'", html):
-		ep_url, title = match.groups()
-		arr.append(Episode(title, urljoin(url, ep_url)))
+	for match in re.finditer(r"payChapter\('(.+?)','(.+?)'[^>]+>([^<]+)", html):
+		ep_url, title, chapter = match.groups()
+		chapter = chapter.strip()
+		arr.append(Episode("{chapter} ({title})".format(chapter=chapter, title=title), urljoin(url, ep_url)))
 	return arr[::-1]
 	
 def get_images(html, url):
