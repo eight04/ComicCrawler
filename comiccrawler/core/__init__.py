@@ -1,10 +1,11 @@
 #! python3
 
-import traceback
-import re
 import hashlib
 import json
+import re
+import string
 import threading
+import traceback
 
 from worker import sleep, WorkerExit
 from os.path import join as path_join, split as path_split, splitext
@@ -130,21 +131,29 @@ VALID_FILE_TYPES = (
 	".json"
 )
 
-escape_table = {
-	"/": "／",
-	"\\": "＼",
-	"?": "？",
-	"|": "｜",
-	"<": "＜",
-	">": "＞",
-	":": "：",
-	"\"": "＂",
-	"*": "＊"
-}
+def create_safefilepath_table():
+	table = {}
+	table.update({
+		"/": "／",
+		"\\": "＼",
+		"?": "？",
+		"|": "｜",
+		"<": "＜",
+		">": "＞",
+		":": "：",
+		"\"": "＂",
+		"*": "＊"
+	})
+	table.update({
+		c: None for c in set([chr(i) for i in range(128)]).difference(string.printable)
+	})
+	return str.maketrans(table)
+	
+safefilepath_table = create_safefilepath_table()
 
 def safefilepath(s):
 	"""Return a safe directory name."""
-	return re.sub("[/\\\?\|<>:\"\*]", lambda m: escape_table[m.group()], s).strip()
+	return s.strip().translate(safefilepath_table)
 
 def download(mission, savepath):
 	"""Download mission to savepath."""
