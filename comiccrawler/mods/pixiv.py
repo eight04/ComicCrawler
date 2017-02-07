@@ -26,11 +26,11 @@ config = {
 
 def get_title(html, url):
 	try:
-		user = re.search("class=\"user\">(.+?)</h1>", html).group(1)
+		user = unescape(re.search("class=\"user\">(.+?)</h1>", html).group(1))
 		id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
 		title = "{} - {}".format(id, user)
 	except Exception:
-		title = "[pixiv] " + re.search("<title>「([^」]+)", html).group(1)
+		title = "[pixiv] " + unescape(re.search("<title>「([^」]+)", html).group(1))
 	return title
 
 def get_episodes(html, url):
