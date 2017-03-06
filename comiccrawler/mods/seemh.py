@@ -60,14 +60,21 @@ def get_images(html, url):
 		html
 	).group(1)
 	configjs = grabhtml(configjs_url, referer=url)
-	crypto = re.search(r"(var CryptoJS.+?)var pVars", configjs, re.S).group(1)
+	crypto = re.search(
+		r'^(var CryptoJS|window\["\\x65\\x76\\x61\\x6c"\]).+',
+		configjs,
+		re.MULTILINE
+	).group()
 
 	info_eval = re.search(
-		r'<script type="text/javascript">(eval[^<]+)',
+		r'<script type="text/javascript">((eval|window\["\\x65\\x76\\x61\\x6c"\]).+?)</script',
 		html
 	).group(1)
 	
-	ctx = execjs.compile(crypto + info_eval)
+	js = "var window = global;" + crypto + info_eval
+	# with open("seemh.js", "w", encoding="utf-8") as f:
+		# f.write(js)
+	ctx = execjs.compile(js)
 	files, path = ctx.eval("[cInfo.files, cInfo.path]")
 	
 	# find server
