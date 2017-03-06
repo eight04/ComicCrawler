@@ -334,6 +334,12 @@ Todos
 Changelog
 ---------
 
+-  2017.3.6
+
+   -  Update seemh. `#35 <https://github.com/eight04/ComicCrawler/issues/35>`__
+   -  Escape title in pixiv.
+   -  Strip non-printable characters in safefilepath.
+
 -  2017.2.5
 
    -  Add www.dmzj.com module. `#33 <https://github.com/eight04/ComicCrawler/issues/33>`__
