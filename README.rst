@@ -109,23 +109,26 @@ As a CLI tool:
 
 ::
 
-    Usage:
-      comiccrawler domains
-      comiccrawler download URL [--dest SAVE_FOLDER]
-      comiccrawler gui
-      comiccrawler migrate
-      comiccrawler (--help | --version)
+   Usage:
+     comiccrawler [--profile=<profile>] (
+       domains |
+       download <url> [--dest=<save_path>] |
+       gui |
+       migrate
+     )
+     comiccrawler (--help | --version)
 
-    Commands:
-      domains             列出支援的網址
-      download URL        下載指定的 url
-      gui                 啟動主視窗
-      migrate             將舊存檔更名為新存檔
+   Commands:
+     domains    列出支援的網址
+     download   下載指定的 url
+     gui        啟動主視窗
+     migrate    將舊存檔更名為新存檔
 
-    Options:
-      --dest SAVE_FOLDER  設定下載目錄（預設為 "."）
-      --help              顯示幫助訊息
-      --version           顯示版本
+   Options:
+     --profile  指定設定檔存放的資料夾（預設為 "~/comiccrawler"）
+     --dest     設定下載目錄（預設為 "."）
+     --help     顯示幫助訊息
+     --version  顯示版本   
       
 or you can use it in your python script:
 
@@ -167,8 +170,8 @@ or you can use it in your python script:
     ; 啟動時自動檢查圖書館更新
     libraryautocheck = true
 
-    ; 下載目的資料夾
-    savepath = ~/comiccrawler/download
+    ; 下載目的資料夾。相對路徑會根據設定檔資料夾的位置。
+    savepath = download
 
     ; 開啟 grabber 偵錯
     errorlog = false
@@ -184,7 +187,7 @@ or you can use it in your python script:
     ; 詳細的格式指定方式請參考 https://docs.python.org/3/library/string.html#format-specification-mini-language
     titlenumberformat = {:03d}
 
--  設定檔位於 ``%USERPROFILE%\comiccrawler\setting.ini``
+-  設定檔位於 ``~\comiccrawler\setting.ini``。可以在執行時指定 ``--profile`` 選項以變更預設的位置。（在 Windows 中 ``~`` 會被展開為 ``%HOME%`` 或 ``%USERPROFILE%``）
 -  執行一次 ``comiccrawler gui`` 後關閉，設定檔會自動產生
 -  各別的網站會有自己的設定，通常是要填入一些登入相關資訊
 -  設定檔會在重新啟動後生效。若 ComicCrawler 正在執行中，可以點「重載設定檔」來載入新設定
@@ -333,6 +336,10 @@ Todos
 
 Changelog
 ---------
+
+-  2017.3.9
+
+   -  Add --profile option. `#36 <https://github.com/eight04/ComicCrawler/issues/36>`__
 
 -  2017.3.6
 
