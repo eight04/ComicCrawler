@@ -24,6 +24,7 @@ from .config import setting, config
 from .safeprint import print, printer
 from .core import safefilepath, create_mission
 from .error import ModuleError
+from .profile import get as profile
 
 from .download_manager import download_manager
 from .mission_manager import mission_manager, init_episode, uninit_episode, edit_mission_id
@@ -541,7 +542,7 @@ class MainWindow:
 			@bind_menu("開啟資料夾")
 			def tvOpen():
 				for mission in table.selected():
-					savepath = mission.module.config["savepath"]
+					savepath = profile(mission.module.config["savepath"])
 					folder = os.path.join(savepath, safefilepath(mission.title))
 					folder = os.path.expanduser(folder)
 					if not os.path.isdir(folder):

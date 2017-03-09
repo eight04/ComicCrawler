@@ -11,6 +11,7 @@ from time import time
 from .safeprint import print
 from .config import setting
 from .core import download, analyze, safefilepath
+from .profile import get as profile
 
 from .mission_manager import mission_manager, init_episode, uninit_episode
 from .channel import download_ch
@@ -64,7 +65,7 @@ class DownloadManager:
 				
 			for command in commands:
 				command = command + " " + path_join(
-					event.data.module.config["savepath"],
+					profile(event.data.module.config["savepath"]),
 					safefilepath(event.data.title)
 				)
 				try:
@@ -145,7 +146,10 @@ class DownloadManager:
 		if mission:
 			print("Start download " + mission.title)
 			init_episode(mission)
-			self.download_thread = Worker(download).start(mission, mission.module.config["savepath"])
+			self.download_thread = Worker(download).start(
+				mission,
+				profile(mission.module.config["savepath"])
+			)
 		else:
 			print("所有任務已下載完成")
 

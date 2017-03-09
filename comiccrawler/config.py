@@ -14,7 +14,7 @@ class CaseSensitiveConfigParser(ConfigParser):
 
 class Config:
 	default = {
-		"savepath": "{profile}/download",
+		"savepath": "download",
 		"runafterdownload": "",
 		"libraryautocheck": "true",
 		"autosave": "5",
