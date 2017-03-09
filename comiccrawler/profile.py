@@ -11,6 +11,6 @@ def set(profile):
 
 def get(file=None):
 	if file is not None:
-		return normpath(join(getcwd(), expanduser(PROFILE), file))
+		return normpath(join(getcwd(), expanduser(PROFILE), expanduser(file)))
 	else:
 		return normpath(join(getcwd(), expanduser(PROFILE)))
