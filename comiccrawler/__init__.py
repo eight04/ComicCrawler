@@ -29,7 +29,7 @@ Sub modules:
   comiccrawler.mods   Import download modules.
 """
 
-__version__ = "2017.3.6"
+__version__ = "2017.3.9"
 
 def console_download(url, savepath):
 	"""Download url to savepath."""
