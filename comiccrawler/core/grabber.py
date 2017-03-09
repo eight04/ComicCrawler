@@ -12,6 +12,7 @@ from pprint import pformat
 
 from ..config import setting
 from ..io import content_write
+from ..profile import get as profile
 
 default_header = {
 	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0",
@@ -47,7 +48,7 @@ def quote_unicode_dict(d):
 	
 def grabber_log(*args):
 	if setting.getboolean("errorlog"):
-		content_write("~/comiccrawler/grabber.log", pformat(args) + "\n\n", append=True)
+		content_write(profile("grabber.log"), pformat(args) + "\n\n", append=True)
 
 sessions = {}
 def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True, params=None, done=None):

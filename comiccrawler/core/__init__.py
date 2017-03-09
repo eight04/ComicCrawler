@@ -16,6 +16,7 @@ from ..error import ModuleError, PauseDownloadError, LastPageError, SkipEpisodeE
 from ..io import content_write, content_read, path_each
 from ..channel import download_ch, mission_ch
 from ..config import setting
+from ..profile import get as profile
 
 from .grabber import grabhtml, grabimg, is_429
 
@@ -23,7 +24,7 @@ mission_lock = threading.Lock()
 
 def debug_log(*args):
 	if setting.getboolean("errorlog"):
-		content_write("~/comiccrawler/debug.log", ", ".join(args) + "\n", append=True)
+		content_write(profile("debug.log"), ", ".join(args) + "\n", append=True)
 
 class Mission:
 	"""Create Mission object. Contains information of the mission."""

@@ -7,12 +7,14 @@ from configparser import ConfigParser
 from os.path import expanduser, dirname, isdir, normpath
 from os import makedirs
 
+from .profile import get as profile
+
 class CaseSensitiveConfigParser(ConfigParser):
 	optionxform = str
 
 class Config:
 	default = {
-		"savepath": "~/comiccrawler/download",
+		"savepath": "{profile}/download",
 		"runafterdownload": "",
 		"libraryautocheck": "true",
 		"autosave": "5",
@@ -47,5 +49,5 @@ class Config:
 		with open(self.path, 'w', encoding='utf-8') as f:
 			self.config.write(f)
 	
-config = Config('~/comiccrawler/setting.ini')
+config = Config(profile('setting.ini'))
 setting = config.config['DEFAULT']

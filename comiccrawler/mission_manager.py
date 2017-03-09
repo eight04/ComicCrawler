@@ -13,6 +13,7 @@ from contextlib import suppress, contextmanager
 from .safeprint import print
 from .core import Mission, Episode, MissionProxy, safefilepath, mission_lock
 from .io import backup, open, remove, move
+from .profile import get as profile
 
 from .channel import mission_ch
 
@@ -40,7 +41,7 @@ def edit_mission_id(mission):
 	
 def make_ep_path(id):
 	"""Construct ep path with id"""
-	return "~/comiccrawler/pool/" + safefilepath(id + ".json")
+	return profile("pool/" + safefilepath(id + ".json"))
 	
 def get_ep_path(mission):
 	"""Return episode save file path"""
@@ -127,9 +128,9 @@ class MissionManager:
 			return
 
 		with mission_lock:
-			dump(list(self.pool.values()), "~/comiccrawler/pool.json")
-			dump(list(self.view), "~/comiccrawler/view.json")
-			dump(list(self.library), "~/comiccrawler/library.json")
+			dump(list(self.pool.values()), profile("pool.json"))
+			dump(list(self.view), profile("view.json"))
+			dump(list(self.library), profile("library.json"))
 			
 		self.edit = False
 		print("Session saved")
@@ -137,22 +138,21 @@ class MissionManager:
 	def load(self):
 		"""Load mission from json.
 
-		If it fail to load missions, create json backup in
-		`~/comiccrawler/invalid-save`.
+		If failing to load missions, create json backup .
 		"""
 		try:
 			self._load()
 		except Exception as err:
 			print("Failed to load session!")
-			backup("~/comiccrawler/*.json")
+			backup(profile("*.json"))
 			raise
 		self.cleanup()
 
 	def _load(self):
 		"""Load missions from json. Called by MissionManager.load."""
-		pool = load("~/comiccrawler/pool.json") or []
-		view = load("~/comiccrawler/view.json") or []
-		library = load("~/comiccrawler/library.json") or []
+		pool = load(profile("pool.json")) or []
+		view = load(profile("view.json")) or []
+		library = load(profile("library.json")) or []
 
 		for m_data in pool:
 			# reset state

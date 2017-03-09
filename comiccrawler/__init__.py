@@ -63,6 +63,7 @@ def migrate():
 	from .core import safefilepath
 	from .io import move
 	from .safeprint import print
+	from .profile import get as profile
 	
 	def safefilepath_old(s):
 		"""Return a safe directory name."""
@@ -79,8 +80,8 @@ def migrate():
 	
 	for mission in mission_manager.pool.values():
 		id = get_mission_id(mission)
-		old_ep = "~/comiccrawler/pool/" + safefilepath_old(id + ".json")
-		new_ep = "~/comiccrawler/pool/" + safefilepath(id + ".json")
+		old_ep = profile("pool/" + safefilepath_old(id + ".json"))
+		new_ep = profile("pool/" + safefilepath(id + ".json"))
 		to_rename.append((old_ep, new_ep))
 		
 	rename(to_rename)

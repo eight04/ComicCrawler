@@ -5,13 +5,14 @@
 Import all downloader modules
 """
 
-from os.path import dirname, join, isdir, splitext, expanduser
+from os.path import dirname, join, isdir, splitext
 from os import listdir
 from importlib import import_module
 from re import search
 from sys import version_info
 
 from ..config import config
+from ..profile import get as profile
 
 def import_module_file(ns, file):
 	if version_info < (3, 5):
@@ -38,7 +39,7 @@ for file in listdir(here):
 	mods.add(import_module("comiccrawler.mods." + name))
 	
 # Load mods from user mods dir
-user_mods_dir = expanduser("~/comiccrawler/mods")
+user_mods_dir = profile("mods")
 if isdir(user_mods_dir):
 	for file in listdir(user_mods_dir):
 		name, ext = splitext(file)
