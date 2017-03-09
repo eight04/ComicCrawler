@@ -1,6 +1,10 @@
 Comic Crawler
 =============
 
+.. image:: https://api.codacy.com/project/badge/Grade/a0c981612220477e96b2c0f8eccfffbf
+   :alt: Codacy Badge
+   :target: https://www.codacy.com/app/eight04/ComicCrawler?utm_source=github.com&utm_medium=referral&utm_content=eight04/ComicCrawler&utm_campaign=badger
+
 Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管理員、圖書館功能、 與方便的擴充能力。
 
 2016.12.20 更新
