@@ -245,14 +245,17 @@ class MissionManager:
 		mission_ch.pub("MISSION_LIST_REARRANGED", pool)
 		self.edit = True
 
-	def get_by_state(self, pool_name, states, all=False):
-		"""Get missions by states."""
+	def get_by_state(self, pool_name, states):
+		"""Get first mission matching states."""
 		with self.lock:
-			if not all:
-				for mission in getattr(self, pool_name).values():
-					if mission.state in states:
-						return mission
-				return None
+			for mission in getattr(self, pool_name).values():
+				if mission.state in states:
+					return mission
+			return None
+			
+	def get_all_by_state(self, pool_name, states):
+		"""Get all missions matching states"""
+		with self.lock:
 			output = []
 			for mission in getattr(self, pool_name).values():
 				if mission.state in states:
