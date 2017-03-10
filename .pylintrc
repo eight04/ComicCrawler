@@ -15,11 +15,13 @@ disable=
 	# https://github.com/PyCQA/pylint/issues/782
 	not-context-manager,
 	
+	anomalous-backslash-in-string,
 	global-statement,
-	missing-docstring,
+	missing-docstring, multiple-imports,
 	no-self-use,
 	redefined-outer-name, redefined-builtin,
 	trailing-whitespace,
+	unused-argument,
 
 [REPORTS]
 reports=no
@@ -51,4 +53,4 @@ min-public-methods=0
 max-parents=14
 
 [TYPECHECK]
-ignored-modules=worker
+ignored-modules=worker, comiccrawler.mods.*

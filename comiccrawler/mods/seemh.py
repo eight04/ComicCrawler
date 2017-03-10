@@ -9,10 +9,10 @@ Ex:
 """
 
 import re
-import execjs
-
 from urllib.parse import urljoin
 from itertools import cycle
+
+import execjs
 
 from ..core import Episode, grabhtml
 
@@ -55,23 +55,25 @@ def get_episodes(html, url):
 cache = {}
 
 def get_images(html, url):
+	# build js context
+	js = "var window = global;"
+	
 	configjs_url = re.search(
 		r'src="(http://[^"]+?/config_\w+?\.js)"',
 		html
 	).group(1)
 	configjs = grabhtml(configjs_url, referer=url)
-	crypto = re.search(
+	js += re.search(
 		r'^(var CryptoJS|window\["\\x65\\x76\\x61\\x6c"\]).+',
 		configjs,
 		re.MULTILINE
 	).group()
 
-	info_eval = re.search(
+	js += re.search(
 		r'<script type="text/javascript">((eval|window\["\\x65\\x76\\x61\\x6c"\]).+?)</script',
 		html
 	).group(1)
 	
-	js = "var window = global;" + crypto + info_eval
 	# with open("seemh.js", "w", encoding="utf-8") as f:
 		# f.write(js)
 	ctx = execjs.compile(js)

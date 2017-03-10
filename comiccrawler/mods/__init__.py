@@ -17,6 +17,7 @@ from ..profile import get as profile
 def import_module_file(ns, file):
 	if version_info < (3, 5):
 		from importlib.machinery import SourceFileLoader
+		# pylint: disable=deprecated-method
 		module = SourceFileLoader(ns, file).load_module()
 	else:
 		from importlib.util import spec_from_file_location, module_from_spec
@@ -47,7 +48,7 @@ if isdir(user_mods_dir):
 			continue
 		mods.add(import_module_file("comiccrawler.user_mods." + name, join(user_mods_dir, file)))
 	
-"""Regist domain with mod to self.dlHolder"""
+# Regist domain with mod to self.dlHolder
 for mod in mods:
 	for url in mod.domain:
 		domain_index[url] = mod
@@ -83,7 +84,7 @@ def list_domain():
 def get_module(url):
 	"""Return the downloader mod of spect url or return None"""
 	
-	match = search("^https?://([^/]+?)(:\d+)?/", url)
+	match = search(r"^https?://([^/]+?)(:\d+)?/", url)
 	
 	if not match:
 		return None

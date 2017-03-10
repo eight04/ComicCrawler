@@ -16,7 +16,9 @@ def get_episodes(html, url):
 	s = []
 	# base = re.search("(https?://[^/]+)", url).group(1)
 	match = None
-	for match in re.finditer(r'href="(http://tsundora\.com/(\d+))"class="img_hover_trans" title="([^"]+)"', html):
+	for match in re.finditer(
+			r'href="(http://tsundora\.com/(\d+))"class="img_hover_trans"'
+			'title="([^"]+)"', html):
 		url, id, title = match.groups()
 		s.append(Episode(id + " - " + title, url))
 	return s[::-1]
