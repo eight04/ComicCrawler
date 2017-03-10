@@ -1,7 +1,5 @@
 #! python3
 
-"""pyXcute task runner"""
-
 import pathlib
 import datetime
 import re
@@ -45,7 +43,7 @@ def domains():
 cute(
 	pkg_name = "comiccrawler",
 	default = "python -m comiccrawler gui",
-	test = ['pyflakes comiccrawler', 'readme_build'],
+	test = ['pylint comiccrawler', 'readme_build'],
 	bump_pre = 'test',
 	bump = bump,
 	bump_post = ['domains', 'dist', 'release', 'publish', 'install'],
