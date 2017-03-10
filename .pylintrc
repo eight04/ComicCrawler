@@ -17,7 +17,8 @@ disable=
 	
 	redefined-outer-name, redefined-builtin,
 	missing-docstring,
-	trailing-whitespace
+	trailing-whitespace,
+	no-self-use,
 
 [REPORTS]
 reports=no
@@ -44,7 +45,7 @@ redefining-builtins-modules=six.moves,future.builtins,safeprint
 
 [DESIGN]
 max-args=10
-max-attributes=14
+max-attributes=21
 min-public-methods=0
 max-parents=14
 

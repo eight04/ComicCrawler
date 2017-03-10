@@ -54,8 +54,8 @@ def console_init():
 		print("Supported domains:\n" + ", ".join(list_domain()))
 
 	elif arguments["gui"]:
-		from .gui import MainWindow
-		MainWindow()
+		from .gui import main
+		main()
 
 	elif arguments["download"]:
 		console_download(arguments["<url>"], arguments["--dest"])
