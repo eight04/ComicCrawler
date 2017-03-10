@@ -260,7 +260,7 @@ class Downloader:
 				
 		return cookie
 		
-	def handle_grab(self, session, response):
+	def handle_grab(self, session, _response):
 		cookie = dict_from_cookiejar(session.cookies)
 		config = getattr(self.mod, "config", None)
 		if not config:
@@ -286,7 +286,8 @@ class SavePath:
 			return path_join(self.root, self.mission_title)
 		return path_join(self.root, self.mission_title, self.ep_title)
 		
-	def fn(self, page, ext=""):
+	def filename(self, page, ext=""):
+		"""Build filename with page and ext"""
 		if not isinstance(page, str):
 			page = "{:03d}".format(page)
 			
@@ -304,7 +305,8 @@ class SavePath:
 		)
 		
 	def full_fn(self, page, ext=""):
-		return path_join(self.parent(), self.fn(page, ext))
+		"""Build full filename with page and ext"""
+		return path_join(self.parent(), self.filename(page, ext))
 
 	def exists(self, page):
 		"""Check if current page exists in savepath."""
@@ -325,7 +327,7 @@ class SavePath:
 				build_file_table
 			)
 			
-		return self.files.get(self.fn(page))
+		return self.files.get(self.filename(page))
 
 class Crawler:
 	"""Create Crawler object. Contains img url, next page url."""
@@ -575,13 +577,13 @@ def error_loop(process, handle_error=None, limit=10):
 def analyze(mission):
 	"""Analyze mission."""
 	try:
-		analyze_info(mission, mission.module)
+		Analyzer(mission).analyze()
 
 	except WorkerExit:
 		mission.state = "ERROR"
 		raise
 
-	except Exception as err:
+	except Exception as err: # pylint: disable=broad-except
 		mission.state = "ERROR"
 		traceback.print_exc()
 		download_ch.pub("ANALYZE_FAILED", (err, mission))
@@ -604,92 +606,131 @@ def remove_duplicate_episode(mission):
 			s2.add(ep.title)
 			result.append(ep)
 	mission.episodes = result
+	
+class Analyzer:
+	"""Analyze mission"""
+	def __init__(self, mission):
+		self.mission = mission
+		self.downloader = Downloader(mission.module)
+		self.old_urls = None
+		self.old_titles = None
+		self.is_new = not mission.episodes
+		self.html = None
+		
+	def analyze(self):
+		"""Start analyze"""
+		print("Start analyzing {}".format(self.mission.url))
 
-def analyze_info(mission, mod):
-	"""Analyze mission."""
-	print("Start analyzing {}".format(mission.url))
-
-	mission.state = "ANALYZING"
-
-	if mission.episodes:
-		is_new = False
+		self.mission.state = "ANALYZING"
 		
 		# one-time mission
-		if mission.episodes[0].url == mission.url:
-			if mission.episodes[0].skip or mission.episodes[0].complete:
-				mission.state = "FINISHED"
+		if self.is_onetime():
+			ep = self.mission.episodes[0]
+			if ep.skip or ep.complete:
+				self.mission.state = "FINISHED"
 			else:
-				mission.state = "UPDATE"
+				self.mission.state = "UPDATE"
 			print("Analyzing success!")
 			return
 			
-		old_urls = set(e.url for e in mission.episodes)
-		old_titles = set(e.title for e in mission.episodes)
+		self.html = self.downloader.html(self.mission.url, raise_429=False)
 		
-	else:
-		is_new = True
-		old_urls = set()
-		old_titles = set()
-		mission.episodes = []
-		
-	downloader = Downloader(mod)
-	
-	html = downloader.html(mission.url, raise_429=False)
-
-	if not mission.title:
-		mission.title = mod.get_title(html, mission.url)
-
-	url = mission.url
-	new_eps = []
-	
-	while True:
-		duplicate = False
-		
-		# format title number on analyzed
-		eps = mod.get_episodes(html, url)
-		format = mod.config.get("titlenumberformat")
-		if format:
-			for e in eps:
-				title = list(e.title.partition(mission.title))
-				for i in (0, 2):
-					title[i] = format_number(title[i], format)
-				e.title = "".join(title)
+		if not self.mission.title:
+			self.mission.title = self.mission.module.get_title(
+				self.html, self.mission.url)
 				
-		for e in reversed(eps):
-			if e.url in old_urls or e.title in old_titles:
-				duplicate = True
-				continue
-			new_eps.append(e)
-		# one-time mission
-		if len(new_eps) == 1 and new_eps[0].url == mission.url:
-			break
-		if duplicate:
-			break
-		if not hasattr(mod, "get_next_page"):
-			break
-		next_url = mod.get_next_page(html, url)
-		if not next_url:
-			break
-		url = next_url
-		print('Analyzing {}...'.format(url))
-		html = downloader.html(url, raise_429=False)
+		self.analyze_pages()
+				
+		if self.is_new:
+			self.mission.state = "ANALYZED"
+			
+		elif all(e.complete or e.skip for e in self.mission.episodes):
+			self.mission.state = "FINISHED"
+			
+		else:
+			self.mission.state = "UPDATE"
+
+		print("Analyzing success!")
 		
-	mission.episodes.extend(reversed(new_eps))
-	
-	if not mission.episodes:
-		raise Exception("Episode list is empty")
+	def analyze_pages(self):
+		"""Crawl for each pages"""
+		url = self.mission.url
+		new_eps = []
+		
+		while True:
+			eps = self.mission.module.get_episodes(self.html, url)
+			self.transform_title(eps)
+			
+			# add result episodes into new_eps
+			duplicate = False
+			for ep in reversed(eps):
+				if self.contains(ep):
+					duplicate = True
+					continue
+				new_eps.append(ep)
+				self.add(ep)
+				
+			if (len(new_eps) == 1 and new_eps[0].url == self.mission.url or
+					duplicate):
+				break
+				
+			# get next page
+			next_url = self.get_next_page(self.html, url)
+			if not next_url:
+				break
+			url = next_url
+			print('Analyzing {}...'.format(url))
+			self.html = self.downloader.html(url, raise_429=False)
+			
+		if not self.mission.episodes:
+			self.mission.episodes = []
+		self.mission.episodes.extend(reversed(new_eps))
+		
+		if not self.mission.episodes:
+			raise Exception("Episode list is empty")
+		
+	def get_next_page(self, html, url):
+		if not hasattr(self.mission.module, "get_next_page"):
+			return None
+		return self.mission.module.get_next_page(html, url)
 
-	if is_new:
-		mission.state = "ANALYZED"
-	elif all(e.complete or e.skip for e in mission.episodes):
-		mission.state = "FINISHED"
-	else:
-		mission.state = "UPDATE"
-
-	# remove duplicate
-	remove_duplicate_episode(mission)
-
-	print("Analyzing success!")
+	def contains(self, ep):
+		"""Check if mission contains episode"""
+		self.build_cache()
+		return ep.url in self.old_urls or ep.title in self.old_titles
+		
+	def add(self, ep):
+		"""Add episode to cache"""
+		self.build_cache()
+		self.old_urls.add(ep.url)
+		self.old_titles.add(ep.title)
+		
+	def build_cache(self):
+		"""Build episode set for existence test"""
+		if self.old_urls is None:
+			self.old_urls = set()
+			if self.mission.episodes:
+				self.old_urls.union(e.url for e in self.mission.episodes)
+		if self.old_titles is None:
+			self.old_titles = set()
+			if self.mission.episodes:
+				self.old_titles.union(e.title for e in self.mission.episodes)
+			
+	def transform_title(self, eps):
+		format = self.mission.module.config.get("titlenumberformat")
+		if not format:
+			return
+		for ep in eps:
+			# ignore mission title if exists
+			title = list(ep.title.partition(self.mission.title))
+			for i in (0, 2):
+				title[i] = format_number(title[i], format)
+			ep.title = "".join(title)
+			
+	def is_onetime(self):
+		"""Check if the mission should only be analyze once"""
+		return (self.mission.episodes and
+			self.mission.episodes[0].url == self.mission.url)
 
 def format_number(title, format):
 	"""第3卷 --> 第003卷"""

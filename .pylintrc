@@ -15,10 +15,11 @@ disable=
 	# https://github.com/PyCQA/pylint/issues/782
 	not-context-manager,
 	
-	redefined-outer-name, redefined-builtin,
+	global-statement,
 	missing-docstring,
-	trailing-whitespace,
 	no-self-use,
+	redefined-outer-name, redefined-builtin,
+	trailing-whitespace,
 
 [REPORTS]
 reports=no
