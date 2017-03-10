@@ -45,7 +45,10 @@ STATE = {
 }
 
 def safe_tk(text):
-	"""Encode U+FFFF+ characters. Tkinter doesn't allow to display these character. See http://stackoverflow.com/questions/23530080/how-to-print-non-bmp-unicode-characters-in-tkinter-e-g"""
+	"""Encode U+FFFF+ characters. Tkinter doesn't allow to display these
+	character. See:
+	http://stackoverflow.com/questions/23530080/how-to-print-non-bmp-unicode-characters-in-tkinter-e-g
+	"""
 
 	return re.sub(r"[^\u0000-\uFFFF]", "_", text)
 	
@@ -65,16 +68,18 @@ def get_scale(root):
 		w = user32.GetSystemMetrics(0)
 		return w / root.winfo_screenwidth()
 	except ImportError:
+		# non-windows
 		pass
-	except Exception:
+	except Exception: # pylint: disable=broad-except
 		traceback.print_exc()
 	
 	# GNome
+	args = ["gsettings", "get", "org.gnome.desktop.interface", "scaling-factor"]
 	try:
-		args = ["gsettings", "get", "org.gnome.desktop.interface", "scaling-factor"]
-		with subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True) as p:
+		with subprocess.Popen(args, stdout=subprocess.PIPE,
+				universal_newlines=True) as p:
 			return float(p.stdout.read().rpartition(" ")[-1])
-	except Exception:
+	except Exception: # pylint: disable=broad-except
 		traceback.print_exc()
 		
 	return 1.0
@@ -315,7 +320,9 @@ class MainWindow:
 			self.root.tk.call("tk", "scaling", old_scale * scale)
 			
 		# Use pt for builtin fonts
-		for name in ("TkDefaultFont", "TkTextFont", "TkHeadingFont", "TkMenuFont", "TkFixedFont", "TkTooltipFont", "TkCaptionFont", "TkSmallCaptionFont", "TkIconFont"):
+		for name in ("TkDefaultFont", "TkTextFont", "TkHeadingFont",
+				"TkMenuFont", "TkFixedFont", "TkTooltipFont", "TkCaptionFont",
+				"TkSmallCaptionFont", "TkIconFont"):
 			f = font.nametofont(name)
 			size = f.config()["size"]
 			if size < 0:

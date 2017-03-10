@@ -6,9 +6,9 @@ import re
 import string
 import threading
 import traceback
+from os.path import join as path_join, split as path_split, splitext
 
 from worker import sleep, WorkerExit
-from os.path import join as path_join, split as path_split, splitext
 from requests.utils import dict_from_cookiejar
 
 from ..safeprint import print
@@ -104,7 +104,8 @@ def create_mission(url):
 class Episode:
 	"""Create Episode object. Contains information of an episode."""
 
-	def __init__(self, title=None, url=None, current_url=None, current_page=0, skip=False, complete=False, total=0, image=None):
+	def __init__(self, title=None, url=None, current_url=None, current_page=0,
+			skip=False, complete=False, total=0, image=None):
 		"""Construct."""
 		self.title = title
 		self.url = url
@@ -220,11 +221,6 @@ def get_checksum(b):
 def get_file_checksum(file):
 	return get_checksum(content_read(file, raw=True))
 
-def extract_filename(file):
-	dir, fn = path_split(file)
-	fn, ext = splitext(fn)
-	return fn
-	
 class Downloader:
 	"""Bind grabber with module's header, cookie..."""
 	def __init__(self, mod):
@@ -264,8 +260,8 @@ class Downloader:
 				
 		return cookie
 		
-	def handle_grab(self, s, r):
-		cookie = dict_from_cookiejar(s.cookies)
+	def handle_grab(self, session, response):
+		cookie = dict_from_cookiejar(session.cookies)
 		config = getattr(self.mod, "config", None)
 		if not config:
 			return
@@ -320,9 +316,9 @@ class SavePath:
 			self.files = {}
 			
 			def build_file_table(file):
-				dir, fn = path_split(file)
-				fn, ext = splitext(fn)
-				self.files[fn] = ext
+				_dir, name = path_split(file)
+				_base, ext = splitext(name)
+				self.files[name] = ext
 				
 			path_each(
 				self.parent(),
@@ -344,6 +340,7 @@ class Crawler:
 		self.is_init = False
 		self.html = None
 		self.image = None
+		self.images = None
 		self.image_bin = None
 		self.image_ext = None
 		self.filename = None
@@ -365,7 +362,7 @@ class Crawler:
 		
 		try:
 			# skip some images
-			for i in range(0, skip_pages):
+			for _ in range(0, skip_pages):
 				next(self.images)
 			# get current image
 			self.image = Image.create(next(self.images))
@@ -383,14 +380,14 @@ class Crawler:
 	def download_image(self):
 		"""Download image"""
 		if self.image.url:
-			r = self.downloader.img(
+			result = self.downloader.img(
 				self.image.url, referer=self.ep.current_url)
 				
 			# redirected and url changed
-			if r.r.history and not self.image.static_filename:
-				self.image.filename = url_extract_filename(r.r.url)
-			bin = r.bin
-			ext = r.ext
+			if result.response.history and not self.image.static_filename:
+				self.image.filename = url_extract_filename(result.response.url)
+			bin = result.bin
+			ext = result.ext
 		else:
 			bin = json.dumps(self.image.data, indent="\t").encode("utf-8")
 			ext = ".json"
@@ -427,7 +424,7 @@ class Crawler:
 				
 		try:
 			content_write(self.savepath.full_fn(self.get_filename(), self.image_ext), self.image_bin)
-		except OSError as er:
+		except OSError:
 			traceback.print_exc()
 			raise PauseDownloadError("Failed to write file!")
 
@@ -497,8 +494,8 @@ class Crawler:
 		try:
 			handler(error, self)
 
-		except Exception as er:
-			print("[Crawler] Failed to handle error: {}".format(er))
+		except Exception as err: # pylint: disable=broad-except
+			print("[Crawler] Failed to handle error: {}".format(err))
 			
 			
 def crawlpage(crawler):
@@ -550,7 +547,7 @@ def crawlpage(crawler):
 		if is_429(er):
 			# retry doesn't work with 429 error
 			sleep(5)
-			raise
+			raise er
 		else:
 			crawler.handle_error(er)
 			sleep(5)
@@ -563,7 +560,7 @@ def error_loop(process, handle_error=None, limit=10):
 	while True:
 		try:
 			process()
-		except Exception as er:
+		except Exception as er: # pylint: disable=broad-except
 			traceback.print_exc()
 			errorcount += 1
 			if errorcount >= limit:
@@ -600,13 +597,13 @@ def remove_duplicate_episode(mission):
 	"""Remove duplicate episodes."""
 	s = set()
 	s2 = set()
-	cleanList = []
+	result = []
 	for ep in mission.episodes:
 		if ep.url not in s and ep.title not in s2:
 			s.add(ep.url)
 			s2.add(ep.title)
-			cleanList.append(ep)
-	mission.episodes = cleanList
+			result.append(ep)
+	mission.episodes = result
 
 def analyze_info(mission, mod):
 	"""Analyze mission."""
@@ -699,4 +696,4 @@ def format_number(title, format):
 	def replacer(match):
 		number = match.group()
 		return format.format(int(number))
-	return re.sub("\d+", replacer, title)
+	return re.sub(r"\d+", replacer, title)

@@ -2,10 +2,16 @@
 
 """Simple io module depressing exceptions"""
 
-import os, os.path as path, pprint, glob, time, shutil
-import io
+import os
+import os.path as path
+import pprint
+import glob
+import time
+import shutil
 
 from contextlib import contextmanager, suppress
+
+import io
 
 CHUNK_LIMIT = 500 * 1000 * 1000
 
@@ -106,17 +112,20 @@ def move(src, dest):
 		prepare_folder(path.dirname(dest))
 		os.rename(src, dest)
 
-def backup(file):
-	"""Create backup file."""
-	file = path.expanduser(file)
-	if "*" in file:
+def backup(arg):
+	"""Create backup file.
+	
+	:param arg: str - glob pattern or filename.
+	"""
+	arg = path.expanduser(arg)
+	if "*" in arg:
 		# Wildcard multiple copy
-		for file in glob.iglob(file):
+		for file in glob.iglob(arg):
 			shutil.copyfile(file, file + time.strftime("@%Y-%m-%d_%H%M%S"))
 	else:
-		if not is_file(file):
+		if not is_file(arg):
 			return
-		shutil.copyfile(file, file + time.strftime("@%Y-%m-%d_%H%M%S"))
+		shutil.copyfile(arg, arg + time.strftime("@%Y-%m-%d_%H%M%S"))
 
 def path_each(folder, callback, mode="f"):
 	"""Iter through all file in the folder.
