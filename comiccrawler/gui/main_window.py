@@ -388,7 +388,7 @@ class EventMixin:
 
 		def cleanfinished():
 			# mission_manager.clean_finished()
-			missions = mission_manager.get_all_by_state("view", ("FINISHED",), all=True)
+			missions = mission_manager.get_all_by_state("view", ("FINISHED",))
 			if not missions:
 				return
 			mission_manager.remove("view", *missions)
@@ -476,7 +476,7 @@ class EventMixin:
 		self.btn_update["command"] = lib_check_update
 
 		def lib_download_update():
-			missions = mission_manager.get_all_by_state("library", ("UPDATE",), all=True)
+			missions = mission_manager.get_all_by_state("library", ("UPDATE",))
 			if not missions:
 				messagebox.showerror("Comic Crawler", "沒有新更新的任務")
 				return
