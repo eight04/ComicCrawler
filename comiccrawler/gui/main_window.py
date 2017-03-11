@@ -181,7 +181,7 @@ def select_episodes(parent, mission):
 	
 class ViewMixin:
 	"""Create main window view"""
-	def __init__(self):
+	def create_view(self):
 		"""Draw the window."""
 		
 		# root
@@ -316,7 +316,7 @@ class ViewMixin:
 	
 class EventMixin:
 	"""Bind main window events"""
-	def __init__(self):
+	def bind_event(self):
 		"""Bind events."""
 		pre_url = None
 		
@@ -515,7 +515,8 @@ class MainWindow(ViewMixin, EventMixin):
 	"""Create main window GUI."""
 	def __init__(self):
 		"""Construct."""
-		super().__init__()
+		self.create_view()
+		self.bind_event()
 		
 		self.thread = current()
 

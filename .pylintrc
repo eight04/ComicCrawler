@@ -1,7 +1,7 @@
 [MESSAGES CONTROL]
 disable=
 	raw-checker-failed, locally-disabled, locally-enabled, file-ignored,
-	suppressed-message,
+	suppressed-message, fixme,
 	
 	# seems continuation checker doesn't work with tabs
 	mixed-indentation, bad-continuation,

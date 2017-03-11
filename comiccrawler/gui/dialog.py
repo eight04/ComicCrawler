@@ -61,5 +61,5 @@ class Dialog:
 		
 	def wait(self):
 		"""Wait the dialog to close."""
-		self.root.wait_window(self)
+		self.root.wait_window(self.root)
 		return self.result

@@ -710,11 +710,11 @@ class Analyzer:
 		if self.old_urls is None:
 			self.old_urls = set()
 			if self.mission.episodes:
-				self.old_urls.union(e.url for e in self.mission.episodes)
+				self.old_urls.update(e.url for e in self.mission.episodes)
 		if self.old_titles is None:
 			self.old_titles = set()
 			if self.mission.episodes:
-				self.old_titles.union(e.title for e in self.mission.episodes)
+				self.old_titles.update(e.title for e in self.mission.episodes)
 			
 	def transform_title(self, eps):
 		format = self.mission.module.config.get("titlenumberformat")
