@@ -21,7 +21,7 @@ disable=
 	no-self-use,
 	redefined-outer-name, redefined-builtin,
 	trailing-whitespace,
-	unused-argument,
+	unused-argument
 
 [REPORTS]
 reports=no
