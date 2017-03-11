@@ -8,9 +8,9 @@ Ex:
 """
 
 import re
-import execjs
-
 from functools import partial
+
+import execjs
 
 from ..core import Episode, grabhtml
 
@@ -34,8 +34,8 @@ def get_episodes(html, url):
 	return s[::-1]
 
 def get_images(html, url):
-	sFiles = re.search('sFiles="([^"]+)"', html).group(1)
-	sPath = re.search('sPath="([^"]+)"', html).group(1)
+	s_files = re.search('sFiles="([^"]+)"', html).group(1)
+	s_path = re.search('sPath="([^"]+)"', html).group(1)
 	
 	viewhtm = grabhtml("http://www.iibq.com/script/viewhtm.js")
 	
@@ -58,10 +58,10 @@ def get_images(html, url):
 		"unsuan"
 	)
 	
-	arrFiles = unsuan(sFiles).split("|")
+	arr_files = unsuan(s_files).split("|")
 	
 	ds = grabhtml("http://www.iibq.com/script/ds.js")
 	
-	SLUrl = re.search('sDS = "([^"]+)"', ds).group(1).split("^")[0].split("|")[1]
+	sl_url = re.search('sDS = "([^"]+)"', ds).group(1).split("^")[0].split("|")[1]
 	
-	return [SLUrl + sPath + f for f in arrFiles]
+	return [sl_url + s_path + f for f in arr_files]

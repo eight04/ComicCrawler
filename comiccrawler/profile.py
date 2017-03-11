@@ -1,9 +1,9 @@
 #! python3
 
-PROFILE = "~/comiccrawler"
-
 from os import getcwd
 from os.path import expanduser, normpath, join
+
+PROFILE = "~/comiccrawler"
 
 def set(profile):
 	global PROFILE
@@ -12,5 +12,4 @@ def set(profile):
 def get(file=None):
 	if file is not None:
 		return normpath(join(getcwd(), expanduser(PROFILE), expanduser(file)))
-	else:
-		return normpath(join(getcwd(), expanduser(PROFILE)))
+	return normpath(join(getcwd(), expanduser(PROFILE)))

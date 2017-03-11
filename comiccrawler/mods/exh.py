@@ -23,7 +23,8 @@ config = {
 	"original": "false"
 }
 
-class BandwidthLimitError(Exception): pass
+class BandwidthLimitError(Exception):
+	pass
 
 def get_boolean(s):
 	return ConfigParser.BOOLEAN_STATES.get(s.lower())

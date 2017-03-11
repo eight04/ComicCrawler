@@ -7,12 +7,14 @@ Ex:
 
 """
 
-import re, execjs
+import re
 from html import unescape
 from urllib.error import HTTPError
 from urllib.parse import urljoin
 from io import BytesIO
 from zipfile import ZipFile
+
+import execjs
 
 from ..core import Episode, grabhtml
 from ..error import SkipEpisodeError, PauseDownloadError
@@ -29,7 +31,7 @@ def get_title(html, url):
 		user = unescape(re.search("class=\"user\">(.+?)</h1>", html).group(1))
 		id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
 		title = "{} - {}".format(id, user)
-	except Exception:
+	except AttributeError:
 		title = "[pixiv] " + unescape(re.search("<title>「([^」]+)", html).group(1))
 	return title
 
@@ -46,11 +48,45 @@ def get_episodes(html, url):
 	
 cache = {}
 
+def get_images_old(html, url):
+	match = re.search(r'"works_display"><a (?:class="[^"]*" )?href="([^"]+)"', html)
+	
+	if not match:
+		return
+		
+	inner_url = match.group(1)
+	html = grabhtml(urljoin(url, inner_url), referer=url)
+
+	if "mode=big" in inner_url:
+		# single image
+		img = re.search(r'src="([^"]+)"', html).group(1)
+		return [img]
+
+	if "mode=manga" in inner_url:
+		# multiple image
+		imgs = []
+		
+		def create_grabber(url):
+			def grabber():
+				html = grabhtml(url)
+				return re.search(r'img src="([^"]+)"', html).group(1)
+			return grabber
+
+		for match in re.finditer(r'a href="(/member_illust\.php\?mode=manga_big[^"]+)"', html):
+			imgs.append(create_grabber(urljoin(url, match.group(1))))
+
+		# New manga reader (2015/3/18)
+		# http://www.pixiv.net/member_illust.php?mode=manga&illust_id=19254298
+		if not imgs:
+			for match in re.finditer(r'originalImages\[\d+\] = ("[^"]+")', html):
+				img = execjs.eval(match.group(1))
+				imgs.append(img)
+
+		return imgs
+
 def get_images(html, url):
 	if "pixiv.user.loggedIn = true" not in html:
 		raise PauseDownloadError("you didn't login!")
-
-	base = re.search(r"https?://[^/]+", url).group()
 
 	# ugoku
 	rs = re.search(r"pixiv\.context\.ugokuIllustFullscreenData\s+= ([^;]+)", html)
@@ -70,38 +106,10 @@ def get_images(html, url):
 		return [rs.group(1)]
 
 	# old image layout
-	match = re.search(r'"works_display"><a (?:class="[^"]*" )?href="([^"]+)"', html)
-	if match:
-		inner_url = match.group(1)
-		html = grabhtml(urljoin(url, inner_url), referer=url)
-
-		if "mode=big" in inner_url:
-			# single image
-			img = re.search(r'src="([^"]+)"', html).group(1)
-			return [img]
-
-		if "mode=manga" in inner_url:
-			# multiple image
-			imgs = []
-			
-			def create_grabber(url):
-				def grabber():
-					html = grabhtml(url)
-					return re.search(r'img src="([^"]+)"', html).group(1)
-				return grabber
-
-			for match in re.finditer(r'a href="(/member_illust\.php\?mode=manga_big[^"]+)"', html):
-				imgs.append(create_grabber(base + match.group(1)))
-
-			# New manga reader (2015/3/18)
-			# http://www.pixiv.net/member_illust.php?mode=manga&illust_id=19254298
-			if not imgs:
-				for match in re.finditer(r'originalImages\[\d+\] = ("[^"]+")', html):
-					img = execjs.eval(match.group(1))
-					imgs.append(img)
-
-			return imgs
-
+	imgs = get_images_old(html, url)
+	if imgs:
+		return imgs
+	
 	# restricted
 	rs = re.search('<section class="restricted-content">', html)
 	if rs:
@@ -128,13 +136,13 @@ def imagehandler(ext, bin):
 	"""Append index info to ugoku zip"""
 	if ext == ".zip":
 		# add frame info
-		with BytesIO(bin) as bin:
-			zip = ZipFile(bin, "a")
+		with BytesIO(bin) as imbin:
+			zip = ZipFile(imbin, "a")
 			data = "\n".join(
 				["{file}\t{delay}".format_map(f) for f in cache["frames"]])
 			zip.writestr("index", data.encode("utf-8"))
 			zip.close()
-			bin = bin.getvalue()
+			bin = imbin.getvalue()
 	return ext, bin
 
 def get_next_page(html, url):

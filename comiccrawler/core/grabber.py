@@ -1,14 +1,13 @@
 #! python3
 
 import re
-import requests
 import imghdr
-
+from pprint import pformat
 from urllib.parse import quote, urlsplit, urlunsplit
 from mimetypes import guess_extension
 
+import requests
 from worker import sync, sleep
-from pprint import pformat
 
 from ..config import setting
 from ..io import content_write
@@ -38,7 +37,7 @@ def safeurl(url):
 	This function should follow this rule:
 	  safeurl(safeurl(url)) == safe(url)
 	"""
-	scheme, netloc, path, query, fragment = urlsplit(url)
+	scheme, netloc, path, query, _fragment = urlsplit(url)
 	return urlunsplit((scheme, netloc, quote_loosely(path), query, ""))
 
 def quote_unicode_dict(d):
@@ -53,7 +52,7 @@ def grabber_log(*args):
 sessions = {}
 def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True, params=None, done=None):
 	"""Request url, return text or bytes of the content."""
-	scheme, netloc, path, query, frag = urlsplit(url)
+	_scheme, netloc, _path, _query, _frag = urlsplit(url)
 	
 	if netloc not in sessions:
 		s = requests.Session()
@@ -148,12 +147,11 @@ def get_ext(r):
 	return ext
 
 def grabimg(*args, **kwargs):
-	"""Return byte array."""
-	r = grabber(*args, **kwargs)
-	return ImgResult(r)
+	"""Grab the image. Return ImgResult"""
+	return ImgResult(grabber(*args, **kwargs))
 
 class ImgResult:
-	def __init__(self, r):
-		self.r = r
-		self.ext = get_ext(r)
-		self.bin = r.content
+	def __init__(self, response):
+		self.response = response
+		self.ext = get_ext(response)
+		self.bin = response.content

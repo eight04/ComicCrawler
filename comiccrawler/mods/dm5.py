@@ -8,9 +8,9 @@ Ex:
 """
 
 from re import search, finditer, DOTALL
-from execjs import eval, compile
-
 from urllib.parse import urljoin
+
+from execjs import eval, compile
 
 from ..core import Episode, grabhtml
 
@@ -40,7 +40,9 @@ def get_episodes(html, url):
 def create_grabber(fun, url):
 	def grabber():
 		text = grabhtml(fun, referer=url)
-		d = compile(text).eval("(typeof (hd_c) != 'undefined' && hd_c.length > 0 && typeof (isrevtt) != 'undefined') ? hd_c : d")
+		d = compile(text).eval(
+			"(typeof (hd_c) != 'undefined' && hd_c.length > 0 && "
+			"typeof (isrevtt) != 'undefined') ? hd_c : d")
 		return d[0]
 	return grabber
 	
@@ -61,7 +63,12 @@ def get_images(html, url):
 	cid = search("DM5_CID=(\d+);", html).group(1)
 	s = []
 	for p in range(1, int(count) + 1):
-		fun_url = urljoin(url, "chapterfun.ashx?cid={}&page={}&language=1&key={}&gtk=6".format(cid, p, key))
+		fun_url = urljoin(
+			url,
+			"chapterfun.ashx?cid={}&page={}&language=1&key={}&gtk=6".format(
+				cid, p, key
+			)
+		)
 		s.append(create_grabber(fun_url, url))
 		
 	global first_grabber

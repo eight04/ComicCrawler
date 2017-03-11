@@ -6,15 +6,15 @@ import json
 import hashlib
 
 from collections import OrderedDict
-from worker import current
 from threading import Lock
 from contextlib import suppress, contextmanager
+
+from worker import current
 
 from .safeprint import print
 from .core import Mission, Episode, MissionProxy, safefilepath, mission_lock
 from .io import backup, open, remove, move
 from .profile import get as profile
-
 from .channel import mission_ch
 
 def get_mission_id(mission):
@@ -75,26 +75,26 @@ def load(file):
 				
 def dump(data, file):
 	"""My json.dump"""
+	
+	def encoder(object):
+		"""Encode any object to json."""
+		if hasattr(object, "tojson"):
+			return object.tojson()
+		return vars(object)
+		
 	with open(file, "w") as fp:
 		json.dump(
 			data,
 			fp,
-			cls=MissionPoolEncoder,
 			indent=4,
-			ensure_ascii=False
+			ensure_ascii=False,
+			default=encoder
 		)
 
-class MissionPoolEncoder(json.JSONEncoder):
-	"""Encode Mission, Episode to json."""
-
-	def default(self, object):
-		if hasattr(object, "tojson"):
-			return object.tojson()
-
-		return vars(object)
-
 class MissionManager:
-	"""Since check_update thread might grab mission from mission_manager, we have to make it thread safe."""
+	"""Since check_update thread might grab mission from mission_manager, we
+	have to make it thread safe.
+	"""
 	def __init__(self):
 		"""Construct."""
 		self.pool = {}
@@ -142,7 +142,7 @@ class MissionManager:
 		"""
 		try:
 			self._load()
-		except Exception as err:
+		except Exception:
 			print("Failed to load session!")
 			backup(profile("*.json"))
 			raise
@@ -245,20 +245,22 @@ class MissionManager:
 		mission_ch.pub("MISSION_LIST_REARRANGED", pool)
 		self.edit = True
 
-	def get_by_state(self, pool_name, states, all=False):
-		"""Get missions by states."""
+	def get_by_state(self, pool_name, states):
+		"""Get first mission matching states."""
 		with self.lock:
-			if not all:
-				for mission in getattr(self, pool_name).values():
-					if mission.state in states:
-						return mission
-				return None
-			else:
-				output = []
-				for mission in getattr(self, pool_name).values():
-					if mission.state in states:
-						output.append(mission)
-				return output
+			for mission in getattr(self, pool_name).values():
+				if mission.state in states:
+					return mission
+			return None
+			
+	def get_all_by_state(self, pool_name, states):
+		"""Get all missions matching states"""
+		with self.lock:
+			output = []
+			for mission in getattr(self, pool_name).values():
+				if mission.state in states:
+					output.append(mission)
+			return output
 
 	def get_by_url(self, url, pool_name=None):
 		"""Get mission by url."""

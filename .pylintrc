@@ -1,0 +1,57 @@
+[MESSAGES CONTROL]
+disable=
+	raw-checker-failed, locally-disabled, locally-enabled, file-ignored,
+	suppressed-message, fixme,
+	
+	# seems continuation checker doesn't work with tabs
+	mixed-indentation, bad-continuation,
+	
+	# https://github.com/PyCQA/pylint/issues/1368
+	bad-whitespace,
+	
+	# https://github.com/PyCQA/pylint/issues/1369
+	function-redefined,
+	
+	# https://github.com/PyCQA/pylint/issues/782
+	not-context-manager,
+	
+	anomalous-backslash-in-string,
+	global-statement,
+	missing-docstring, multiple-imports,
+	no-self-use,
+	redefined-outer-name, redefined-builtin,
+	trailing-whitespace,
+	unused-argument
+
+[REPORTS]
+reports=no
+score=no
+
+[REFACTORING]
+# Maximum number of nested blocks for function / method body
+max-nested-blocks=5
+
+[BASIC]
+argument-rgx=(([a-z][a-z0-9_]{,30})|(_[a-z0-9_]*))$
+attr-rgx=(([a-z][a-z0-9_]{1,30})|(_[a-z0-9_]*))$
+const-rgx=^(([A-Z_][A-Z0-9_]*)|(__.*__)|[a-z_][a-z0-9_]*)$
+variable-rgx=(([a-z][a-z0-9_]{,30})|(_[a-z0-9_]*))$
+
+[FORMAT]
+no-space-check=trailing-comma,empty-line
+indent-string="\t"
+
+[VARIABLES]
+callbacks=_
+init-import=yes
+redefining-builtins-modules=six.moves,future.builtins,safeprint
+
+[DESIGN]
+max-args=10
+max-attributes=21
+max-locals=30
+min-public-methods=0
+max-parents=14
+
+[TYPECHECK]
+ignored-modules=worker, comiccrawler.mods.*

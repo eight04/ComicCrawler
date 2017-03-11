@@ -4,10 +4,12 @@
 Ex. http://m.dmzj.com/info/qiyuanzui.html
 """
 
-import re, execjs
+import re
+from urllib.parse import urljoin
+
+import execjs
 
 from ..core import Episode
-from urllib.parse import urljoin
 
 domain = ["m.dmzj.com"]
 name = "動漫之家M"

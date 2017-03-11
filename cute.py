@@ -4,7 +4,7 @@ import pathlib
 import datetime
 import re
 
-from xcute import cute, Version, split_version, conf, Exc
+from xcute import cute, split_version, conf, Exc
 
 def bump():
 	"""My bump task"""
@@ -43,7 +43,7 @@ def domains():
 cute(
 	pkg_name = "comiccrawler",
 	default = "python -m comiccrawler gui",
-	test = ['pyflakes comiccrawler', 'readme_build'],
+	test = ['pylint comiccrawler', 'readme_build'],
 	bump_pre = 'test',
 	bump = bump,
 	bump_post = ['domains', 'dist', 'release', 'publish', 'install'],
@@ -61,9 +61,13 @@ cute(
 	publish_err = 'start https://pypi.python.org/pypi/comiccrawler/',
 	install = 'pip install -e .',
 	install_err = 'elevate -c -w pip install -e .',
-	readme_build = 'python setup.py --long-description > %temp%/ld && rst2html --no-raw --exit-status=1 --verbose %temp%/ld %temp%/ld.html',
+	readme_build = [
+		'python setup.py --long-description > build/long-description.rst',
+		'rst2html --no-raw --exit-status=1 --verbose '
+			'build/long-description.rst build/long-description.html'
+	],
 	readme_build_err = ['readme_show', Exc()],
-	readme_show = 'start %temp%/ld.html',
+	readme_show = 'start build/long-description.html',
 	readme = 'readme_build',
 	readme_post = 'readme_show'
 )

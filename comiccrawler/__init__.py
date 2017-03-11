@@ -54,8 +54,8 @@ def console_init():
 		print("Supported domains:\n" + ", ".join(list_domain()))
 
 	elif arguments["gui"]:
-		from .gui import MainWindow
-		MainWindow()
+		from .gui import main
+		main()
 
 	elif arguments["download"]:
 		console_download(arguments["<url>"], arguments["--dest"])
@@ -72,12 +72,12 @@ def migrate():
 	from .safeprint import print
 	from .profile import get as profile
 	
-	def safefilepath_old(s):
+	def safefilepath_old(file):
 		"""Return a safe directory name."""
-		return re.sub("[/\\\?\|<>:\"\*]","_",s).strip()
+		return re.sub(r"[/\?|<>:\"*]", "_", file).strip()
 		
-	def rename(l):
-		for src, dst in l:
+	def rename(to_rename):
+		for src, dst in to_rename:
 			if src != dst:
 				print("\n" + src + "\n" + dst)
 				move(src, dst)

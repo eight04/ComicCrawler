@@ -4,8 +4,10 @@
 
 """
 
-import re, execjs
+import re
 from urllib.parse import urljoin
+
+import execjs
 
 from ..core import Episode, grabhtml
 
@@ -40,7 +42,7 @@ def get_episodes(html, url):
 			}
 		};
 		""" + comicviewjs
-	);
+	)
 
 	s = []
 	for match in matches:
@@ -56,6 +58,33 @@ def get_episodes(html, url):
 		e = Episode(title, urljoin(url, ep_url))
 		s.append(e)
 	return s
+	
+def get_images_20140406(html, url, ch):
+	"""before 2014/4/6"""
+	itemid = re.search("itemid=(.+?);", html).group(1)
+	allcodes = re.search("allcodes=\"(.+?)\"", html).group(1)
+
+	cs = allcodes.split("|")
+	code = ""
+
+	for c in cs:
+		if c.split(" ")[0] == ch:
+			code = c
+			break
+	else:
+		raise Exception("can't retrieve imgurl")
+
+	num, sid, did, pages, code = code.split(" ")
+	s = []
+	for p in range(1, int(pages)+1):
+		hash = (((p - 1) // 10) % 10) + (((p - 1) % 10) * 3)
+		img = (
+			"http://img{sid}.8comic.com/{did}/{itemid}/{num}/"
+			"{page:03}_{code}.jpg"
+		).format(sid=sid, did=did, itemid=itemid, num=num, page=p,
+			code=code[hash:hash+3])
+		s.append(img)
+	return s
 
 def get_images(html, url):
 	m = re.search("ch=(\d+)", url)
@@ -65,32 +94,12 @@ def get_images(html, url):
 		ch = m.group(1)
 
 	try:
-		# before 2014/4/6
-		# chs = re.search("chs=(.+?);", html).group(1)
-		itemid = re.search("itemid=(.+?);", html).group(1)
-		allcodes = re.search("allcodes=\"(.+?)\"", html).group(1)
-
-		cs = allcodes.split("|")
-		code = ""
-
-		for c in cs:
-			if c.split(" ")[0] == ch:
-				code = c
-				break
-		else:
-			raise Exception("can't retrieve imgurl")
-
-		num, sid, did, pages, code = code.split(" ")
-		s = []
-		for p in range(1, int(pages)+1):
-			hash = (((p - 1) // 10) % 10) + (((p - 1) % 10) * 3)
-			s.append("http://img" + sid + ".8comic.com/" + did + "/" + itemid + "/" + num + "/" + "{:03}_{}".format(p, code[hash:hash+3]) + ".jpg")
-		return s
-	except Exception:
+		get_images_20140406(html, url, ch)
+	except AttributeError:
 		pass
 
 	# after 2014/4/6
-	def ss(str):
+	def ss(str): # pylint: disable=invalid-name
 		return re.sub("[a-z]+", "", str)
 
 	cs = re.search("cs='(.+)'", html).group(1)

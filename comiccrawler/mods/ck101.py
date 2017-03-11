@@ -41,7 +41,7 @@ def get_images(html, url):
 	try:
 		pic = re.search("'defualtPagePic' src=\"(.+?)\"", html).group(1)
 		return pic
-	except Exception:
+	except AttributeError:
 		ex = re.search("李組長眉頭一皺，快翻下一頁→", html)
 		if ex:
 			raise SkipEpisodeError

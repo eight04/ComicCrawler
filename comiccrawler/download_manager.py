@@ -2,11 +2,12 @@
 
 """Download Manager"""
 
-import subprocess
+import subprocess # nosec
 
 from os.path import join as path_join
-from worker import Worker, current, later
 from time import time
+
+from worker import Worker, current, later
 
 from .safeprint import print
 from .config import setting
@@ -36,15 +37,16 @@ class DownloadManager:
 		@thread.listen("DOWNLOAD_FINISHED")
 		def _(event):
 			try:
-				err, mission = event.data
-			except Exception:
+				_err, mission = event.data
+			except TypeError:
 				mission = event.data
+
 			if mission.url in mission_manager.pool:
 				uninit_episode(mission)
 		
 		@thread.listen("DOWNLOAD_ERROR")
 		def _(event):
-			err, mission = event.data
+			_err, mission = event.data
 			mission_manager.drop("view", mission)
 
 		@thread.listen("DOWNLOAD_FINISHED")
@@ -69,8 +71,8 @@ class DownloadManager:
 					safefilepath(event.data.title)
 				)
 				try:
-					subprocess.call(command)
-				except Exception:
+					subprocess.call(command) # nosec
+				except (OSError, subprocess.SubprocessError):
 					print("Failed to run process: {}".format(command))
 					
 		@thread.listen("DOWNLOAD_FINISHED")
@@ -93,8 +95,8 @@ class DownloadManager:
 		def _(event):
 			"""After analyze, continue next (library)"""
 			try:
-				err, mission = event.data
-			except Exception:
+				_err, mission = event.data
+			except TypeError:
 				mission = event.data
 				
 			if event.target is self.library_thread:
@@ -117,7 +119,7 @@ class DownloadManager:
 		@thread.listen("ANALYZE_INVALID")
 		def _(event):
 			"""Cleanup library thread with PauseDownloadError"""
-			err, mission = event.data
+			_err, mission = event.data
 			if event.target is self.library_thread:
 				uninit_episode(mission)
 				self.library_thread = None
@@ -163,7 +165,8 @@ class DownloadManager:
 	def start_analyze(self, mission):
 		"""Start analyzing"""
 		if mission.state not in ("ANALYZE_INIT", "INIT"):
-			print("Invalid state to analyze: {state}".format(mission.state))
+			print(
+				"Invalid state to analyze: {state}".format(state=mission.state))
 			return
 		init_episode(mission)
 		thread = Worker(analyze).start(mission)
