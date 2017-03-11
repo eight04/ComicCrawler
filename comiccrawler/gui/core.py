@@ -51,7 +51,7 @@ def get_scale(root):
 	# GNome
 	args = ["gsettings", "get", "org.gnome.desktop.interface", "scaling-factor"]
 	try:
-		with subprocess.Popen(args, stdout=subprocess.PIPE,
+		with subprocess.Popen(args, stdout=subprocess.PIPE, # nosec
 				universal_newlines=True) as p:
 			return float(p.stdout.read().rpartition(" ")[-1])
 	except Exception: # pylint: disable=broad-except

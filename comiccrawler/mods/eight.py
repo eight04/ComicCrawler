@@ -95,7 +95,7 @@ def get_images(html, url):
 
 	try:
 		get_images_20140406(html, url, ch)
-	except Exception: # pylint: disable=broad-except
+	except AttributeError:
 		pass
 
 	# after 2014/4/6

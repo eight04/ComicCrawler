@@ -216,7 +216,7 @@ def crawl(mission, savepath):
 				ep.skip = True
 
 def get_checksum(b):
-	return hashlib.md5(b).hexdigest()
+	return hashlib.md5(b).hexdigest() # nosec
 
 def get_file_checksum(file):
 	return get_checksum(content_read(file, raw=True))

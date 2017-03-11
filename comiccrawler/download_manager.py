@@ -71,7 +71,7 @@ class DownloadManager:
 					safefilepath(event.data.title)
 				)
 				try:
-					subprocess.call(command)
+					subprocess.call(command) # nosec
 				except (OSError, subprocess.SubprocessError):
 					print("Failed to run process: {}".format(command))
 					
