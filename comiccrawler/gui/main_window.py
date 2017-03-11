@@ -330,6 +330,7 @@ class EventMixin:
 			url = self.root.clipboard_get(type="STRING")
 
 			if get_module(url) and url != pre_url:
+				pre_url = url
 				self.entry_url.insert(0, url)
 				self.entry_url.selection_range(0, "end")
 				self.entry_url.focus_set()
@@ -348,8 +349,6 @@ class EventMixin:
 
 		# interface for download manager
 		def addurl():
-			nonlocal pre_url
-		
 			url = self.entry_url.get()
 			self.entry_url.delete(0, "end")
 
@@ -358,7 +357,6 @@ class EventMixin:
 			except KeyError:
 				pass
 			else:
-				pre_url = url
 				if ask_analyze_update(mission):
 					mission.state = 'ANALYZE_INIT'
 					download_manager.start_analyze(mission)
@@ -372,7 +370,6 @@ class EventMixin:
 					"建立任務失敗！不支援的網址！"
 				)
 			else:
-				pre_url = url
 				download_manager.start_analyze(mission)
 
 		self.btn_addurl["command"] = addurl
