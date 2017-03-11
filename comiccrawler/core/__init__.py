@@ -313,14 +313,16 @@ class SavePath:
 		if page is None:
 			return False
 		
+		# FIXME: if multiple SavePath is created and sharing same .parent(), 
+		# they should share the .files too.
 		if self.files is None:
 		
 			self.files = {}
 			
 			def build_file_table(file):
 				_dir, name = path_split(file)
-				_base, ext = splitext(name)
-				self.files[name] = ext
+				base, ext = splitext(name)
+				self.files[base] = ext
 				
 			path_each(
 				self.parent(),
@@ -406,7 +408,8 @@ class Crawler:
 	def handle_image(self):
 		"""Post processing"""
 		if hasattr(self.mod, "imagehandler"):
-			self.mod.imagehandler(self.image_ext, self.image_bin)
+			self.image_ext, self.image_bin = self.mod.imagehandler(
+				self.image_ext, self.image_bin)
 
 	def save_image(self):
 		"""Write image to save path"""
