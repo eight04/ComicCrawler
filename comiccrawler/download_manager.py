@@ -2,7 +2,7 @@
 
 """Download Manager"""
 
-import subprocess
+import subprocess # nosec
 
 from os.path import join as path_join
 from time import time

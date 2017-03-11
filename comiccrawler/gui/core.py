@@ -1,7 +1,7 @@
 #! python3
 
 import re
-import subprocess
+import subprocess # nosec
 import traceback
 import platform
 
