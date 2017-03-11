@@ -10,10 +10,10 @@ Ex:
 
 import re
 import json
-import execjs
-
 from urllib.parse import urljoin
 from html import unescape
+
+import execjs
 
 from ..core import Episode, grabhtml
 
@@ -70,6 +70,8 @@ def query_photos(url, key, nsid, page):
 		params["user_id"] = nsid
 		
 	rs = grabhtml("https://api.flickr.com/services/rest", params=params)
+	# pylint: disable=no-member
+	# https://github.com/PyCQA/pylint/issues/922
 	rs = json.loads(rs)
 	return (rs.get("photos") or rs.get("photoset"))["photo"]
 	
@@ -117,7 +119,10 @@ def key_func(stream):
 def get_images(html, url):
 	key = re.search('root\.YUI_config\.flickr\.api\.site_key = "([^"]+)', html).group(1)
 	model = re.search(r"Y\.ClientApp\.init\(([\s\S]+?)\)\s*\.then", html).group(1)
-	data = execjs.eval("auth = null, reqId = null, model = " + model + ", model.modelExport['photo-models'][0]")
+	data = execjs.eval((
+		"auth = null, reqId = null, model = {model}, "
+		"model.modelExport['photo-models'][0]"
+	).format(model=model))
 	return query_video(data["id"], data["secret"], key)
 
 def get_next_page(html, url):

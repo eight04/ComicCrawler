@@ -4,10 +4,12 @@ http://manhua.dmzj.com/fklmfsnyly/
 
 """
 
-import re, execjs
+import re
+from urllib.parse import urljoin
+
+import execjs
 
 from ..core import Episode
-from urllib.parse import urljoin
 
 domain = ["manhua.dmzj.com"]
 name = "動漫之家"
@@ -17,8 +19,12 @@ def get_title(html, url):
 
 def get_episodes(html, url):
 	comicurl = re.search("comic_url = \"(.+?)\"", html).group(1)
+	pattern = (
+		r'href="(/{}[^"]+)" (?: class="color_red")?>(.+?)</a>\s*</li>'
+			.format(comicurl)
+	)
 	s = []
-	for match in re.finditer(r'href="(/{}[^"]+)" (?: class="color_red")?>(.+?)</a>\s*</li>'.format(comicurl), html):
+	for match in re.finditer(pattern, html):
 		ep_url, title = match.groups()
 		s.append(Episode(title, urljoin(url, ep_url)))
 	return s
@@ -30,8 +36,8 @@ def get_images(html, url):
 	# Get urls
 	html = html.replace("\n", "")
 	s = re.search(r"page = '';\s*(.+?);\s*var g_comic_name", html).group(1)
-	pages = execjs.compile(s).eval("pages");
-	pages = execjs.eval(pages);
+	pages = execjs.compile(s).eval("pages")
+	pages = execjs.eval(pages)
 
 	# thumbs.db?!
 	# http://manhua.dmzj.com/zhuoyandexiana/3488-20.shtml

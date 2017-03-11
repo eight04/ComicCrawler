@@ -4,10 +4,12 @@ http://www.dmzj.com/info/xixingji.html
 
 """
 
-import re, execjs
+import re
+from urllib.parse import urljoin
+
+import execjs
 
 from ..core import Episode
-from urllib.parse import urljoin
 
 domain = ["www.dmzj.com"]
 name = "動漫之家w"
@@ -36,7 +38,7 @@ def get_images(html, url):
 
 	# Get urls
 	s = re.search(r"page = '';\s+([^\n]+)", html).group(1)
-	pages = execjs.compile(s).eval("pages");
+	pages = execjs.compile(s).eval("pages")
 	pages = re.search('"page_url":"([^"]+)', pages).group(1)
 	pages = re.split("\r?\n", pages)
 

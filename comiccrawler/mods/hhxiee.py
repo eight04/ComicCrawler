@@ -8,9 +8,9 @@ Ex:
 """
 
 import re
-import execjs
-
 from urllib.parse import urljoin
+
+import execjs
 
 from ..core import Episode, grabhtml
 
@@ -80,10 +80,10 @@ def get_images(html, url):
 	if not ctx:
 		build_ctx(url)
 		
-	hdDomain = re.search('id="hdDomain" value="([^"]+)', html).group(1)
+	hd_domain = re.search('id="hdDomain" value="([^"]+)', html).group(1)
 	img_name = re.search('img[^>]+?name="([^"]+)', html).group(1)
 	
-	return ctx.call("getImages", url, img_name, hdDomain)
+	return ctx.call("getImages", url, img_name, hd_domain)
 	
 def get_next_page(html, url):
 	try:

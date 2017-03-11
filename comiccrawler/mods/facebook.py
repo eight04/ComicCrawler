@@ -47,7 +47,9 @@ def get_next_page(html, url):
 		"data": json.dumps({"fbid": fbid, "set": fbset}),
 		"__a": 1
 	})
-	pagelet = grabhtml("https://www.facebook.com/ajax/pagelet/generic.php/PhotoViewerInitPagelet?" + query)
+	pagelet = grabhtml(
+		"https://www.facebook.com/ajax/pagelet/generic.php/"
+		"PhotoViewerInitPagelet?" + query)
 	
 	next_id = re.search(r'"addPhotoFbids".*?(\d+)', pagelet).group(1)
 	return urllib.parse.urljoin(url, "../" + next_id + "/")

@@ -60,7 +60,7 @@ def get_images(html, url):
 	try:
 		i = re.search('dev-page-download"\s+href="([^"]+)"', html).group(1)
 		return [unescape(i)]
-	except Exception:
+	except AttributeError:
 		pass
 	i = re.search('<img[^>]+?src="([^"]+)"[^>]+?class="dev-content-full[^"]*">', html).group(1)
 	return [i]
