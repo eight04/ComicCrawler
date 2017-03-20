@@ -326,8 +326,10 @@ class EventMixin:
 			if self.entry_url.get():
 				return
 
-			# FIXME: would clipboard_get raise error?
-			url = self.root.clipboard_get(type="STRING")
+			try:
+				url = self.root.clipboard_get(type="STRING")
+			except tk.TclError:
+				return
 
 			if get_module(url) and url != pre_url:
 				pre_url = url
