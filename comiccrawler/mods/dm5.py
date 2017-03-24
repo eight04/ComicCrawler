@@ -40,8 +40,6 @@ def get_episodes(html, url):
 def create_grabber(fun, url):
 	def grabber():
 		text = grabhtml(fun, referer=url)
-		with open("test.js", "w", encoding="utf-8") as f:
-			f.write(text)
 		d = eval(text + """;
 			((typeof (hd_c) != 'undefined' && hd_c.length > 0 && 
 			typeof (isrevtt) != 'undefined') ? hd_c : d)
