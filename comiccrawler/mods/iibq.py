@@ -53,8 +53,7 @@ def get_images(html, url):
 	
 	js = env + re.search(r'(.+?)var cuImg', viewhtm, re.DOTALL).group(1)
 	with VM(js) as vm:
-		unsuan = partial(vm.call, "unsuan")
-		arr_files = unsuan(s_files).split("|")
+		arr_files = vm.call("unsuan", s_files).split("|")
 	
 	ds = grabhtml("http://www.iibq.com/script/ds.js")
 	
