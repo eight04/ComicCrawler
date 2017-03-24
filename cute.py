@@ -8,7 +8,7 @@ from xcute import cute, split_version, conf, Exc
 
 def bump():
 	"""My bump task"""
-	path = pathlib.Path('comiccrawler/__init__.py')
+	path = pathlib.Path('comiccrawler/__pkginfo__.py')
 	text = path.read_text('utf-8')
 	left, old_version, right = split_version(text)
 	old_version = tuple(int(token) for token in old_version.split("."))
