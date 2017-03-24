@@ -19,10 +19,7 @@ def get_title(html, url):
 			"font-weight:bold;\">(.+?)</font>",html).group(1)
 
 def get_episodes(html, url):
-	html = html.replace("\n","")
-	matches = re.finditer("<a href='#' onclick=\"cview\('(.+?)',(\d+?)\);return "
-			"false;\" id=\"\w+?\" class=\"\w+?\">(.+?)</a>", html, re.M)
-	comicviewjs = grabhtml(urljoin(url, "/js/comicview.js"))
+	html = html.replace("\n", "")
 	
 	js = """
 		var output;
@@ -41,12 +38,18 @@ def get_episodes(html, url):
 				href: ""
 			}
 		};
-	""" + comicviewjs
+	""" + grabhtml(urljoin(url, "/js/comicview.js"))
+	
+	s = []
+	matches = re.finditer(
+		"<a href='#' onclick=\"cview\('(.+?)',(\d+?)\);return "
+			"false;\" id=\"\w+?\" class=\"\w+?\">(.+?)</a>",
+		html, re.M
+	)
 	with VM(js) as vm:
-		s = []
 		for match in matches:
 			ep_url, catid, title = match.groups()
-
+			
 			ep_url = vm.call("get", ep_url, int(catid))
 
 			# tag cleanup
@@ -56,7 +59,7 @@ def get_episodes(html, url):
 
 			e = Episode(title, urljoin(url, ep_url))
 			s.append(e)
-		return s
+	return s
 	
 def get_images_20140406(html, url, ch):
 	"""before 2014/4/6"""
