@@ -8,7 +8,6 @@ Ex:
 """
 
 import re
-from functools import partial
 
 from node_vm2 import VM
 
