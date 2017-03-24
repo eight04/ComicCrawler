@@ -14,7 +14,7 @@ from urllib.parse import urljoin
 from io import BytesIO
 from zipfile import ZipFile
 
-import execjs
+from node_vm2 import eval
 
 from ..core import Episode, grabhtml
 from ..error import SkipEpisodeError, PauseDownloadError
@@ -79,7 +79,7 @@ def get_images_old(html, url):
 		# http://www.pixiv.net/member_illust.php?mode=manga&illust_id=19254298
 		if not imgs:
 			for match in re.finditer(r'originalImages\[\d+\] = ("[^"]+")', html):
-				img = execjs.eval(match.group(1))
+				img = eval(match.group(1))
 				imgs.append(img)
 
 		return imgs
@@ -92,7 +92,7 @@ def get_images(html, url):
 	rs = re.search(r"pixiv\.context\.ugokuIllustFullscreenData\s+= ([^;]+)", html)
 	if rs:
 		json = rs.group(1)
-		o = execjs.eval(json)
+		o = eval(json)
 		cache["frames"] = o["frames"]
 		return [o["src"]]
 

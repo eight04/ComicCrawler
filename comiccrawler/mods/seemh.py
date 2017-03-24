@@ -12,7 +12,7 @@ import re
 from urllib.parse import urljoin
 from itertools import cycle
 
-import execjs
+from node_vm2 import VM, eval
 
 from ..core import Episode, grabhtml
 
@@ -74,10 +74,8 @@ def get_images(html, url):
 		html
 	).group(1)
 	
-	# with open("seemh.js", "w", encoding="utf-8") as f:
-		# f.write(js)
-	ctx = execjs.compile(js)
-	files, path = ctx.eval("[cInfo.files, cInfo.path]")
+	with VM(js) as vm:
+		files, path = vm.run("[cInfo.files, cInfo.path]")
 	
 	# find server
 	# "http://c.3qfm.com/scripts/core_5C348B32A78647FF4208EACA42FC5F84.js"
@@ -90,23 +88,24 @@ def get_images(html, url):
 	
 	# cache server list
 	servs = re.search(r"var servs=(.+?),pfuncs=", corejs).group(1)
-	servs = execjs.eval(servs)
+	servs = eval(servs)
 	servs = [host["h"] for category in servs for host in category["hosts"]]
 	
 	cache["servs"] = cycle(servs)
 	host = next(cache["servs"])
 	
 	utils = re.search(r"SMH\.(utils=.+?),SMH\.imgData=", corejs).group(1)
-	ctx = execjs.compile(utils + """
+	
+	js = utils + """;
 	function getFiles(path, files, host) {
 		// lets try if it will be faster in javascript
 		return files.map(function(file){
 			return utils.getPath(host, path + file);
 		});
 	}
-	""")
-	
-	images = ctx.call("getFiles", path, files, host)
+	"""
+	with VM(js) as vm:
+		images = vm.call("getFiles", path, files, host)
 	
 	if config.getboolean("nowebp"):
 		images = map(lambda i: i[:-5] if i.endswith(".webp") else i, images)

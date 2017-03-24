@@ -7,7 +7,7 @@
 import re
 from urllib.parse import urljoin
 
-import execjs
+from node_vm2 import VM
 
 from ..core import Episode, grabhtml
 
@@ -23,8 +23,8 @@ def get_episodes(html, url):
 	matches = re.finditer("<a href='#' onclick=\"cview\('(.+?)',(\d+?)\);return "
 			"false;\" id=\"\w+?\" class=\"\w+?\">(.+?)</a>", html, re.M)
 	comicviewjs = grabhtml(urljoin(url, "/js/comicview.js"))
-	ctx = execjs.compile(
-		"""
+	
+	js = """
 		var output;
 		function getCookie() {}
 		var window = {
@@ -41,23 +41,22 @@ def get_episodes(html, url):
 				href: ""
 			}
 		};
-		""" + comicviewjs
-	)
+	""" + comicviewjs
+	with VM(js) as vm:
+		s = []
+		for match in matches:
+			ep_url, catid, title = match.groups()
 
-	s = []
-	for match in matches:
-		ep_url, catid, title = match.groups()
+			ep_url = vm.call("get", ep_url, int(catid))
 
-		ep_url = ctx.call("get", ep_url, int(catid))
+			# tag cleanup
+			title = title.strip()
+			title = re.sub("<script.+?</script>","",title)
+			title = re.sub("<.+?>","",title)
 
-		# tag cleanup
-		title = title.strip()
-		title = re.sub("<script.+?</script>","",title)
-		title = re.sub("<.+?>","",title)
-
-		e = Episode(title, urljoin(url, ep_url))
-		s.append(e)
-	return s
+			e = Episode(title, urljoin(url, ep_url))
+			s.append(e)
+		return s
 	
 def get_images_20140406(html, url, ch):
 	"""before 2014/4/6"""

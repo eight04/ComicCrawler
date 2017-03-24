@@ -7,7 +7,7 @@ Ex. http://m.dmzj.com/info/qiyuanzui.html
 import re
 from urllib.parse import urljoin
 
-import execjs
+from node_vm2 import eval
 
 from ..core import Episode
 
@@ -19,7 +19,7 @@ def get_title(html, url):
 
 def get_episodes(html, url):
 	data_js = re.search("initIntroData(.+?);", html, re.DOTALL).group(1)
-	data = execjs.eval(data_js)
+	data = eval(data_js)
 
 	ep_data = []
 	for category in data:
@@ -37,7 +37,7 @@ def get_episodes(html, url):
 
 def get_images(html, url):
 	pages_js = re.search(r'page_url":(\[[^\]]+\])', html).group(1)
-	pages = execjs.eval(pages_js)
+	pages = eval(pages_js)
 
 	# thumbs.db?!
 	# http://manhua.dmzj.com/zhuoyandexiana/3488-20.shtml

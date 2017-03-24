@@ -10,7 +10,7 @@ Ex:
 from re import search, finditer, DOTALL
 from urllib.parse import urljoin
 
-from execjs import eval, compile
+from node_vm2 import eval
 
 from ..core import Episode, grabhtml
 
@@ -40,9 +40,12 @@ def get_episodes(html, url):
 def create_grabber(fun, url):
 	def grabber():
 		text = grabhtml(fun, referer=url)
-		d = compile(text).eval(
-			"(typeof (hd_c) != 'undefined' && hd_c.length > 0 && "
-			"typeof (isrevtt) != 'undefined') ? hd_c : d")
+		with open("test.js", "w", encoding="utf-8") as f:
+			f.write(text)
+		d = eval(text + """;
+			((typeof (hd_c) != 'undefined' && hd_c.length > 0 && 
+			typeof (isrevtt) != 'undefined') ? hd_c : d)
+		""")
 		return d[0]
 	return grabber
 	

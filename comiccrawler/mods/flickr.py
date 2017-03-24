@@ -13,7 +13,7 @@ import json
 from urllib.parse import urljoin
 from html import unescape
 
-import execjs
+from node_vm2 import eval
 
 from ..core import Episode, grabhtml
 
@@ -119,7 +119,7 @@ def key_func(stream):
 def get_images(html, url):
 	key = re.search('root\.YUI_config\.flickr\.api\.site_key = "([^"]+)', html).group(1)
 	model = re.search(r"Y\.ClientApp\.init\(([\s\S]+?)\)\s*\.then", html).group(1)
-	data = execjs.eval((
+	data = eval((
 		"auth = null, reqId = null, model = {model}, "
 		"model.modelExport['photo-models'][0]"
 	).format(model=model))

@@ -7,7 +7,7 @@ http://manhua.dmzj.com/fklmfsnyly/
 import re
 from urllib.parse import urljoin
 
-import execjs
+from node_vm2 import eval
 
 from ..core import Episode
 
@@ -36,8 +36,8 @@ def get_images(html, url):
 	# Get urls
 	html = html.replace("\n", "")
 	s = re.search(r"page = '';\s*(.+?);\s*var g_comic_name", html).group(1)
-	pages = execjs.compile(s).eval("pages")
-	pages = execjs.eval(pages)
+	pages = eval(s + "; pages")
+	pages = eval(pages)
 
 	# thumbs.db?!
 	# http://manhua.dmzj.com/zhuoyandexiana/3488-20.shtml

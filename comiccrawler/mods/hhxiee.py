@@ -10,7 +10,7 @@ Ex:
 import re
 from urllib.parse import urljoin
 
-import execjs
+from node_vm2 import VM
 
 from ..core import Episode, grabhtml
 
@@ -34,7 +34,7 @@ def build_ctx(url):
 	global ctx
 	js_url = urljoin(url, "/script/view.js")
 	js = grabhtml(js_url)
-	ctx = """
+	js = """
 		var imgEl = {
 				style: {},
 				name: ""
@@ -74,7 +74,7 @@ def build_ctx(url):
 			return imgEl.src;
 		}
 	""" + js
-	ctx = execjs.compile(ctx)
+	ctx = VM(js)
 			
 def get_images(html, url):
 	if not ctx:
