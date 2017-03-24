@@ -23,25 +23,29 @@ config = {
 	"original": "false"
 }
 
-class BandwidthLimitError(Exception):
-	pass
-
 def get_boolean(s):
 	return ConfigParser.BOOLEAN_STATES.get(s.lower())
+	
+def check_login(html):
+	if html[6:10] == "JFIF":
+		raise PauseDownloadError("You didn't login!")
 
 def get_title(html, url):
+	check_login(html)
 	t = re.findall("<h1 id=\"g(j|n)\">(.+?)</h1>", html)
 	t = t[-1][1]
 
 	return unescape(t)
 
 def get_episodes(html, url):
+	check_login(html)
 	url = re.search(r'href="([^\"]+?/s/\w+/\w+-1)"', html).group(1)
 	e = Episode("image", url)
 	return [e]
 
 nl = ""
 def get_images(html, url):
+	check_login(html)
 	global nl
 	nl = re.search("nl\('([^)]+)'\)", html).group(1)
 	
@@ -71,6 +75,7 @@ def errorhandler(er, crawler):
 	crawler.html = None
 
 def get_next_page(html, url):
+	check_login(html)
 	match = re.search('id="next"[^>]+?href="([^"]+)', html)
 	if match:
 		match = match.group(1)
