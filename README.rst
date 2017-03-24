@@ -7,6 +7,15 @@ Comic Crawler
 
 Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管理員、圖書館功能、 與方便的擴充能力。
 
+2017.3.25 更新
+----------------
+
+-  此版本用 `node_vm2 <https://github.com/eight04/node_vm2>`__ 取代 `pyExecJs <https://pypi.python.org/pypi/PyExecJS>`__
+
+   -  execjs 可以用來執行 JavaScript，但是沒有任何的安全機制。若是從網站下載的 JavaScript 包含惡意程式（如︰刪光你的資料、破壞作業系統、病毒……等），以 execjs 執行是完全無法防止的。
+   -  node_vm2 用 `vm2 <https://github.com/patriksimek/vm2>`__ 執行 JavaScript，比 execjs 多了一層沙箱防護。
+   -  vm2 需要 Node.js >= 6。
+
 2016.12.20 更新
 ----------------
 
@@ -31,28 +40,6 @@ Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管�
 -  任務下載時，會再從 pool 資料夾中讀出 episode 相關資訊
 -  目的為減少不必要的記憶體使用量
 
-2016.2.27 更新
---------------
-
--  "www.comicvip.com" 被 "www.comicbus.com" 取代。詳細請參考 `#7 <https://github.com/eight04/ComicCrawler/issues/7>`__
-
-Dependencies
-------------
-
--  docopt - command line interface.
--  pyexecjs - to execute javascript.
--  pythreadworker - a small threading library.
--  safeprint - to print unicode chars on Windows.
--  requests - http library.
-
-Development Dependencies
-------------------------
-
--  wheel - create python wheel.
--  twine - upload package.
--  docutils - to test rst.
--  pyxcute - task runner.
-
 下載和安裝（Windows）
 ---------------------
 
@@ -71,8 +58,9 @@ Install Python
 Install Node.js
 ~~~~~~~~~~~~~~~
 
-有些網站的 JavaScript 用 Windows 內建的 Windows Script Host
-會解析失敗，建議安裝 `Node.js <https://nodejs.org/>`__.
+Comic Crawler 使用 Node.js 來分析需要執行 JavaScript 的網站。
+
+至少需要 6.0 以上的版本︰ https://nodejs.org/
 
 Install Comic Crawler
 ~~~~~~~~~~~~~~~~~~~~~
@@ -340,6 +328,15 @@ Todos
 
 Changelog
 ---------
+
+-  2017.3.25
+
+   -  **Switch to node_vm2, drop pyexecjs.**
+   -  Add login check in exh.
+   -  Switch to pylint, drop pyflakes.
+   -  Drop module manhuadao.
+   -  Update pyxcute.
+   -  Refactor.
 
 -  2017.3.9
 
