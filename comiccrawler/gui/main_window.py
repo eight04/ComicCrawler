@@ -302,7 +302,7 @@ class ViewMixin:
 		btnstart.pack(side="left")
 		self.btn_start = btnstart
 
-		btnstop = ttk.Button(buttonbox,text="停止下載")
+		btnstop = ttk.Button(buttonbox, text="停止下載")
 		btnstop.pack(side="left")
 		self.btn_stop = btnstop
 
@@ -326,8 +326,10 @@ class EventMixin:
 			if self.entry_url.get():
 				return
 
-			# FIXME: would clipboard_get raise error?
-			url = self.root.clipboard_get(type="STRING")
+			try:
+				url = self.root.clipboard_get(type="STRING")
+			except tk.TclError:
+				return
 
 			if get_module(url) and url != pre_url:
 				pre_url = url
