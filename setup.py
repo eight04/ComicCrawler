@@ -41,11 +41,11 @@ setup(
 	# https://pythonhosted.org/setuptools/setuptools.html#declaring-dependencies
 	install_requires = [
 		"docopt >=0.6.2, <0.7",
-		"pyexecjs >=1.3.1, <2",
 		"pythreadworker >=0.6",
 		"safeprint >=0.1.1, <1",
 		"requests >=2.9.1, <3",
-		"desktop3 >=0.5.2, <1"
+		"desktop3 >=0.5.2, <1",
+		"node_vm2 >= 0.2.0, < 0.3"
 	],
 	entry_points = {
 		"console_scripts": [
