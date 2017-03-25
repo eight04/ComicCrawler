@@ -111,7 +111,7 @@ class DownloadManager:
 					else:
 						self.library_err_count += 1
 						mission_manager.drop("library", mission)
-						later(self.do_check_update, 5)
+						later(self.do_check_update, 5, target=thread)
 					return
 					
 				self.do_check_update()

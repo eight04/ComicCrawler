@@ -7,7 +7,7 @@ from urllib.parse import quote, urlsplit, urlunsplit
 from mimetypes import guess_extension
 
 import requests
-from worker import sync, sleep
+from worker import await_, sleep
 
 from ..config import setting
 from ..io import content_write
@@ -71,7 +71,7 @@ def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True, para
 		quote_unicode_dict(cookie)
 		requests.utils.add_dict_to_cookiejar(s.cookies, cookie)
 		
-	r = sync(do_request, s, url, params, raise_429)
+	r = await_(do_request, s, url, params, raise_429)
 	
 	if done:
 		done(s, r)
