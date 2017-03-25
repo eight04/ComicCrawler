@@ -48,7 +48,7 @@ cute(
 	bump = bump,
 	bump_post = ['domains', 'dist', 'release', 'publish', 'install'],
 	domains = domains,
-	dist = 'python setup.py sdist bdist_wheel',
+	dist = 'rm -r build dist & python setup.py sdist bdist_wheel',
 	release = [
 		'git add .',
 		'git commit -m "Release v{version}"',
