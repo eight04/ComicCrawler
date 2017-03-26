@@ -329,6 +329,11 @@ Todos
 Changelog
 ---------
 
+-  2017.3.26
+
+   -  Fix: cleanup the old files.
+   -  Update pythreadworker to 0.8.0.
+
 -  2017.3.25
 
    -  **Switch to node_vm2, drop pyexecjs.**
