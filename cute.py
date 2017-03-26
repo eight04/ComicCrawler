@@ -55,7 +55,7 @@ cute(
 		'git tag -a v{version} -m "Release v{version}"'
 	],
 	publish = [
-		'twine upload dist/*{version}[.-]*',
+		'twine upload dist/*',
 		'git push --follow-tags'
 	],
 	publish_err = 'start https://pypi.python.org/pypi/comiccrawler/',
