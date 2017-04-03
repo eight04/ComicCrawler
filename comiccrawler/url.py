@@ -1,5 +1,6 @@
 #! python3
 
+# pylint: disable=unused-import
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode, urljoin
 
 URL_PARTS = ("scheme", "netloc", "path", "params", "query", "fragment")
