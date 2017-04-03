@@ -10,11 +10,10 @@ Ex:
 
 import re
 from urllib.parse import urljoin
-from itertools import cycle
 
 from node_vm2 import VM, eval
 
-from ..core import Episode, grabhtml
+from ..core import Episode, grabhtml, CycleList
 
 domain = ["tw.seemh.com", "www.seemh.com", "ikanman.com"]
 name = "看漫畫"
@@ -52,7 +51,7 @@ def get_episodes(html, url):
 	episodes = [Episode(v[0].strip(), urljoin(url, v[1])) for v in episodes]
 	return episodes[::-1]
 	
-cache = {}
+servers = None
 
 def get_images(html, url):
 	# build js context
@@ -91,8 +90,10 @@ def get_images(html, url):
 	servs = eval(servs)
 	servs = [host["h"] for category in servs for host in category["hosts"]]
 	
-	cache["servs"] = cycle(servs)
-	host = next(cache["servs"])
+	global servers
+	servers = CycleList(servs)
+
+	host = servers.get()
 	
 	utils = re.search(r"SMH\.(utils=.+?),SMH\.imgData=", corejs).group(1)
 	
@@ -115,7 +116,8 @@ def get_images(html, url):
 def errorhandler(err, crawler):
 	"""Change host"""
 	if crawler.image and crawler.image.url:
-		host = next(cache["servs"])
+		servers.next()
+		host = servers.get()
 		crawler.image.url = re.sub(
 			r"://.+?\.",
 			"://{host}.".format(host=host),
