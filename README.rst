@@ -300,7 +300,7 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         if match:
             return match.group(1)
 
-    def errorhandler(error, episode):
+    def errorhandler(error, crawler):
         """Downloader will call errorhandler if there is an error happened when
         downloading image. Normally you can just ignore this function.
         """
