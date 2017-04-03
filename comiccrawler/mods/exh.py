@@ -13,7 +13,7 @@ from configparser import ConfigParser
 from ..core import Episode, Image, url_extract_filename
 from ..error import PauseDownloadError
 
-domain = ["exhentai.org", "g.e-hentai.org"]
+domain = ["exhentai.org", "e-hentai.org"]
 name = "e紳士"
 noepfolder = True
 rest = 5
