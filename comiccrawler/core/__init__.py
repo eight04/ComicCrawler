@@ -1,6 +1,7 @@
 #! python3
 
 import hashlib
+from itertools import cycle
 import json
 import re
 import string
@@ -741,3 +742,19 @@ def format_number(title, format):
 		number = match.group()
 		return format.format(int(number))
 	return re.sub(r"\d+", replacer, title)
+
+class CycleList:
+	"""Create a cycled list"""
+	def __init__(self, list):
+		self.list = cycle(list)
+		self.item = None
+		self.next()
+		
+	def next(self):
+		"""Move to next item"""
+		self.item = next(self.list)
+		
+	def get(self):
+		"""Get current item"""
+		return self.item
+	
