@@ -4,7 +4,7 @@ import pathlib
 import datetime
 import re
 
-from xcute import cute, split_version, conf, Exc
+from xcute import cute, split_version, conf, exc
 
 def bump():
 	"""My bump task"""
@@ -62,12 +62,12 @@ cute(
 	install = 'pip install -e .',
 	install_err = 'elevate -c -w pip install -e .',
 	readme_build = [
-		'python setup.py --long-description > build/long-description.rst',
+		'python setup.py --long-description | x-pipe build/ld.rst',
 		'rst2html --no-raw --exit-status=1 --verbose '
-			'build/long-description.rst build/long-description.html'
+			'build/ld.rst build/ld.html'
 	],
-	readme_build_err = ['readme_show', Exc()],
-	readme_show = 'start build/long-description.html',
+	readme_build_err = ['readme_show', exc],
+	readme_show = 'start build/ld.html',
 	readme = 'readme_build',
 	readme_post = 'readme_show'
 )
