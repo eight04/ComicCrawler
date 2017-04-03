@@ -74,7 +74,7 @@ def build_ctx(url):
 			return imgEl.src;
 		}
 	""" + js
-	ctx = VM(js)
+	ctx = VM(js).create()
 			
 def get_images(html, url):
 	if not ctx:
