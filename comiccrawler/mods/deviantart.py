@@ -10,10 +10,10 @@ JDownloader2 now support　deviantart.com!
 import re
 
 from html import unescape
-from urllib.parse import urljoin, urlparse, urlunparse, parse_qs, urlencode
 
 from ..error import PauseDownloadError
 from ..core import Episode
+from ..url import update_qs
 
 domain = ["deviantart.com"]
 name = "dA"
@@ -35,7 +35,10 @@ def get_episodes(html, url):
 	
 	base = re.search("(https?://[^/]+)", url).group(1)
 	s = []
-	pattern = '<a class="torpedo-thumb-link" href="({}/art/[^"]+?(\d+))".+?class="title">([^<]*)'.format(base)
+	pattern = (
+		'<a class="torpedo-thumb-link" href="({}/art/[^"]+?(\d+))"'
+		'.+?class="title">([^<]*)'
+	).format(base)
 
 	for match in re.finditer(pattern, html, re.DOTALL):
 		ep_url, id, title = match.groups()
@@ -67,11 +70,4 @@ def get_next_page(html, url):
 	if '"hasMore":true' not in html:
 		return None
 	next_offset = re.search('"nextOffset":(\d+)', html).group(1)
-	return apply_query(url, {"offset": next_offset})
-	
-def apply_query(url, new_query):
-	scheme, netloc, path, params, query, fragment = urlparse(url)
-	query_dict = parse_qs(query)
-	query_dict.update(new_query)
-	query = urlencode(query_dict, doseq=True)
-	return urlunparse((scheme, netloc, path, params, query, fragment))
+	return update_qs(url, {"offset": next_offset})
