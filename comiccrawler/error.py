@@ -1,3 +1,5 @@
+from requests import HTTPError # pylint: disable=unused-import
+
 class ComicCrawlerSignal(BaseException):
 	"""Extend BaseException."""
 	pass
