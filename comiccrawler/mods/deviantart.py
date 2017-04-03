@@ -10,7 +10,7 @@ JDownloader2 now support　deviantart.com!
 import re
 
 from html import unescape
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse, urlunparse, parse_qs, urlencode
 
 from ..error import PauseDownloadError
 from ..core import Episode
@@ -35,19 +35,17 @@ def get_episodes(html, url):
 	
 	base = re.search("(https?://[^/]+)", url).group(1)
 	s = []
-	startpos = html.index('id="gmi-ResourceStream"')
-	ex = re.compile('<a class="thumb[^"]*?" href="({}/art/.+?)" title="(.+?)"'.format(base))
+	pattern = '<a class="torpedo-thumb-link" href="({}/art/[^"]+?(\d+))".+?class="title">([^<]*)'.format(base)
 
-	for match in ex.finditer(html, startpos):
-		id = re.search("\d+$", match.group(1)).group()
-		title = match.group(2).rpartition(" by ")[0]
+	for match in re.finditer(pattern, html, re.DOTALL):
+		ep_url, id, title = match.groups()
 		# WTF r u doing deviantArt?
 		title = unescape(unescape(title))
 
 		s.append(
 			Episode(
 				"{} - {}".format(id, title),
-				match.group(1)
+				ep_url
 			)
 		)
 
@@ -66,6 +64,14 @@ def get_images(html, url):
 	return [i]
 	
 def get_next_page(html, url):
-	next = re.search('id="gmi-GPageButton"[^>]+?href="([^"]+?)"><span>Next</span>', html)
-	if next:
-		return urljoin(url, unescape(next.group(1)))
+	if '"hasMore":true' not in html:
+		return None
+	next_offset = re.search('"nextOffset":(\d+)', html).group(1)
+	return apply_query(url, {"offset": next_offset})
+	
+def apply_query(url, new_query):
+	scheme, netloc, path, params, query, fragment = urlparse(url)
+	query_dict = parse_qs(query)
+	query_dict.update(new_query)
+	query = urlencode(query_dict, doseq=True)
+	return urlunparse((scheme, netloc, path, params, query, fragment))
