@@ -329,6 +329,15 @@ Todos
 Changelog
 ---------
 
+-  2017.4.3
+
+   -  Fix: analyze error in dA.
+   -  Fix: subdomain changed in exh.
+   -  Fix: vm error in hh.
+   -  Add .url utils, .core.CycleList, .error.HTTPError.
+   -  Add aacomic.
+   -  Update pyxcute to 0.4.1.
+
 -  2017.3.26
 
    -  Fix: cleanup the old files.
