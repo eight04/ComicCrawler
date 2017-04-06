@@ -3,11 +3,13 @@
 """Download Manager"""
 
 import subprocess # nosec
+import shlex
+import traceback
 
 from os.path import join as path_join
 from time import time
 
-from worker import Worker, current, later
+from worker import Worker, current, later, await_
 
 from .safeprint import print
 from .config import setting
@@ -55,25 +57,27 @@ class DownloadManager:
 			if event.target is not self.download_thread:
 				return
 				
-			r1 = event.data.module.config.get("runafterdownload")
-			r2 = setting.get("runafterdownload")
+			cmd = event.data.module.config.get("runafterdownload")
+			default_cmd = setting.get("runafterdownload")
 			
-			if r1 == r2 and r1:
-				commands = [r1]
-			elif r1:
-				commands = [r1, r2]
-			else:
-				commands = []
+			commands = []
+			
+			if cmd:
+				commands.append(cmd)
 				
+			if default_cmd and default_cmd not in commands:
+				commands.append(default_cmd)
+			
 			for command in commands:
-				command = command + " " + path_join(
+				command = shlex.split(command)
+				command.append(path_join(
 					profile(event.data.module.config["savepath"]),
 					safefilepath(event.data.title)
-				)
+				))
 				try:
-					subprocess.call(command) # nosec
+					await_(subprocess.call, command) # nosec
 				except (OSError, subprocess.SubprocessError):
-					print("Failed to run process: {}".format(command))
+					traceback.print_exc()
 					
 		@thread.listen("DOWNLOAD_FINISHED")
 		@thread.listen("DOWNLOAD_ERROR")
