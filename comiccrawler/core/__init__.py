@@ -13,13 +13,15 @@ from worker import sleep, WorkerExit
 from requests.utils import dict_from_cookiejar
 
 from ..safeprint import print
-from ..error import ModuleError, PauseDownloadError, LastPageError, SkipEpisodeError
+from ..error import (
+	ModuleError, PauseDownloadError, LastPageError, SkipEpisodeError, is_http
+)
 from ..io import content_write, content_read, path_each
 from ..channel import download_ch, mission_ch
 from ..config import setting
 from ..profile import get as profile
 
-from .grabber import grabhtml, grabimg, is_429
+from .grabber import grabhtml, grabimg
 
 mission_lock = threading.Lock()
 
@@ -550,7 +552,7 @@ def crawlpage(crawler):
 		crawler.next_image()
 
 	def download_error(er):
-		if is_429(er):
+		if is_http(er, code=429):
 			# retry doesn't work with 429 error
 			sleep(5)
 			raise er

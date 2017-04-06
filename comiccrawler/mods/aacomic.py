@@ -13,7 +13,7 @@ from node_vm2 import VM
 
 from ..core import Episode, grabhtml, CycleList
 from ..url import urlparse, urlupdate, urljoin
-from ..error import HTTPError
+from ..error import is_http
 
 domain = ["www.aacomic.com"]
 name = "暗暗"
@@ -73,7 +73,7 @@ def get_images(html, url):
 	return (servers.get() + s_path + f for f in arr_files)
 	
 def errorhandler(err, crawler):
-	if not isinstance(err, HTTPError):
+	if not is_http(err):
 		return
 		
 	if not crawler.image or not crawler.image.url:

@@ -90,12 +90,6 @@ def do_request(s, url, params, raise_429):
 		sleep(5)
 	return r
 	
-def is_429(err):
-	"""Return True if it is a 429 HTTPError"""
-	if isinstance(err, requests.HTTPError) and hasattr(err, "response"):
-		return err.response.status_code == 429
-	return False
-	
 def grabhtml(*args, **kwargs):
 	"""Get html source of given url. Return String."""
 	r = grabber(*args, **kwargs)

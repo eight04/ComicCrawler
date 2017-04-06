@@ -31,10 +31,19 @@ class ModuleError(ComicCrawlerError):
 	pass
 	
 def is_403(err):
-	try:
-		return is_http(err) and err.response.status_code == 403
-	except AttributeError:
-		return False
+	return is_http(err, code=403)
 	
-def is_http(err):
-	return isinstance(err, HTTPError)
+def is_http(err, code=None):
+	if not isinstance(err, HTTPError):
+		return False
+		
+	if code is None:
+		return True
+		
+	try:
+		if err.response.status_code == code:
+			return True
+	except AttributeError:
+		pass
+		
+	return False
