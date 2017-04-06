@@ -184,6 +184,7 @@ class DownloadManager:
 			return
 
 		self.library_err_count = 0
+		setting["lastcheckupdate"] = str(time())
 		for mission in mission_manager.library.values():
 			if mission.state not in ("DOWNLOADING", "ANALYZING"):
 				mission.state = "ANALYZE_INIT"
@@ -198,7 +199,6 @@ class DownloadManager:
 			self.library_thread = Worker(analyze).start(mission)
 		else:
 			self.library_thread = None
-			setting["lastcheckupdate"] = str(time())
 			print("Update checking done")
 			
 	def stop_check_update(self):
