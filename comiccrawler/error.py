@@ -1,4 +1,4 @@
-from requests import HTTPError # pylint: disable=unused-import
+from requests import HTTPError
 
 class ComicCrawlerSignal(BaseException):
 	"""Extend BaseException."""
@@ -29,3 +29,12 @@ class ComicCrawlerError(Exception):
 class ModuleError(ComicCrawlerError):
 	"""Can't find module."""
 	pass
+	
+def is_403(err):
+	try:
+		return is_http(err) and err.response.status_code == 403
+	except AttributeError:
+		return False
+	
+def is_http(err):
+	return isinstance(err, HTTPError)
