@@ -9,15 +9,14 @@ Ex:
 
 import re
 from html import unescape
-from urllib.error import HTTPError
-from urllib.parse import urljoin
 from io import BytesIO
 from zipfile import ZipFile
 
 from node_vm2 import eval
 
 from ..core import Episode, grabhtml
-from ..error import SkipEpisodeError, PauseDownloadError
+from ..error import SkipEpisodeError, PauseDownloadError, is_403
+from ..url import urljoin
 
 domain = ["www.pixiv.net"]
 name = "Pixiv"
@@ -92,7 +91,7 @@ def get_images(html, url):
 	rs = re.search(r"pixiv\.context\.ugokuIllustFullscreenData\s+= ([^;]+)", html)
 	if rs:
 		json = rs.group(1)
-		o = eval(json)
+		o = eval("(" + json + ")")
 		cache["frames"] = o["frames"]
 		return [o["src"]]
 
@@ -127,10 +126,9 @@ def get_images(html, url):
 
 def errorhandler(er, crawler):
 	# http://i1.pixiv.net/img21/img/raven1109/10841650_big_p0.jpg
-	if isinstance(er, HTTPError):
-		# Private page?
-		if er.code == 403:
-			raise SkipEpisodeError
+	# Private page?
+	if is_403(er):
+		raise SkipEpisodeError
 			
 def imagehandler(ext, bin):
 	"""Append index info to ugoku zip"""
