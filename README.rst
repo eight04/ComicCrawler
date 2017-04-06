@@ -329,6 +329,12 @@ Todos
 Changelog
 ---------
 
+-  2017.4.6
+
+   -  Fix: run after download doesn't work properly if path contains spaces.
+   -  Fix: VMError with ugoku in pixiv.
+   -  Fix: automatic update check doesn't record update time when failing.
+
 -  2017.4.3
 
    -  Fix: analyze error in dA.
