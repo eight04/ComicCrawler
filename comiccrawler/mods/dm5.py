@@ -18,7 +18,7 @@ cookie = {
 	"isAdult": "1",
 	"fastshow": "true"
 }
-domain = ["www.dm5.com", "tel.dm5.com"]
+domain = ["www.dm5.com", "tel.dm5.com", "m.dm5.com"]
 name = "動漫屋"
 
 def get_title(html, url):
