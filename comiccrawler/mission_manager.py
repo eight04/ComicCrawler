@@ -46,6 +46,32 @@ def make_ep_path(id):
 def get_ep_path(mission):
 	"""Return episode save file path"""
 	return make_ep_path(get_mission_id(mission))
+	
+episode_loader_cache = {}
+class EpisodeLoader:
+	"""Context manager. Load episode info."""
+	def __init__(self, mission):
+		self.mission = mission
+		
+	def __enter__(self):
+		self.load()
+		
+	def __exit__(self, _type, _value, _traceback):
+		self.unload()
+		
+	def load(self):
+		if self.mission not in episode_loader_cache:
+			episode_loader_cache[self.mission] = 0
+		# self.lock = episode_loader_cache.setdefault(self.mission, 0)
+		if not episode_loader_cache[self.mission]:
+			init_episode(self.mission)
+		episode_loader_cache[self.mission] += 1
+		
+	def unload(self):
+		episode_loader_cache[self.mission] -= 1
+		if not episode_loader_cache[self.mission]:
+			uninit_episode(self.mission)
+			del episode_loader_cache[self.mission]
 
 def init_episode(mission):
 	"""Construct mission.episodes"""
