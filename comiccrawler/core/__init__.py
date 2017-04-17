@@ -1,15 +1,16 @@
 #! python3
 
+from collections import deque
 import hashlib
 from itertools import cycle
 import json
 import re
 import string
-import threading
+from threading import Lock, RLock
 import traceback
 from os.path import join as path_join, split as path_split, splitext
 
-from worker import sleep, WorkerExit
+from worker import sleep, WorkerExit, Worker
 from requests.utils import dict_from_cookiejar
 
 from ..safeprint import print
@@ -23,7 +24,7 @@ from ..profile import get as profile
 
 from .grabber import grabhtml, grabimg
 
-mission_lock = threading.Lock()
+mission_lock = Lock()
 
 def debug_log(*args):
 	if setting.getboolean("errorlog"):
@@ -45,6 +46,10 @@ class Mission:
 		self.module = get_module(url)
 		if not self.module:
 			raise ModuleError("Get module failed!")
+			
+	def load_episode(self):
+		from ..mission_manager import EpisodeLoader
+		return EpisodeLoader(self)
 			
 class MissionProxy:
 	"""Publish MISSION_PROPERTY_CHANGED event when property changed"""
@@ -586,20 +591,53 @@ def analyze(mission):
 		Analyzer(mission).analyze()
 
 	except WorkerExit:
-		mission.state = "ERROR"
 		raise
 
 	except Exception as err: # pylint: disable=broad-except
-		mission.state = "ERROR"
 		traceback.print_exc()
 		download_ch.pub("ANALYZE_FAILED", (err, mission))
 
 	except PauseDownloadError as err:
-		mission.state = "ERROR"
 		download_ch.pub("ANALYZE_INVALID", (err, mission))
 
 	else:
 		download_ch.pub("ANALYZE_FINISHED", mission)
+		
+class BatchAnalyzer:
+	def __init__(self, missions):
+		self.thread = Worker(self.analyze)
+		self.missions = deque(missions)
+		self.lock = RLock()
+		
+	def start(self):
+		self.thread.start()
+		return self
+		
+	def stop(self):
+		self.thread.stop()
+		
+	def analyze(self):
+		err = None
+		
+		while self.missions:
+			mission = None
+			with self.lock:
+				mission = self.missions.popleft()
+			with mission.load_episode():
+				try:
+					Analyzer(mission).analyze()
+				except BaseException as _err:
+					with self.lock:
+						self.missions.appendleft(mission)
+					err = _err
+					break
+				download_ch.pub("BATCH_ANALYZE_ITEM_FINISHED", (self, mission))
+				
+		download_ch.pub("BATCH_ANALYZE_END", (self, err))
+		
+	def to_urls(self):
+		with self.lock:
+			return [m.url for m in self.missions]
 
 def remove_duplicate_episode(mission):
 	"""Remove duplicate episodes."""
@@ -625,12 +663,22 @@ class Analyzer:
 		
 	def analyze(self):
 		"""Start analyze"""
+		try:
+			self.do_analyze()
+		except BaseException:
+			# correctly handle mission state
+			self.mission.state = "ERROR"
+			raise
+		
+	def do_analyze(self):
+		"""Analyze inner"""
 		print("Start analyzing {}".format(self.mission.url))
 
 		self.mission.state = "ANALYZING"
 		
 		# one-time mission
 		if self.is_onetime():
+			print("It's one-time mission")
 			ep = self.mission.episodes[0]
 			if ep.skip or ep.complete:
 				self.mission.state = "FINISHED"
@@ -667,6 +715,9 @@ class Analyzer:
 			eps = self.mission.module.get_episodes(self.html, url)
 			self.transform_title(eps)
 			
+			if self.has_duplicate(eps):
+				print("Warning, the episode list contains duplicate URLs")
+			
 			# add result episodes into new_eps
 			duplicate = False
 			for ep in reversed(eps):
@@ -694,6 +745,10 @@ class Analyzer:
 		
 		if not self.mission.episodes:
 			raise Exception("Episode list is empty")
+			
+	def has_duplicate(self, eps):
+		url_set = set(e.url for e in eps)
+		return len(url_set) < len(eps)
 		
 	def get_next_page(self, html, url):
 		if not hasattr(self.mission.module, "get_next_page"):
