@@ -21,7 +21,7 @@ disable=
 	missing-docstring, multiple-imports,
 	no-self-use,
 	redefined-outer-name, redefined-builtin,
-	trailing-whitespace,
+	trailing-whitespace, too-many-statements,
 	unused-argument
 
 [REPORTS]
