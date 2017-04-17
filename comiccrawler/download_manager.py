@@ -2,6 +2,7 @@
 
 """Download Manager"""
 
+import re
 import subprocess # nosec
 import shlex
 import traceback
@@ -13,7 +14,7 @@ from worker import Worker, current, later, await_
 
 from .safeprint import print
 from .config import setting
-from .core import download, analyze, safefilepath
+from .core import download, analyze, safefilepath, BatchAnalyzer, create_mission
 from .profile import get as profile
 
 from .mission_manager import mission_manager, init_episode, uninit_episode
@@ -28,6 +29,7 @@ class DownloadManager:
 		self.analyze_threads = set()
 		self.library_thread = None
 		self.library_err_count = None
+		self.batch_analyzer = None
 		
 		thread = current()
 		
@@ -136,12 +138,22 @@ class DownloadManager:
 				mission = event.data
 				uninit_episode(mission)
 				mission_manager.add("view", mission)
+				download_ch.pub("ANALYZE_NEW_MISSION", mission)
 
 		@thread.listen("ANALYZE_FINISHED")
 		@thread.listen("ANALYZE_FAILED")
 		def _(event):
 			if event.target in self.analyze_threads:
 				self.analyze_threads.remove(event.target)
+				
+		@thread.listen("BATCH_ANALYZE_END")
+		def _(event):
+			self.batch_analyzer = None
+			
+		@thread.listen("BATCH_ANALYZE_ITEM_FINISHED")
+		def _(event):
+			_analyzer, mission = event.data
+			mission_manager.add("view", mission)
 
 	def start_download(self):
 		"""Start downloading."""
@@ -175,6 +187,26 @@ class DownloadManager:
 		init_episode(mission)
 		thread = Worker(analyze).start(mission)
 		self.analyze_threads.add(thread)
+		
+	def start_batch_analyze(self, missions):
+		"""Start batch analyze"""
+		if self.batch_analyzer:
+			print("There is already a working batch analyzer")
+			return
+			
+		if isinstance(missions, str):
+			missions = [
+				create_mission(m) for m in re.split("\s+", missions) if m]
+			
+		self.batch_analyzer = BatchAnalyzer(missions).start()
+		
+	def stop_batch_analyze(self):
+		"""Stop batch analyzer"""
+		if not self.batch_analyzer:
+			print("No batch analyzer exists")
+			return
+			
+		self.batch_analyzer.stop()
 		
 	def stop_analyze(self):
 		"""Stop analyze"""
