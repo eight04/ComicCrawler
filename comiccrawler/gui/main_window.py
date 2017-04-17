@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import ttk, font, messagebox
 
 import desktop
-from worker import current
+from worker import current, WorkerExit
 
 from ..mods import list_domain, get_module, load_config, domain_index
 from ..config import setting, config
@@ -284,6 +284,21 @@ class ViewMixin:
 				"mod": domain_index[domain].name
 			})
 			
+		# batch analyzer
+		frame = ttk.Frame(self.notebook)
+		self.notebook.add(frame, text="批次加入")
+		
+		btn_bar = ttk.Frame(frame)
+		btn_bar.pack()
+		
+		self.btn_batch_analyze = ttk.Button(btn_bar, text="開始分析")
+		self.btn_batch_analyze.pack(side="left")
+		
+		self.btn_batch_analyze_stop = ttk.Button(btn_bar, text="停止分析")
+		self.btn_batch_analyze_stop.pack(side="left")
+		
+		self.text_batch_analyze = create_scrollable_text(frame)
+			
 		# status bar
 		statusbar = ttk.Label(self.root, text="Comic Crawler", anchor="e")
 		statusbar.pack(anchor="e")
@@ -329,6 +344,9 @@ class EventMixin:
 			try:
 				url = self.root.clipboard_get(type="STRING")
 			except tk.TclError:
+				return
+				
+			if "\n" in url:
 				return
 
 			if get_module(url) and url != pre_url:
@@ -486,6 +504,24 @@ class EventMixin:
 
 		# library menu
 		create_menu_set("library", self.library_table)
+		
+		# batch analyze
+		def batch_analyze():
+			text = self.text_batch_analyze.get("1.0", "end")
+			
+			try:
+				download_manager.start_batch_analyze(text)
+			except Exception as err: # pylint: disable=broad-except
+				messagebox.showerror(
+					"Comic Crawler", "Failed to batch: {}".format(err))
+				return
+					
+			self.text_batch_analyze.config(state="disabled")
+		self.btn_batch_analyze["command"] = batch_analyze
+		
+		def batch_analyze_stop():
+			download_manager.stop_batch_analyze()
+		self.btn_batch_analyze_stop["command"] = batch_analyze_stop
 
 		# close window event
 		def beforequit():
@@ -580,7 +616,7 @@ class MainWindow(ViewMixin, EventMixin):
 		def _(event):
 			self.update_table(event.data)
 
-		@self.thread.listen("MISSION_ADDED")
+		@self.thread.listen("ANALYZE_NEW_MISSION")
 		def _(event):
 			mission = event.data
 			
@@ -623,6 +659,31 @@ class MainWindow(ViewMixin, EventMixin):
 		def _(event):
 			messagebox.showerror("Comic Crawler", "檢查更新未完成，已重試 10 次")
 			
+		@self.thread.listen("BATCH_ANALYZE_ITEM_FINISHED")
+		def _(event):
+			analyzer, _mission = event.data
+			self.update_batch_text(analyzer)
+			
+		@self.thread.listen("BATCH_ANALYZE_END")
+		def _(event):
+			analyzer, err = event.data
+			self.update_batch_text(analyzer)
+			
+			if err and not isinstance(err, WorkerExit):
+				messagebox.showerror(
+					"Comic Crawler", "批次加入失敗！{}".format(err))
+					
+			self.text_batch_analyze.config(state="normal")
+			print("Batch analyze ended")
+			
+	def update_batch_text(self, analyzer):
+		# print(analyzer.to_urls())
+		text = "\n".join(analyzer.to_urls())
+		self.text_batch_analyze.config(state="normal")
+		self.text_batch_analyze.delete("1.0", "end")
+		self.text_batch_analyze.insert("1.0", text)
+		self.text_batch_analyze.config(state="disabled")
+			
 	def remove(self, pool_name, *missions):
 		"""Wrap mission_manager.remove."""
 		for mission in missions:
@@ -650,3 +711,14 @@ class MainWindow(ViewMixin, EventMixin):
 				}, key=mission)
 				
 		table.rearrange(missions)
+		
+def create_scrollable_text(parent):
+	scrbar = ttk.Scrollbar(parent)
+	scrbar.pack(side="right", fill="y")
+	
+	text = tk.Text(parent, height=3, yscrollcommand=scrbar.set)
+	text.pack(expand=True, fill="both")
+	
+	scrbar.config(command=text.yview)
+
+	return text
