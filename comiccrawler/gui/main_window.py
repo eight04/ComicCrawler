@@ -458,7 +458,7 @@ class EventMixin:
 						mission.state = "ANALYZED"
 
 			@bind_menu("開啟資料夾")
-			def _():
+			def start_explorer(event=None):
 				for mission in table.selected():
 					savepath = profile(mission.module.config["savepath"])
 					folder = os.path.join(savepath, safefilepath(mission.title))
@@ -484,6 +484,9 @@ class EventMixin:
 			def tvmenucall(event):
 				menu.tk_popup(event.x_root, event.y_root)
 			table.tv.bind("<Button-3>", tvmenucall)
+
+			# dubleclick to start explorer
+			table.tv.bind("<Double-Button-1>", start_explorer)
 
 		create_menu_set("view", self.view_table)
 
