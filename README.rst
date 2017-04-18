@@ -329,6 +329,15 @@ Todos
 Changelog
 ---------
 
+-  2017.4.18
+
+   -  Add senmanga. `#49 <https://github.com/eight04/ComicCrawler/issues/49>`_
+   -  Add yoedge. `#47 <https://github.com/eight04/ComicCrawler/issues/47>`_
+   -  Fix: header parser issue. See  https://www.ptt.cc/bbs/Python/M.1492438624.A.BBC.html
+   -  Fix: escape trailing dots in file path. `#46 <https://github.com/eight04/ComicCrawler/issues/46>`_
+   -  Add: double-click to launch explorer.
+   -  Add: batch analyze panel. `#45 <https://github.com/eight04/ComicCrawler/issues/45>`_
+
 -  2017.4.6
 
    -  Fix: run after download doesn't work properly if path contains spaces.
