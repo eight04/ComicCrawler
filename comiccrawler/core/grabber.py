@@ -87,6 +87,18 @@ def do_request(s, url, params, raise_429):
 			break
 		if r.status_code != 429 or raise_429:
 			r.raise_for_status()
+		# 302 error without location header
+		if r.status_code == 302:
+			# pylint: disable=protected-access
+			match = re.search(
+				r"^location:\s*(.+)",
+				str(r.raw._original_response.msg),
+				re.M + re.I
+			)
+			if not match:
+				raise Exception("status 302 without location header")
+			url = match.group(1)
+			continue
 		sleep(5)
 	return r
 	
