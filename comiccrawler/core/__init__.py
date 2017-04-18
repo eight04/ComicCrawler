@@ -160,10 +160,14 @@ def create_safefilepath_table():
 	return str.maketrans(table)
 	
 safefilepath_table = create_safefilepath_table()
+dot_table = str.maketrans({".": "．"})
 
 def safefilepath(s):
 	"""Return a safe directory name."""
-	return s.strip().translate(safefilepath_table)
+	s = s.strip().translate(safefilepath_table)
+	if s[-1] == ".":
+		s = s.translate(dot_table)
+	return s
 
 def download(mission, savepath):
 	"""Download mission to savepath."""
