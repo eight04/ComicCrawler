@@ -8,7 +8,6 @@ from ..url import urljoin
 
 domain = ["smp.yoedge.com"]
 name = "yoedge"
-noepfolder = True
 
 def get_title(html, url):
 	return re.search(r"<title>([^<]+)", html).group(1)
