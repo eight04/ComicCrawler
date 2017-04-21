@@ -132,7 +132,7 @@ def format_escape(s):
 	
 VALID_FILE_TYPES = (
 	# images
-	".jpg", ".jpeg", ".gif", ".png", ".svg", ".psd", ".webp",
+	".jpg", ".jpeg", ".gif", ".png", ".svg", ".psd", ".webp", ".bmp",
 	# zips
 	".zip", ".rar",
 	# videos
