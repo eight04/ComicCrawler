@@ -655,6 +655,41 @@ def remove_duplicate_episode(mission):
 			result.append(ep)
 	mission.episodes = result
 	
+class EpisodeList:
+	def __init__(self, eps=()):
+		self.list = []
+		self.title_set = set()
+		self.url_set = set()
+		for ep in eps:
+			self.add(ep)
+	
+	def add(self, ep):
+		if ep in self:
+			return False
+		self.list.append(ep)
+		self.url_set.add(ep.url)
+		self.title_set.add(ep.title)
+		return True
+		
+	def __contains__(self, ep):
+		if ep.url in self.url_set:
+			return True
+		if ep.title in self.title_set:
+			return True
+		return False
+		
+	def __iter__(self):
+		return iter(self.list)
+		
+	def __len__(self):
+		return len(self.list)
+		
+	def __reversed__(self):
+		return reversed(self.list)
+
+def first(s):
+	return next(iter(s))
+	
 class Analyzer:
 	"""Analyze mission"""
 	def __init__(self, mission):
@@ -713,26 +748,26 @@ class Analyzer:
 	def analyze_pages(self):
 		"""Crawl for each pages"""
 		url = self.mission.url
-		new_eps = []
+		old_eps = EpisodeList(self.mission.episodes or ())
+		new_eps = EpisodeList()
 		
 		while True:
 			eps = self.mission.module.get_episodes(self.html, url)
 			self.transform_title(eps)
 			
-			if self.has_duplicate(eps):
-				print("Warning, the episode list contains duplicate URLs")
+			eps = EpisodeList(eps)
 			
-			# add result episodes into new_eps
-			duplicate = False
+			# add result episodes into new_eps in new to old order.
 			for ep in reversed(eps):
-				if self.contains(ep):
-					duplicate = True
-					continue
-				new_eps.append(ep)
-				self.add(ep)
+				new_eps.add(ep)
 				
-			if (len(new_eps) == 1 and new_eps[0].url == self.mission.url or
-					duplicate):
+			# FIXME: do we really need this check?
+			# one-time mission?
+			if self.is_onetime(new_eps):
+				break
+				
+			# duplicate with old_eps
+			if any(e in old_eps for e in eps):
 				break
 				
 			# get next page
@@ -743,43 +778,17 @@ class Analyzer:
 			print('Analyzing {}...'.format(url))
 			self.html = self.downloader.html(url, raise_429=False)
 			
-		if not self.mission.episodes:
-			self.mission.episodes = []
-		self.mission.episodes.extend(reversed(new_eps))
+		for ep in reversed(new_eps):
+			old_eps.add(ep)
+		self.mission.episodes = [*old_eps]
 		
 		if not self.mission.episodes:
 			raise Exception("Episode list is empty")
 			
-	def has_duplicate(self, eps):
-		url_set = set(e.url for e in eps)
-		return len(url_set) < len(eps)
-		
 	def get_next_page(self, html, url):
 		if not hasattr(self.mission.module, "get_next_page"):
 			return None
 		return self.mission.module.get_next_page(html, url)
-
-	def contains(self, ep):
-		"""Check if mission contains episode"""
-		self.build_cache()
-		return ep.url in self.old_urls or ep.title in self.old_titles
-		
-	def add(self, ep):
-		"""Add episode to cache"""
-		self.build_cache()
-		self.old_urls.add(ep.url)
-		self.old_titles.add(ep.title)
-		
-	def build_cache(self):
-		"""Build episode set for existence test"""
-		if self.old_urls is None:
-			self.old_urls = set()
-			if self.mission.episodes:
-				self.old_urls.update(e.url for e in self.mission.episodes)
-		if self.old_titles is None:
-			self.old_titles = set()
-			if self.mission.episodes:
-				self.old_titles.update(e.title for e in self.mission.episodes)
 			
 	def transform_title(self, eps):
 		format = self.mission.module.config.get("titlenumberformat")
@@ -792,10 +801,11 @@ class Analyzer:
 				title[i] = format_number(title[i], format)
 			ep.title = "".join(title)
 			
-	def is_onetime(self):
+	def is_onetime(self, it=None):
 		"""Check if the mission should only be analyze once"""
-		return (self.mission.episodes and
-			self.mission.episodes[0].url == self.mission.url)
+		if it is None:
+			it = self.mission.episodes
+		return it and len(it) and first(it).url == self.mission.url
 
 def format_number(title, format):
 	"""第3卷 --> 第003卷"""
