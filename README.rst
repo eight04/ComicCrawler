@@ -329,6 +329,11 @@ Todos
 Changelog
 ---------
 
+-  2017.4.22
+
+   -  Add .bmp to valid file extensions.
+   -  Fix: unable to check update for multi-page sites.
+
 -  2017.4.18
 
    -  Add senmanga. `#49 <https://github.com/eight04/ComicCrawler/issues/49>`_
