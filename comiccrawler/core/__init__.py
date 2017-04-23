@@ -780,7 +780,7 @@ class Analyzer:
 			
 		for ep in reversed(new_eps):
 			old_eps.add(ep)
-		self.mission.episodes = list(*old_eps)
+		self.mission.episodes = list(old_eps)
 		
 		if not self.mission.episodes:
 			raise Exception("Episode list is empty")
