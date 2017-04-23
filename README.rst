@@ -329,6 +329,11 @@ Todos
 Changelog
 ---------
 
+-  2017.4.23
+
+   -  Fix: compat with python 3.4, starred expression can only occur inside function call.
+   -  Update node_vm2 to 0.3.0.
+
 -  2017.4.22
 
    -  Add .bmp to valid file extensions.
