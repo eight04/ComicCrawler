@@ -329,6 +329,10 @@ Todos
 Changelog
 ---------
 
+-  2017.4.24
+
+   -  Fix: starred expression inside list.
+
 -  2017.4.23
 
    -  Fix: compat with python 3.4, starred expression can only occur inside function call.
