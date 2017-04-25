@@ -16,7 +16,8 @@ from ..core import Episode, grabhtml
 
 cookie = {
 	"isAdult": "1",
-	"fastshow": "true"
+	"fastshow": "true",
+	"ComicHistoryitem_zh": "ViewType=1"
 }
 domain = ["www.dm5.com", "tel.dm5.com"]
 name = "動漫屋"
@@ -26,10 +27,8 @@ def get_title(html, url):
 
 def get_episodes(html, url):
 	s = []
-	# base = search("(https?://[^/]+)", url).group(1)
-	html = html[html.index("cbc_1"):]
 
-	for match in finditer("class=\"tg\" href=\"([^\"]+)\" title=\"([^\"]+)\"", html):
+	for match in finditer('href="([^"]+)" class="tg"[^>]*>([^<]+)', html):
 		s.append(Episode(
 			match.group(2),
 			urljoin(url, match.group(1))
