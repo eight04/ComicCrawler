@@ -331,7 +331,7 @@ Changelog
 
 -  2017.4.26
 
-   -  Change: use table view in dm5. (`#54 <https://github.com/eight04/ComicCrawler/issues/54>`)
+   -  Change: use table view in dm5. `#54 <https://github.com/eight04/ComicCrawler/issues/54>`_
    -  Fix: runafterdownload is parsed incorrectly on windows.
 
 -  2017.4.24
