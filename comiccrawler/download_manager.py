@@ -5,6 +5,7 @@
 import re
 import subprocess # nosec
 import shlex
+import sys
 import traceback
 
 from os.path import join as path_join
@@ -19,6 +20,11 @@ from .profile import get as profile
 
 from .mission_manager import mission_manager, init_episode, uninit_episode
 from .channel import download_ch
+
+def quote(item):
+	if sys.platform == "win32":
+		return subprocess.list2cmdline([item])
+	return shlex.quote(item)
 
 class DownloadManager:
 	"""Create a download manager used in GUI. Manage threads."""
@@ -71,13 +77,12 @@ class DownloadManager:
 				commands.append(default_cmd)
 			
 			for command in commands:
-				command = shlex.split(command)
-				command.append(path_join(
+				command += " " + quote(path_join(
 					profile(event.data.module.config["savepath"]),
 					safefilepath(event.data.title)
 				))
 				try:
-					await_(subprocess.call, command) # nosec
+					await_(subprocess.call, command, shell=True) # nosec
 				except (OSError, subprocess.SubprocessError):
 					traceback.print_exc()
 					
