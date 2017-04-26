@@ -329,6 +329,11 @@ Todos
 Changelog
 ---------
 
+-  2017.4.26
+
+   -  Change: use table view in dm5. (`#54 <https://github.com/eight04/ComicCrawler/issues/54>`)
+   -  Fix: runafterdownload is parsed incorrectly on windows.
+
 -  2017.4.24
 
    -  Fix: starred expression inside list.
