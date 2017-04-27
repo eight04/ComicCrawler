@@ -144,6 +144,13 @@ def _get_ext(r):
 	if b[:4] == b"RIFF" and b[8:12] == b"WEBP":
 		return ".webp"
 		
+	if b[:4] == b"8BPS":
+		return ".psd"
+		
+	if (b[:16] == b"\x30\x26\xB2\x75\x8E\x66\xCF\x11"
+			b"\xA6\xD9\x00\xAA\x00\x62\xCE\x6C"):
+		return ".wmv"
+		
 def get_ext(r):
 	"""Get file extension"""
 	ext = _get_ext(r)

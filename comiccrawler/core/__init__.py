@@ -136,7 +136,7 @@ VALID_FILE_TYPES = (
 	# zips
 	".zip", ".rar",
 	# videos
-	".mp4", ".mkv", ".swf", ".webm",
+	".mp4", ".mkv", ".swf", ".webm", ".mov", ".wmv",
 	# json
 	".json"
 )
