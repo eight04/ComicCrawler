@@ -329,6 +329,11 @@ Todos
 Changelog
 ---------
 
+-  2017.5.5
+
+   -  Fix: use raw ``<title>`` as title in search result (pixiv).
+   -  Add .wmv, .mov, and .psd into valid file extensions.
+
 -  2017.4.26
 
    -  Change: use table view in dm5. `#54 <https://github.com/eight04/ComicCrawler/issues/54>`_
