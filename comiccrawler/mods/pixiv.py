@@ -31,7 +31,7 @@ def get_title(html, url):
 		id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
 		title = "{} - {}".format(id, user)
 	except AttributeError:
-		title = "[pixiv] " + unescape(re.search("<title>「([^」]+)", html).group(1))
+		title = "[pixiv] " + unescape(re.search("<title>([^<]+)", html).group(1))
 	return title
 
 def get_episodes(html, url):
