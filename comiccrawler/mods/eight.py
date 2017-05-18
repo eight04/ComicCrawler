@@ -42,8 +42,7 @@ def get_episodes(html, url):
 	
 	s = []
 	matches = re.finditer(
-		"<a href='#' onclick=\"cview\('(.+?)',(\d+?)\);return "
-			"false;\" id=\"\w+?\" class=\"\w+?\">(.+?)</a>",
+		"<a [^>]*?onclick=\"cview\('(.+?)',(\d+?)[^>]*?>(.+?)</a>",
 		html, re.M
 	)
 	with VM(js) as vm:
