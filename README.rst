@@ -329,6 +329,13 @@ Todos
 Changelog
 ---------
 
+-  2017.5.19
+
+   -  Add nijie module. `#58 <https://github.com/eight04/ComicCrawler/issues/58>`_
+   -  Add core.clean_tags.
+   -  Fix: check update button doesn't work after update checking failed. `#59 <https://github.com/eight04/ComicCrawler/issues/59>`_
+   -  Fix: analyzation failed in comicbus. `#61 <https://github.com/eight04/ComicCrawler/issues/61>`_
+
 -  2017.5.5
 
    -  Fix: use raw ``<title>`` as title in search result (pixiv).
