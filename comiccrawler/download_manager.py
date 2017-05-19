@@ -119,6 +119,7 @@ class DownloadManager:
 					if self.library_err_count > 10:
 						print("Too many error!")
 						download_ch.pub("LIBRARY_CHECK_UPDATE_FAILED")
+						self.library_thread = None
 					else:
 						self.library_err_count += 1
 						mission_manager.drop("library", mission)
@@ -222,6 +223,7 @@ class DownloadManager:
 	def start_check_update(self):
 		"""Start checking library update."""
 		if self.library_thread:
+			print("Already checking update")
 			return
 
 		self.library_err_count = 0
