@@ -829,3 +829,8 @@ class CycleList:
 		"""Get current item"""
 		return self.item
 	
+def clean_tags(html):
+	html = re.sub("<script.+?</script>", "", html)
+	html = re.sub("<.+?>", "", html)
+	return html.strip()
+	

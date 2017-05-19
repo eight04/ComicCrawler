@@ -9,7 +9,7 @@ from urllib.parse import urljoin
 
 from node_vm2 import VM
 
-from ..core import Episode, grabhtml
+from ..core import Episode, grabhtml, clean_tags
 
 domain = ["www.8comic.com", "www.comicvip.com", "www.comicbus.com"]
 name = "無限"
@@ -50,11 +50,7 @@ def get_episodes(html, url):
 			ep_url, catid, title = match.groups()
 			
 			ep_url = vm.call("get", ep_url, int(catid))
-
-			# tag cleanup
-			title = title.strip()
-			title = re.sub("<script.+?</script>","",title)
-			title = re.sub("<.+?>","",title)
+			title = clean_tags(title)
 
 			e = Episode(title, urljoin(url, ep_url))
 			s.append(e)
