@@ -329,6 +329,10 @@ Todos
 Changelog
 ---------
 
+-  2017.5.22
+
+   -  Fix: comicbus analyze issue. `#62 <https://github.com/eight04/ComicCrawler/issues/62>`_
+
 -  2017.5.19
 
    -  Add nijie module. `#58 <https://github.com/eight04/ComicCrawler/issues/58>`_
