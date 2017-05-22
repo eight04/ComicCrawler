@@ -29,10 +29,6 @@ def get_episodes(html, url):
 				output = result;
 			}
 		};
-		function get(url, catid) {
-			cview(url, catid);
-			return output;
-		}
 		var document = {
 			location: {
 				href: ""
@@ -42,47 +38,21 @@ def get_episodes(html, url):
 	
 	s = []
 	matches = re.finditer(
-		"<a [^>]*?onclick=\"cview\('(.+?)',(\d+?)[^>]*?>(.+?)</a>",
+		r'<a [^>]*?onclick="(cview[^"]+?);[^>]*>(.+?)</a>',
 		html, re.M
 	)
 	with VM(js) as vm:
 		for match in matches:
-			ep_url, catid, title = match.groups()
+			cview, title = match.groups()
 			
-			ep_url = vm.call("get", ep_url, int(catid))
+			vm.run(cview)
+			ep_url = vm.run("output")
 			title = clean_tags(title)
 
 			e = Episode(title, urljoin(url, ep_url))
 			s.append(e)
 	return s
 	
-def get_images_20140406(html, url, ch):
-	"""before 2014/4/6"""
-	itemid = re.search("itemid=(.+?);", html).group(1)
-	allcodes = re.search("allcodes=\"(.+?)\"", html).group(1)
-
-	cs = allcodes.split("|")
-	code = ""
-
-	for c in cs:
-		if c.split(" ")[0] == ch:
-			code = c
-			break
-	else:
-		raise Exception("can't retrieve imgurl")
-
-	num, sid, did, pages, code = code.split(" ")
-	s = []
-	for p in range(1, int(pages)+1):
-		hash = (((p - 1) // 10) % 10) + (((p - 1) % 10) * 3)
-		img = (
-			"http://img{sid}.8comic.com/{did}/{itemid}/{num}/"
-			"{page:03}_{code}.jpg"
-		).format(sid=sid, did=did, itemid=itemid, num=num, page=p,
-			code=code[hash:hash+3])
-		s.append(img)
-	return s
-
 def get_images(html, url):
 	m = re.search("ch=(\d+)", url)
 	if m is None:
@@ -90,16 +60,10 @@ def get_images(html, url):
 	else:
 		ch = m.group(1)
 
-	try:
-		get_images_20140406(html, url, ch)
-	except AttributeError:
-		pass
-
-	# after 2014/4/6
 	def ss(str): # pylint: disable=invalid-name
 		return re.sub("[a-z]+", "", str)
 
-	cs = re.search("cs='(.+)'", html).group(1)
+	cs = re.search("cs='([^']+)", html).group(1)
 	ti = re.search("ti=(\d+);", html).group(1)
 
 	i = 0
