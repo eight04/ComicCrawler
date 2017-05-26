@@ -1,13 +1,5 @@
 #! python3
 
-"""this is seemh module for comiccrawler
-
-Ex:
-	http://tw.seemh.com/comic/10924/
-	http://www.seemh.com/comic/10924/
-
-"""
-
 import re
 from urllib.parse import urljoin
 
@@ -41,13 +33,28 @@ def get_list(html, cid):
 
 
 def get_episodes(html, url):
+	episodes = None
 	cid = re.search(r"comic/(\d+)", url).group(1)
+	
+	# http://tw.ikanman.com/comic/10924/
 	episodes = get_list(html, cid)
-
+	
+	# http://tw.ikanman.com/comic/4350/
 	if not episodes:
-		ep_html = grabhtml(urljoin(url, "/support/chapters.aspx?id=" + cid), referer=url)
+		view_state = re.search(
+			r'id="__VIEWSTATE" value="([^"]+)', html).group(1)
+		js_main = re.search(r'src="([^"]+?/main_[^"]*?\.js)"', html).group(1)
+		js_main = grabhtml(js_main)
+		js_main = re.search(r'^window\[.+', js_main, re.M).group()
+		js = """
+			var window = global;
+		""" + js_main
+		
+		with VM(js) as vm:
+			ep_html = vm.call("LZString.decompressFromBase64", view_state)
+			
 		episodes = get_list(ep_html, cid)
-
+		
 	episodes = [Episode(v[0].strip(), urljoin(url, v[1])) for v in episodes]
 	return episodes[::-1]
 	
