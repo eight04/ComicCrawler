@@ -329,6 +329,10 @@ Todos
 Changelog
 ---------
 
+-  2017.5.29
+
+   -  Fix: 99 module. `#63 <https://github.com/eight04/ComicCrawler/issues/63>`_
+
 -  2017.5.26
 
    -  Fix: ikanman analyze issue.
