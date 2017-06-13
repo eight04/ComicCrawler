@@ -1,6 +1,8 @@
 #! python3
 
 """this is 8comic module for comiccrawler.
+	
+http://www.comicbus.com/html/197.html
 
 """
 
@@ -15,8 +17,7 @@ domain = ["www.8comic.com", "www.comicvip.com", "www.comicbus.com"]
 name = "無限"
 
 def get_title(html, url):
-	return re.search("<font color=\"#FF6600\" style=\"font:12pt;"
-			"font-weight:bold;\">(.+?)</font>",html).group(1)
+	return re.search("<title>([^<]+?)漫畫,",html).group(1)
 
 def get_episodes(html, url):
 	html = html.replace("\n", "")
