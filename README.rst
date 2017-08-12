@@ -329,6 +329,10 @@ Todos
 Changelog
 ---------
 
+-  2017.8.13
+
+   -  Fix: sankaku login issue. `#66 <https://github.com/eight04/ComicCrawler/issues/66>`_
+
 -  2017.6.14
 
    -  Fix: comicbus analzye issue.
