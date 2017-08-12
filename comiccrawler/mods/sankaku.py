@@ -13,7 +13,8 @@ noepfolder = True
 config = {
 	"cookie_cf_clearance": "Set cf_clearance",
 	"cookie__sankakucomplex_session": "Set _sankakucomplex_session",
-	"cookie_pass_hash": "Set pass_hash"
+	"cookie_pass_hash": "Set pass_hash",
+	"cookie_login": "Set login"
 }
 
 def login_check(html):
