@@ -19,8 +19,9 @@ domain = ["deviantart.com"]
 name = "dA"
 noepfolder = True
 config = {
-	"cookie_auth": "請輸入Cookie中的auth",
-	"cookie_userinfo": "請輸入Cookie中的userinfo"
+	"cookie_auth": "",
+	"cookie_auth_secure": "",
+	"cookie_userinfo": ""
 }
 
 def get_title(html, url):
