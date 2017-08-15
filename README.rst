@@ -329,6 +329,10 @@ Todos
 Changelog
 ---------
 
+-  2017.8.16
+
+   -  Fix: deviantart login issue.
+
 -  2017.8.13
 
    -  Fix: sankaku login issue. `#66 <https://github.com/eight04/ComicCrawler/issues/66>`_
