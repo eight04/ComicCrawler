@@ -244,6 +244,7 @@ class Downloader:
 			header=self.get_header(),
 			cookie=self.get_cookie(),
 			done=self.handle_grab,
+			proxy=self.mod.config.get("proxy"),
 			**kwargs
 		)
 	
@@ -253,6 +254,7 @@ class Downloader:
 			header=self.get_header(),
 			cookie=self.get_cookie(),
 			done=self.handle_grab,
+			proxy=self.mod.config.get("proxy"),
 			**kwargs
 		)
 		

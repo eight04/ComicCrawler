@@ -50,7 +50,7 @@ def grabber_log(*args):
 		content_write(profile("grabber.log"), pformat(args) + "\n\n", append=True)
 
 sessions = {}
-def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True, params=None, done=None):
+def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True, params=None, done=None, proxy=None):
 	"""Request url, return text or bytes of the content."""
 	_scheme, netloc, _path, _query, _frag = urlsplit(url)
 	
@@ -70,17 +70,21 @@ def grabber(url, header=None, *, referer=None, cookie=None, raise_429=True, para
 	if cookie:
 		quote_unicode_dict(cookie)
 		requests.utils.add_dict_to_cookiejar(s.cookies, cookie)
-		
-	r = await_(do_request, s, url, params, raise_429)
+
+	if isinstance(proxy, str):
+		proxies = {'http': proxy, 'https': proxy}
+	else:
+		proxies = proxy
+	r = await_(do_request, s, url, params, proxies, raise_429)
 	
 	if done:
 		done(s, r)
 	
 	return r
 		
-def do_request(s, url, params, raise_429):
+def do_request(s, url, params, proxies, raise_429):
 	while True:
-		r = s.get(url, timeout=20, params=params)
+		r = s.get(url, timeout=20, params=params, proxies=proxies)
 		grabber_log(url, r.url, r.request.headers, r.headers)
 
 		if r.status_code == 200:
