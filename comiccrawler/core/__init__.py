@@ -239,26 +239,20 @@ class Downloader:
 		self.mod = mod
 		
 	def html(self, url, **kwargs):
-		proxy = self.mod.config.get("proxy")
-		proxies = {'http': proxy, 'https': proxy} if proxy else None
 		return grabhtml(
 			url,
 			header=self.get_header(),
 			cookie=self.get_cookie(),
 			done=self.handle_grab,
-			proxies=proxies,
 			**kwargs
 		)
 	
 	def img(self, url, **kwargs):
-		proxy = self.mod.config.get("proxy")
-		proxies = {'http': proxy, 'https': proxy} if proxy else None
 		return grabimg(
 			url,
 			header=self.get_header(),
 			cookie=self.get_cookie(),
 			done=self.handle_grab,
-			proxies=proxies,
 			**kwargs
 		)
 		
