@@ -178,6 +178,9 @@ or you can use it in your python script:
     ; 例︰第1集 -> 第001集
     ; 詳細的格式指定方式請參考 https://docs.python.org/3/library/string.html#format-specification-mini-language
     titlenumberformat = {:03d}
+    
+    ; 連線時使用 http/https proxy
+    proxy = 127.0.0.1:1080
 
 -  設定檔位於 ``~\comiccrawler\setting.ini``。可以在執行時指定 ``--profile`` 選項以變更預設的位置。（在 Windows 中 ``~`` 會被展開為 ``%HOME%`` 或 ``%USERPROFILE%``）
 -  執行一次 ``comiccrawler gui`` 後關閉，設定檔會自動產生
@@ -328,6 +331,11 @@ Todos
 
 Changelog
 ---------
+
+-  2017.8.19
+
+   -  Fix: can't match http in deviantart.
+   -  Add setting `proxy`.
 
 -  2017.8.16
 
