@@ -332,9 +332,10 @@ Todos
 Changelog
 ---------
 
--  2017.8.19
+-  2017.8.20
 
    -  Fix: can't match http in deviantart.
+   -  Fix: can't get images in eight.
    -  Add setting `proxy`.
 
 -  2017.8.16
