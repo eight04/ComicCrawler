@@ -55,33 +55,49 @@ def get_episodes(html, url):
 	return s
 	
 def get_images(html, url):
-	m = re.search("ch=(\d+)", url)
-	if m is None:
-		ch = "1"
-	else:
-		ch = m.group(1)
-
-	def ss(str): # pylint: disable=invalid-name
-		return re.sub("[a-z]+", "", str)
-
-	cs = re.search("cs='([^']+)", html).group(1)
-	ti = re.search("ti=(\d+);", html).group(1)
-
-	i = 0
-	while i < len(cs):
-		if ch == ss(cs[i:i+4]):
-			code = cs[i:i+50]
-			break
-		i += 50
-	else:
-		code = cs[-50:]
-
-	pages = int(ss(code[7:10]))
-
-	s = []
-	for p in range(1, pages + 1):
-		hash = (((p - 1) // 10) % 10) + (((p - 1) % 10) * 3)
-		src = "http://img{}.8comic.com/{}/{}/{}/{:03}_{}.jpg".format(
-				ss(code[4:6]), code[6:7], ti, ch, p, code[hash + 10:hash + 13])
-		s.append(src)
-	return s
+	nview = re.search('src="([^"]*nview\.js)"', html).group(1)
+	nview = urljoin(url, nview)
+	nview = grabhtml(nview)
+	
+	script = re.search('(var ch=.+?)spp\(\)', html, re.DOTALL).group(1)
+	
+	js = """
+	var url,
+		images = [],
+		document = {
+			location: {
+				toString() {return url;},
+				get href() {return url;},
+				set href(_url) {url = _url; scriptBody()}
+			},
+			getElementById() {
+				return {
+					set src(value) {
+						images.push(value);
+					}
+				};
+			}
+		},
+		navigator = {
+			userAgent: "",
+			language: ""
+		},
+		window = {},
+		alert = () => {};
+		
+	function scriptBody() {
+	""" + nview + script + """
+		jn();
+	}
+	
+	function getImages(url) {
+		images = [];
+		document.location.href = url;
+		return images;
+	}
+	"""
+	
+	with VM(js) as vm:
+		images = vm.call("getImages", url)
+	
+	return images
