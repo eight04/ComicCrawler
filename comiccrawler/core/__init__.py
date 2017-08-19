@@ -755,6 +755,8 @@ class Analyzer:
 		
 		while True:
 			eps = self.mission.module.get_episodes(self.html, url)
+			if not eps:
+				print("Warning: get_episodes returns an empty list")
 			self.transform_title(eps)
 			
 			eps = EpisodeList(eps)
