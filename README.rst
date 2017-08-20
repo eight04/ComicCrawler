@@ -332,6 +332,10 @@ Todos
 Changelog
 ---------
 
+-  2017.8.20.1
+
+   -  Fix: can't download in comicbus.
+
 -  2017.8.20
 
    -  Fix: can't match http in deviantart.
