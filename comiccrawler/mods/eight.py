@@ -59,7 +59,12 @@ def get_images(html, url):
 	nview = urljoin(url, nview)
 	nview = grabhtml(nview)
 	
-	script = re.search('(var ch=.+?)spp\(\)', html, re.DOTALL).group(1)
+	try:
+		# http://www.comicbus.com/html/103.html
+		script = re.search('(var ch=.+?)spp\(\)', html, re.DOTALL).group(1)
+	except AttributeError:
+		# http://www.comicbus.com/html/7294.html
+		script = re.search('(var chs=.+?)</script>', html, re.DOTALL).group(1)
 	
 	js = """
 	var url,
@@ -74,7 +79,8 @@ def get_images(html, url):
 				return {
 					set src(value) {
 						images.push(value);
-					}
+					},
+					style: {}
 				};
 			}
 		},
@@ -86,6 +92,7 @@ def get_images(html, url):
 		alert = () => {};
 		
 	function scriptBody() {
+		initpage = () => {};
 	""" + nview + script + """
 		jn();
 	}
