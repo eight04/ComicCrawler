@@ -27,7 +27,7 @@ config = {
 
 def get_title(html, url):
 	try:
-		user = unescape(re.search("class=\"user\">(.+?)</h1>", html).group(1))
+		user = unescape(re.search("class=\"user-name\"[^>]*>([^<]+)", html).group(1))
 		id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
 		title = "{} - {}".format(id, user)
 	except AttributeError:
