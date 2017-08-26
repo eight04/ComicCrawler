@@ -332,6 +332,10 @@ Todos
 Changelog
 ---------
 
+-  2017.8.26
+
+   -  Fix: html changed in pixiv.
+
 -  2017.8.20.1
 
    -  Fix: can't download in comicbus.
