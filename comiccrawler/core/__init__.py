@@ -431,7 +431,7 @@ class Crawler:
 			if not self.checksums:
 				self.checksums = set()
 				path_each(
-					self.savepath,
+					self.savepath.parent(),
 					lambda file: self.checksums.add(get_file_checksum(file))
 				)
 
