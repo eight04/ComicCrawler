@@ -13,11 +13,16 @@ import re, urllib.parse, json
 # from urllib.parse import urljoin
 from html import unescape
 from ..core import Episode, grabhtml
+from ..url import urljoin, urlparse, parse_qs
 
 domain = ["www.facebook.com"]
 name = "FB"
 circular = True
 noepfolder = True
+config = {
+	"cookie_c_user": "",
+	"cookie_xs": ""
+}
 
 def get_title(html, url):
 	try:
@@ -25,24 +30,43 @@ def get_title(html, url):
 	except AttributeError:
 		id = re.search("set=([^&]+)", url).group(1)
 	title = re.search("<title[^>]*>([^<]+)", html).group(1)
+	title = re.sub("\s+", " ", title)
 	return unescape("{} ({})".format(title, id))
 
 def get_episodes(html, url):
 	return [Episode("image", url)]
+	
+def get_url_info(url):
+	try:
+		return re.search('photos/([^/]+)/([^/]+)', url).groups()
+	except AttributeError:
+		pass
+	query = urlparse(url).query
+	query = parse_qs(query)
+	return query["fbset"], query["fbid"]
 
 def get_images(html, url):
-	try:
-		id = re.search(r"photos/[^/]+/(\d+)", url).group(1)
-	except AttributeError:
-		id = re.search("fbid=([^&]+)", url).group(1)
-	return urllib.parse.urljoin(url, "/photo/download/?fbid=" + id)
+	fbset, fbid = get_url_info(url)
+	fb_dtsg = re.search('name="fb_dtsg" value="([^"]+)', html).group(1)
+	# fb_dtsg = re.search('"DTSGInitialData".*?"token":"([^"]+?)', html).group(1)
+	response = grabhtml(
+		"https://www.facebook.com/ajax/photos/snowlift/menu/",
+		params={"fbid": fbid, "set": fbset},
+		method="POST",
+		data={"__a": 1, "fb_dtsg": fb_dtsg}
+	)
+	# with open("test.js", "w") as f:
+		# f.write(response)
+	download_url = re.search('"download_photo","href":(.+?),"', response).group(1)
+	download_url = json.loads(download_url)
+	return urljoin(url, download_url)
 
 def get_next_page(html, url):
 	match = re.search('photoPageNextNav"[^>]*?href="([^"]+)', html)
 	if match:
 		return urllib.parse.urljoin(url, match.group(1))
 		
-	fbset, fbid = re.search('photos/([^/]+)/([^/]+)', url).groups()
+	fbset, fbid = get_url_info(url)
 	query = urllib.parse.urlencode({
 		"data": json.dumps({"fbid": fbid, "set": fbset}),
 		"__a": 1
