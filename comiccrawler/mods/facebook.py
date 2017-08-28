@@ -6,6 +6,7 @@ Ex:
 	https://www.facebook.com/gtn.moe/photos/pcb.942148229165656/942147902499022/?type=3&theater
 	https://www.facebook.com/Nisinsheep/photos/pcb.1667254973516031/1667254333516095/?type=3&theater
 	https://www.facebook.com/photo.php?fbid=10202533447211476&set=a.10202533447131474.1073741835.1654599523&type=3&theater
+	https://www.facebook.com/photo.php?fbid=10210069591680987&set=p.10210069591680987&type=3&theater
 
 """
 
@@ -43,7 +44,7 @@ def get_url_info(url):
 		pass
 	query = urlparse(url).query
 	query = parse_qs(query)
-	return query["fbset"], query["fbid"]
+	return query["set"], query["fbid"]
 
 def get_images(html, url):
 	fbset, fbid = get_url_info(url)
@@ -75,6 +76,8 @@ def get_next_page(html, url):
 		"https://www.facebook.com/ajax/pagelet/generic.php/"
 		"PhotoViewerInitPagelet?" + query)
 	
-	next_id = re.search(r'"addPhotoFbids".*?(\d+)', pagelet).group(1)
-	return urllib.parse.urljoin(url, "../" + next_id + "/")
+	match = re.search(r'"addPhotoFbids".*?(\d+)', pagelet)
+	if match:
+		next_id = match.group(1)
+		return urllib.parse.urljoin(url, "../" + next_id + "/")
 	
