@@ -7,7 +7,7 @@ from node_vm2 import VM, eval
 
 from ..core import Episode, grabhtml, CycleList
 
-domain = ["tw.seemh.com", "www.seemh.com", "ikanman.com"]
+domain = ["seemh.com", "ikanman.com", "manhuagui.com"]
 name = "看漫畫"
 config = {
 	"nowebp": "False"
