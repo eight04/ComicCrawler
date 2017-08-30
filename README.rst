@@ -332,6 +332,12 @@ Todos
 Changelog
 ---------
 
+-  2017.8.31
+
+   -  Fix: match nview.js in comicbus.
+   -  Fix: ikanman.com -> manhuagui.com.
+   -  Fix: require login in facebook.
+
 -  2017.8.26
 
    -  Fix: html changed in pixiv.
