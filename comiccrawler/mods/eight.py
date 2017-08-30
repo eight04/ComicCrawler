@@ -55,7 +55,7 @@ def get_episodes(html, url):
 	return s
 	
 def get_images(html, url):
-	nview = re.search('src="([^"]*nview\.js)"', html).group(1)
+	nview = re.search('src="([^"]*nview\.js[^"]*)"', html).group(1)
 	nview = urljoin(url, nview)
 	nview = grabhtml(nview)
 	
