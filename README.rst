@@ -332,6 +332,10 @@ Todos
 Changelog
 ---------
 
+-  2017.9.5
+
+   -  Fix: url is not unescaped correctly in sankaku.
+
 -  2017.8.31
 
    -  Fix: match nview.js in comicbus.
