@@ -40,7 +40,7 @@ def get_images(html, url):
 	u = re.search('href="([^"]+)" id=highres', html)
 	if not u:
 		u = re.search('embed src="([^"]+)"', html)
-	return ["https:" + u.group(1)]
+	return ["https:" + unescape(u.group(1))]
 
 def get_next_page(html, url):
 	match = re.search('next-page-url="([^"]+)"', html)
