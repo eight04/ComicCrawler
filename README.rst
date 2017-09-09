@@ -332,6 +332,10 @@ Todos
 Changelog
 ---------
 
+-  2017.9.9
+
+   -  Fix: image match pattern in cartoonmad.
+
 -  2017.9.5
 
    -  Fix: url is not unescaped correctly in sankaku.
