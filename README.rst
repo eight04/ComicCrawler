@@ -335,7 +335,7 @@ Changelog
 -  2017.11.29
 
    -  Fix: download error in cartoonmad. `#81 <https://github.com/eight04/ComicCrawler/issues/81>`_
-   -  Add: ability to get images from ajax (dmzj). `#78 <https://github.com/eight04/ComicCrawler/issues/78>`_
+   -  Add: ability to get images from ajax (dmzj). Thanks to `动漫之家助手 <https://greasyfork.org/zh-TW/scripts/33087-%E5%8A%A8%E6%BC%AB%E4%B9%8B%E5%AE%B6%E5%8A%A9%E6%89%8B>`_. `#78 <https://github.com/eight04/ComicCrawler/issues/78>`_
 
 -  2017.9.9
 
