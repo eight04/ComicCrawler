@@ -332,6 +332,11 @@ Todos
 Changelog
 ---------
 
+-  2017.11.29
+
+   -  Fix: download error in cartoonmad. `#81 <https://github.com/eight04/ComicCrawler/issues/81>`_
+   -  Add: ability to get images from ajax (dmzj). `#78 <https://github.com/eight04/ComicCrawler/issues/78>`_
+
 -  2017.9.9
 
    -  Fix: image match pattern in cartoonmad.
