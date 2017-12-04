@@ -32,10 +32,9 @@ def check_login(html):
 
 def get_title(html, url):
 	check_login(html)
-	t = re.findall("<h1 id=\"g(j|n)\">(.+?)</h1>", html)
-	t = t[-1][1]
-
-	return unescape(t)
+	title = re.findall("<h1 id=\"g(j|n)\">(.+?)</h1>", html)[-1][1]
+	hash = re.search(r"/g/(\w+/\w+)", url).group(1)
+	return unescape("{title} ({hash})".format(title=title, hash=hash))
 
 def get_episodes(html, url):
 	check_login(html)
