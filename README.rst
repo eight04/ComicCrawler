@@ -332,6 +332,11 @@ Todos
 Changelog
 ---------
 
+-  2017.12.4
+
+   -  Fix: download original image from tumblr. `#82 <https://github.com/eight04/ComicCrawler/issues/82>`_
+   -  Change: add gid/token to the title in exh. `#83 <https://github.com/eight04/ComicCrawler/issues/83>`_
+
 -  2017.11.29
 
    -  Fix: download error in cartoonmad. `#81 <https://github.com/eight04/ComicCrawler/issues/81>`_
