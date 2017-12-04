@@ -37,8 +37,15 @@ def get_images(html, url):
 	if "image" not in o:
 		raise SkipEpisodeError
 	if isinstance(o["image"], str):
-		return [o["image"]]
-	return o["image"]["@list"]
+		return transform(o["image"])
+	return [transform(u) for u in o["image"]["@list"]]
+	
+def transform(url):
+	"""Map thumbnail to full size"""
+	# https://github.com/eight04/ComicCrawler/issues/82
+	url = re.sub("[^/]+\.tumblr\.com", "data.tumblr.com", url)
+	url = re.sub("_\d+(\.\w+)$", r"_raw\1", url)
+	return url
 
 def get_next_page(html, url):
 	match = re.search(r'/page/(\d+)', url)
