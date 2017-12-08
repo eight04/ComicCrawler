@@ -17,6 +17,11 @@ domain = ["tumblr.com"]
 name = "tumblr"
 noepfolder = True
 
+config = {
+	"full_size": "False",
+	"insecure_http": "False"
+}
+
 def get_title(html, url):
 	title = re.search(r"<title>([^<]+)", html).group(1).strip()
 	id = url[url.index("://") + 3: url.index(".tumblr.com")]
@@ -43,8 +48,11 @@ def get_images(html, url):
 def transform(url):
 	"""Map thumbnail to full size"""
 	# https://github.com/eight04/ComicCrawler/issues/82
-	url = re.sub("[^/]+\.tumblr\.com", "data.tumblr.com", url)
-	url = re.sub("_\d+(\.\w+)$", r"_raw\1", url)
+	if config.getboolean("full_size"):
+		url = re.sub("[^/]+\.tumblr\.com", "data.tumblr.com", url)
+		url = re.sub("_\d+(\.\w+)$", r"_raw\1", url)
+	if config.getboolean("insecure_http"):
+		url = re.sub("^http:", "https:", url)
 	return url
 
 def get_next_page(html, url):
