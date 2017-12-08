@@ -8,6 +8,7 @@ Ex:
 """
 
 import re
+import json
 from html import unescape
 from io import BytesIO
 from zipfile import ZipFile
@@ -26,13 +27,15 @@ config = {
 }
 
 def get_title(html, url):
-	try:
-		user = unescape(re.search("class=\"user-name\"[^>]*>([^<]+)", html).group(1))
-		id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
-		title = "{} - {}".format(id, user)
-	except AttributeError:
-		title = "[pixiv] " + unescape(re.search("<title>([^<]+)", html).group(1))
-	return title
+	if ("js-mount-point-search-result-list" not in html and
+		"member_illust" not in url):
+		try:
+			user = unescape(re.search("class=\"user-name\"[^>]*>([^<]+)", html).group(1))
+			id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
+			return "{} - {}".format(id, user)
+		except AttributeError:
+			pass
+	return "[pixiv] " + unescape(re.search("<title>([^<]+)", html).group(1))
 
 def get_episodes(html, url):
 	if "pixiv.user.loggedIn = true" not in html:
@@ -43,6 +46,21 @@ def get_episodes(html, url):
 		uid = re.search("id=(\d+)", ep_url).group(1)
 		e = Episode("{} - {}".format(uid, unescape(title)), urljoin(url, ep_url))
 		s.append(e)
+	# search result?
+	match = re.search('id="js-mount-point-search-result-list"data-items="([^"]+)', html)
+	if match:
+		data = unescape(match.group(1))
+		for illust in json.loads(data):
+			s.append(Episode(
+				"{illustId} - {illustTitle}".format_map(illust),
+				urljoin(url, "/member_illust.php?mode=medium&illust_id={illustId}".format_map(illust))
+			))
+			
+	# single image
+	match = re.search(r'pixiv\.context\.illustId\s*=\s*"(\d+)', html)
+	if match:
+		s.append(Episode("image", url))
+		
 	return s[::-1]
 	
 cache = {}
@@ -133,15 +151,16 @@ def errorhandler(er, crawler):
 def imagehandler(ext, bin):
 	"""Append index info to ugoku zip"""
 	if ext == ".zip":
-		# add frame info
-		with BytesIO(bin) as imbin:
-			zip = ZipFile(imbin, "a")
-			data = "\n".join(
-				["{file}\t{delay}".format_map(f) for f in cache["frames"]])
-			zip.writestr("index", data.encode("utf-8"))
-			zip.close()
-			bin = imbin.getvalue()
+		bin = pack_ugoira(bin, cache["frames"])
+		ext = ".ugoira"
 	return ext, bin
+	
+def pack_ugoira(bin, frames):
+	with BytesIO(bin) as imbin:
+		with ZipFile(imbin, "a") as zip:
+			data = json.dumps({"frames": frames}, separators=(',', ':'))
+			zip.writestr("animation.json", data.encode("utf-8"))
+		return imbin.getvalue()
 
 def get_next_page(html, url):
 	match = re.search("href=\"([^\"]+)\" rel=\"next\"", html)
