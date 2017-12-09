@@ -332,6 +332,11 @@ Todos
 Changelog
 ---------
 
+-  2017.12.9
+
+   -  Add: full_size, insecure_http options to tumblr.
+   -  Add: Support .ugoira file in pixiv.
+
 -  2017.12.4
 
    -  Fix: download original image from tumblr. `#82 <https://github.com/eight04/ComicCrawler/issues/82>`_
