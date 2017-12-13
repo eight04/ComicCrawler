@@ -332,6 +332,10 @@ Todos
 Changelog
 ---------
 
+-  2017.12.14
+
+   -  Fix: insecure_http option in tumblr doesn't work properly.
+
 -  2017.12.9
 
    -  Add: full_size, insecure_http options to tumblr.
