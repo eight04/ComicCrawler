@@ -52,7 +52,7 @@ def transform(url):
 		url = re.sub("[^/]+\.tumblr\.com", "data.tumblr.com", url)
 		url = re.sub("_\d+(\.\w+)$", r"_raw\1", url)
 	if config.getboolean("insecure_http"):
-		url = re.sub("^http:", "https:", url)
+		url = re.sub("^https:", "http:", url)
 	return url
 
 def get_next_page(html, url):
