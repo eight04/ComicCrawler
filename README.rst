@@ -188,11 +188,6 @@ or you can use it in your python script:
 -  設定檔會在重新啟動後生效。若 ComicCrawler 正在執行中，可以點「重載設定檔」來載入新設定
 -  各別網站的設定不會互相影響。假如在 [DEFAULT] 設 savepath = a；在 [Pixiv] 設 savepath = b，那麼從 pixiv 下載的都會存到 b 資料夾，其它的就用預設值，存到 a 資料夾。
 
-runafterdownload
-~~~~~~~~~~~~~~~~
-
--  `Pixiv Ugoku to MP4 <https://github.com/eight04/bunch-of-shells/tree/master/Pixiv%20Ugoku%20to%20MP4>`__
-
 Module example
 --------------
 
