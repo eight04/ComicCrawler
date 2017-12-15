@@ -327,6 +327,10 @@ Todos
 Changelog
 ---------
 
+-  2017.12.15
+
+   -  Fix: incorrect title in pixiv.
+
 -  2017.12.14
 
    -  Fix: insecure_http option in tumblr doesn't work properly.
