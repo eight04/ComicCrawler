@@ -183,7 +183,7 @@ or you can use it in your python script:
     proxy = 127.0.0.1:1080
 
 -  設定檔位於 ``~\comiccrawler\setting.ini``。可以在執行時指定 ``--profile`` 選項以變更預設的位置。（在 Windows 中 ``~`` 會被展開為 ``%HOME%`` 或 ``%USERPROFILE%``）
--  執行一次 ``comiccrawler gui`` 後關閉，設定檔會自動產生
+-  執行一次 ``comiccrawler gui`` 後關閉，設定檔會自動產生。若 Comic Crawler 更新後有新增的設定，在關閉後會自動將新設定加入設定檔。
 -  各別的網站會有自己的設定，通常是要填入一些登入相關資訊
 -  設定檔會在重新啟動後生效。若 ComicCrawler 正在執行中，可以點「重載設定檔」來載入新設定
 -  各別網站的設定不會互相影響。假如在 [DEFAULT] 設 savepath = a；在 [Pixiv] 設 savepath = b，那麼從 pixiv 下載的都會存到 b 資料夾，其它的就用預設值，存到 a 資料夾。
