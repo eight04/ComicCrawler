@@ -28,7 +28,7 @@ config = {
 
 def get_title(html, url):
 	if ("js-mount-point-search-result-list" not in html and
-		"member_illust" not in url):
+		"illust_id=" not in url):
 		try:
 			user = unescape(re.search("class=\"user-name\"[^>]*>([^<]+)", html).group(1))
 			id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
