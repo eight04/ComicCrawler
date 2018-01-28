@@ -9,7 +9,7 @@ Ex:
 """
 
 from re import search, finditer, DOTALL
-from urllib.parse import urljoin, urlencode
+from urllib.parse import urljoin
 
 from node_vm2 import eval
 
@@ -57,7 +57,7 @@ def get_images(html, url):
 	pages = {}
 	
 	def grab_page(page):
-		qs = urlencode({
+		params = {
 			"cid": cid,
 			"page": page + 1,
 			"language": 1,
@@ -67,9 +67,9 @@ def get_images(html, url):
 			"_mid": mid,
 			"_dt": dt,
 			"_sign": sign
-		})
-		fun_url = urljoin(url, "chapterfun.ashx?" + qs)
-		text = grabhtml(fun_url, referer=url)
+		}
+		fun_url = urljoin(url, "chapterfun.ashx")
+		text = grabhtml(fun_url, referer=url, params=params)
 		d = eval(text)
 		for i, image in enumerate(d):
 			pages[i + page] = image
