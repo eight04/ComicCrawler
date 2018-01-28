@@ -4,11 +4,12 @@
 
 Ex:
 	http://www.dm5.com/manhua-yaojingdeweiba/
+	http://www.dm5.com/manhua-ribenyaoguaidaquan/
 
 """
 
 from re import search, finditer, DOTALL
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlencode
 
 from node_vm2 import eval
 
@@ -28,26 +29,14 @@ def get_title(html, url):
 def get_episodes(html, url):
 	s = []
 
-	for match in finditer('href="([^"]+)" class="tg"[^>]*>([^<]+)', html):
+	for match in finditer('<li><a href="(/m\d+/)"[^>]*>([^<]+)', html):
 		s.append(Episode(
-			match.group(2),
+			match.group(2).strip(),
 			urljoin(url, match.group(1))
 		))
 
 	return s[::-1]
 
-def create_grabber(fun, url):
-	def grabber():
-		text = grabhtml(fun, referer=url)
-		d = eval(text + """;
-			((typeof (hd_c) != 'undefined' && hd_c.length > 0 && 
-			typeof (isrevtt) != 'undefined') ? hd_c : d)
-		""")
-		return d[0]
-	return grabber
-	
-first_grabber = None
-		
 def get_images(html, url):
 	key = search(r'id="dm5_key".+?<script[^>]+?>\s*eval(.+?)</script>', html, DOTALL)
 	
@@ -59,23 +48,37 @@ def get_images(html, url):
 	else:
 		key = ""
 		
-	count = search("DM5_IMAGE_COUNT=(\d+);", html).group(1)
+	count = int(search("DM5_IMAGE_COUNT=(\d+);", html).group(1))
 	cid = search("DM5_CID=(\d+);", html).group(1)
-	s = []
-	for p in range(1, int(count) + 1):
-		fun_url = urljoin(
-			url,
-			"chapterfun.ashx?cid={}&page={}&language=1&key={}&gtk=6".format(
-				cid, p, key
-			)
-		)
-		s.append(create_grabber(fun_url, url))
-		
-	global first_grabber
-	first_grabber = s[0]
+	mid = search("DM5_MID=(\d+);", html).group(1)
+	dt = search('DM5_VIEWSIGN_DT="([^"]+)', html).group(1)
+	sign = search('DM5_VIEWSIGN="([^"]+)', html).group(1)
 	
-	return s
-
-def errorhandler(err, crawler):
-	if first_grabber:
-		first_grabber()
+	pages = {}
+	
+	def grab_page(page):
+		qs = urlencode({
+			"cid": cid,
+			"page": page + 1,
+			"language": 1,
+			"key": key,
+			"gtk": 6,
+			"_cid": cid,
+			"_mid": mid,
+			"_dt": dt,
+			"_sign": sign
+		})
+		fun_url = urljoin(url, "chapterfun.ashx?" + qs)
+		text = grabhtml(fun_url, referer=url)
+		d = eval(text)
+		for i, image in enumerate(d):
+			pages[i + page] = image
+	
+	def create_page_getter(page):
+		def getter():
+			if page not in pages:
+				grab_page(page)
+			return pages[page]
+		return getter
+	
+	return [create_page_getter(p) for p in range(count)]
