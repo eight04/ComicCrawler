@@ -328,6 +328,11 @@ Todos
 Changelog
 ---------
 
+-  2018.1.30
+
+   -  Fix: verify Content-Length.
+   -  Fix: dm5 update.
+
 -  2017.12.15
 
    -  Fix: incorrect title in pixiv.
