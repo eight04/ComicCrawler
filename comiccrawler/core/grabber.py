@@ -91,6 +91,12 @@ def do_request(s, url, params, proxies, method, data, raise_429):
 		grabber_log(url, r.url, r.request.headers, r.headers)
 
 		if r.status_code == 200:
+			content_length = int(r.headers.get("Content-Length"))
+			if content_length and content_length != r.raw.tell():
+				raise Exception(
+					"incomplete response. Content-Length: {content_length}, got: {actual}"
+						.format(content_length=content_length, actual=r.raw.tell())
+				)
 			break
 		if r.status_code != 429 or raise_429:
 			r.raise_for_status()
