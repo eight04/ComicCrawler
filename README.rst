@@ -172,6 +172,7 @@ or you can use it in your python script:
     autosave = 5
     
     ; 存檔時使用下載時的原始檔名而不用頁碼
+    ; 強列建議不要使用這個選項，見 https://github.com/eight04/ComicCrawler/issues/90
     originalfilename = false
     
     ; 自動轉換集數名稱中數字的格式，可以用於補0
