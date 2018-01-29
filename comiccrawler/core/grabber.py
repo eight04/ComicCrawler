@@ -91,8 +91,8 @@ def do_request(s, url, params, proxies, method, data, raise_429):
 		grabber_log(url, r.url, r.request.headers, r.headers)
 
 		if r.status_code == 200:
-			content_length = int(r.headers.get("Content-Length"))
-			if content_length and content_length != r.raw.tell():
+			content_length = r.headers.get("Content-Length")
+			if content_length and int(content_length) != r.raw.tell():
 				raise Exception(
 					"incomplete response. Content-Length: {content_length}, got: {actual}"
 						.format(content_length=content_length, actual=r.raw.tell())
