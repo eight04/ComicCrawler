@@ -1,7 +1,12 @@
 #! python3
 
+"""
+http://tw.manhuagui.com/comic/25713/
+http://tw.manhuagui.com/comic/25713/351280.html#p=1
+"""
+
 import re
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlencode
 
 from node_vm2 import VM, eval
 
@@ -81,7 +86,7 @@ def get_images(html, url):
 	).group(1)
 	
 	with VM(js) as vm:
-		files, path = vm.run("[cInfo.files, cInfo.path]")
+		files, path, md5, cid = vm.run("[cInfo.files, cInfo.path, cInfo.sl.md5, cInfo.cid]")
 	
 	# find server
 	# "http://c.3qfm.com/scripts/core_5C348B32A78647FF4208EACA42FC5F84.js"
@@ -117,6 +122,12 @@ def get_images(html, url):
 	
 	if config.getboolean("nowebp"):
 		images = map(lambda i: i[:-5] if i.endswith(".webp") else i, images)
+		
+	params = urlencode({
+		"cid": cid,
+		"md5": md5
+	})
+	images = ["{file}?{params}".format(file=i, params=params) for i in images]
 	
 	return images
 	
