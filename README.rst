@@ -328,6 +328,10 @@ Todos
 Changelog
 ---------
 
+-  2018.1.30.2
+
+   -  Fix: update seemh.
+
 -  2018.1.30.1
 
    -  Fix: get Content-Length error.
