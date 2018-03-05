@@ -20,14 +20,12 @@ def get_title(html, url):
 	return re.search(r'class="title-font">([^<]*)', html).group(1).strip()
 
 def get_episodes(html, url):
+	rx = '<a[^>]+href="(/view/[^"]+)"[^>]*>([^<]+)'
 	arr = []
-	for match in re.finditer(r"payChapter\('(.+?)','(.+?)'[^>]+>([^<]+)", html):
-		ep_url, title, chapter = match.groups()
-		chapter = chapter.strip()
-		arr.append(Episode(
-			"{chapter} ({title})".format(chapter=chapter, title=title),
-			urljoin(url, ep_url)
-		))
+	for match in re.finditer(rx, html):
+		ep_url, title = match.groups()
+		title = title.strip()
+		arr.append(Episode(title, urljoin(url, ep_url)))
 	return arr[::-1]
 	
 def get_images(html, url):
