@@ -109,7 +109,11 @@ def get_images(html, url):
 	
 	utils = re.search(r"SMH\.(utils=.+?),SMH\.imgData=", corejs).group(1)
 	
-	js = utils + """;
+	js = """
+	var location = {
+		protocol: "http:"
+	};
+	""" + utils + """;
 	function getFiles(path, files, host) {
 		// lets try if it will be faster in javascript
 		return files.map(function(file){
