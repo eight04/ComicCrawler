@@ -15,7 +15,8 @@ from requests.utils import dict_from_cookiejar
 
 from ..safeprint import print
 from ..error import (
-	ModuleError, PauseDownloadError, LastPageError, SkipEpisodeError, is_http
+	ModuleError, PauseDownloadError, LastPageError, SkipEpisodeError, is_http,
+	SkipPageError
 )
 from ..io import content_write, content_read, path_each
 from ..channel import download_ch, mission_ch
@@ -754,25 +755,29 @@ class Analyzer:
 		new_eps = EpisodeList()
 		
 		while True:
-			eps = self.mission.module.get_episodes(self.html, url)
-			if not eps:
-				print("Warning: get_episodes returns an empty list")
-			self.transform_title(eps)
-			
-			eps = EpisodeList(eps)
-			
-			# add result episodes into new_eps in new to old order.
-			for ep in reversed(eps):
-				new_eps.add(ep)
+			try:
+				eps = self.mission.module.get_episodes(self.html, url)
+			except SkipPageError:
+				pass
+			else:
+				if not eps:
+					print("Warning: get_episodes returns an empty list")
+				self.transform_title(eps)
 				
-			# FIXME: do we really need this check?
-			# one-time mission?
-			if self.is_onetime(new_eps):
-				break
+				eps = EpisodeList(eps)
 				
-			# duplicate with old_eps
-			if any(e in old_eps for e in eps):
-				break
+				# add result episodes into new_eps in new to old order.
+				for ep in reversed(eps):
+					new_eps.add(ep)
+					
+				# FIXME: do we really need this check?
+				# one-time mission?
+				if self.is_onetime(new_eps):
+					break
+					
+				# duplicate with old_eps
+				if any(e in old_eps for e in eps):
+					break
 				
 			# get next page
 			next_url = self.get_next_page(self.html, url)

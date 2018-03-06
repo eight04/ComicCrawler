@@ -17,6 +17,10 @@ class SkipEpisodeError(ComicCrawlerSignal):
 class PauseDownloadError(ComicCrawlerSignal):
 	"""Raise PauseDownloadError to exit crawl mission loop."""
 	pass
+	
+class SkipPageError(ComicCrawlerSignal):
+	"""Raise this error to skip a page in the analyzer."""
+	pass
 
 # class ExitErrorLoop(ComicCrawlerSignal):
 	# """Raise ExitErrorLoop to exit error loop."""
