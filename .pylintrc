@@ -18,6 +18,7 @@ disable=
 	anomalous-backslash-in-string,
 	duplicate-code,
 	global-statement,
+	inconsistent-return-statements,
 	missing-docstring, multiple-imports,
 	no-self-use,
 	redefined-outer-name, redefined-builtin,

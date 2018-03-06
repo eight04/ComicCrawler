@@ -1,4 +1,4 @@
 docutils~=0.12
 twine~=1.9.1
 pyxcute~=0.4.1
-pylint~=1.7.0
+pylint~=1.8.2
