@@ -328,6 +328,14 @@ Todos
 Changelog
 ---------
 
+-  2018.3.7
+
+   -  Fix: get_episodes error in buka. Note that buka currently only shows images to its own reader app.
+   -  Fix: can't download image in seemh (manhuagui).
+   -  Add: SkipPageError for get_episodes.
+   -  Add: artstation module.
+   -  Update pylint to 1.8.2.
+
 -  2018.1.30.2
 
    -  Fix: update seemh.
