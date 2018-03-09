@@ -70,7 +70,7 @@ def get_images(html, url):
 	js = "var window = global;"
 	
 	configjs_url = re.search(
-		r'src="(http://[^"]+?/config_\w+?\.js)"',
+		r'src="(https?://[^"]+?/config_\w+?\.js)"',
 		html
 	).group(1)
 	configjs = grabhtml(configjs_url, referer=url)
@@ -92,7 +92,7 @@ def get_images(html, url):
 	# "http://c.3qfm.com/scripts/core_5C348B32A78647FF4208EACA42FC5F84.js"
 	# getpath()
 	corejs_url = re.search(
-		r'src="(http://[^"]+?/core_\w+?\.js)"',
+		r'src="(https?://[^"]+?/core_\w+?\.js)"',
 		html
 	).group(1)
 	corejs = grabhtml(corejs_url, referer=url)
