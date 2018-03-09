@@ -328,6 +328,11 @@ Todos
 Changelog
 ---------
 
+-  2018.3.9
+
+   -  Fix: seemh start using https. (#103)
+   -  Add: qq module. (#102)
+
 -  2018.3.7
 
    -  Fix: get_episodes error in buka. Note that buka currently only shows images to its own reader app.
