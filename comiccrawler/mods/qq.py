@@ -25,6 +25,8 @@ def get_episodes(html, url):
 		if match.start() >= end_index:
 			break
 		title, ep_url = match.groups()
+		ep_id = re.search("\d+$", ep_url).group()
+		title = "{ep_id} - {title}".format(ep_id=ep_id, title=title)
 		ep_url = urljoin(url, ep_url)
 		episodes.append(Episode(title, ep_url))
 	return episodes
