@@ -328,6 +328,10 @@ Todos
 Changelog
 ---------
 
+-  2018.3.15
+
+   -  Change: use chapter id in the title of the episode. (qq) (#104)
+
 -  2018.3.9
 
    -  Fix: seemh start using https. (#103)
