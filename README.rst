@@ -334,6 +334,10 @@ Todos
 Changelog
 ---------
 
+-  2018.3.18
+
+   -  Fix: SMH is not defined error. (seemh) (#106)
+
 -  2018.3.15
 
    -  Change: use chapter id in the title of the episode. (qq) (#104)
