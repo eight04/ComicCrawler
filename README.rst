@@ -207,10 +207,10 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
     from comiccrawler.core import Episode
     from configparser import ConfigParser
 
-    # The header used in grabber method
+    # The header used in grabber method. Optional.
     header = {}
     
-    # The cookies
+    # The cookies. Optional.
     cookie = {}
 
     # Match domain. Support sub-domain, which means "example.com" will match
@@ -221,13 +221,20 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
     name = "Example"
 
     # With noepfolder = True, Comic Crawler won't generate subfolder for each
-    # episode.
+    # episode. Optional, default to False.
     noepfolder = False
 
-    # Wait 5 seconds between each download.
+    # Wait 5 seconds before downloading another image. Optional, default to 0.
     rest = 5
 
-    # Specific user settings. The key is case-sensitive.
+    # User settings which could be modified from setting.ini. The keys are
+    # case-sensitive.
+    # 
+    # After loading the module, the config dictionary would be converted into 
+    # a ConfigParser section data object so you can e.g. call
+    # config.getboolean("use_large_image") directly.
+    #
+    # Optional.
     config = {
         # The config value can only be str
         "use_largest_image": "true",
@@ -238,18 +245,16 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         "cookie_hash": "hash-default-value"
     }
     
-    USE_LARGEST_IMAGE = True
-
     def load_config():
-        """This function will be called each time the config reloaded. Optional
+        """This function will be called each time the config reloads. Optional.
         """
-        global USE_LARGE_IMAGE
-        USE_LARGE_IMAGE = ConfigParser.BOOLEAN_STATES.get(config["use_largest_image"].lower())
+        pass
 
     def get_title(html, url):
         """Return mission title.
 
-        Title will be used in saving filepath, so be sure to avoid duplicate title.
+        The title would be used in saving filepath, so be sure to avoid
+        duplicated title.
         """
         return re.search("<h1 id='title'>(.+?)</h1>", html).group(1)
 
@@ -257,8 +262,9 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         """Return episode list.
 
         The episode list should be sorted by date, oldest first.
-        If the episode list is multi-pages, specify the url of next page in
-        get_next_page.
+        If is a multi-page list, specify the URL of the next page in
+        get_next_page. Comic Crawler would grab the next page and call this
+        function again.
         """
         match_list = re.findall("<a href='(.+?)'>(.+?)</a>", html)
         return [Episode(title, urljoin(url, ep_url))
@@ -271,30 +277,29 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
 
         -  A list of image.
         -  A generator yielding image.
-        -  An image, when there is only one image in current page.
+        -  An image, when there is only one image on the current page.
         
         Comic Crawler treats following types as an image:
         
-        -  str - the url of the image
-        -  callable - return an url when called
+        -  str - the URL of the image
+        -  callable - return a URL when called
         -  comiccrawler.core.Image - use it to provide customized filename.
         
-        While receiving the value, it is converted to a Image instance. See ``comiccrawler.core.Image.create()``.
+        While receiving the value, it is converted to an Image instance. See ``comiccrawler.core.Image.create()``.
         
-        If the episode has multi-pages, specify the url of next page in
-        get_next_page.
+        If the episode has multi-pages, uses get_next_page to change page.
         
-        Use generator in caution! If your generator raised any error between
+        Use generator in caution! If the generator raises any error between
         two images, next call to the generator will always result in
         StopIteration, which means that Comic Crawler will think it had crawled
-        all images and navigate to next page. If you need to use grabhtml()
-        between each pages (i.e. may raise HTTPError), you should return a list
-        of callback!
+        all images and navigate to next page. If you have to call grabhtml()
+        for each image (i.e. it may raise HTTPError), use a list of
+        callback instead!
         """
         return re.findall("<img src='(.+?)'>", html)
 
     def get_next_page(html, url):
-        """Return the url of the next page."""
+        """Return the URL of the next page."""
         match = re.search("<a id='nextpage' href='(.+?)'>next</a>", html)
         if match:
             return match.group(1)
@@ -306,13 +311,14 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         pass
         
     def imagehandler(ext, b):
-        """If this function exist, Comic Crawler will call it before saving
-        image to disk, letting the module be able to edit the image.
+        """If this function exists, Comic Crawler will call it before writing
+        the image to disk. This allow the module to modify the image after
+        the download.
         
-        @ext  A str of image extension. Including "." (e.g. ".jpg")
+        @ext  str, file extension, including ".". (e.g. ".jpg")
         @b    The bytes object of the image.
 
-        It should return a (result_ext, result_b) tuple.
+        It should return a (modified_ext, modified_b) tuple.
         """
         return (ext, b)
         
