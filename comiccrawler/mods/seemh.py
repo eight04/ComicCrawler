@@ -67,7 +67,18 @@ servers = None
 
 def get_images(html, url):
 	# build js context
-	js = "var window = global;"
+	js = """
+	var window = global;
+	var cInfo;
+	var SMH = {
+		imgData: function(data) {
+			cInfo = data;
+			return {
+				preInit: function(){}
+			};
+		}
+	};
+	"""
 	
 	configjs_url = re.search(
 		r'src="(https?://[^"]+?/config_\w+?\.js)"',
