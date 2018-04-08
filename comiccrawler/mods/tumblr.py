@@ -11,7 +11,7 @@ import re, json
 from urllib.parse import urljoin
 
 from ..core import Episode
-from ..error import SkipEpisodeError
+from ..error import SkipEpisodeError, PauseDownloadError
 
 domain = ["tumblr.com"]
 name = "tumblr"
@@ -19,8 +19,13 @@ noepfolder = True
 
 config = {
 	"full_size": "False",
-	"insecure_http": "False"
+	"insecure_http": "False",
+	"cookie_pfx": ""
 }
+
+def check_login(html):
+	if 'href="https://www.tumblr.com/login"' in html:
+		raise PauseDownloadError("You didn't login")
 
 def get_title(html, url):
 	title = re.search(r"<title>([^<]+)", html).group(1).strip()
@@ -28,8 +33,9 @@ def get_title(html, url):
 	return "[tumblr] {} ({})".format(title, id)
 	
 def get_episodes(html, url):
+	# FIXME: we need a way to check final URL
+	check_login(html)
 	s = []
-	# base = re.search("(https?://[^/]+)", url).group(1)
 	pattern = 'href="(' + re.escape(urljoin(url, "/post/")) + '(\d+)[^"]*)'
 	for m in re.finditer(pattern, html):
 		url, uid = m.groups()
