@@ -334,6 +334,11 @@ Todos
 Changelog
 ---------
 
+-  2018.4.8
+
+   -  Add: allow users to login. (tumblr)
+   -  Add: support videos. (tumblr)
+
 -  2018.3.18
 
    -  Fix: SMH is not defined error. (seemh) (#106)
