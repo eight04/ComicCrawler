@@ -10,7 +10,7 @@ Ex:
 import re, json
 from urllib.parse import urljoin
 
-from ..core import Episode
+from ..core import Episode, grabhtml
 from ..error import SkipEpisodeError, PauseDownloadError
 
 domain = ["tumblr.com"]
@@ -49,13 +49,26 @@ def get_episodes(html, url):
 	return s[::-1]
 			
 def get_images(html, url):
+	type = re.search('meta property="og:type" content="tumblr-feed:([^"]+)', html).group(1)
+	if type == "photo":
+		return try_get_images(html)
+	elif type == "video":
+		return try_get_videos(html, url)
+	raise SkipEpisodeError
+		
+def try_get_images(html):
 	s = re.search('<script type="application/ld\+json">([^<]*)</script>', html).group(1)
 	o = json.loads(s)
-	if "image" not in o:
-		raise SkipEpisodeError
 	if isinstance(o["image"], str):
 		return transform(o["image"])
 	return [transform(u) for u in o["image"]["@list"]]
+	
+def try_get_videos(html, url):
+	frame_src = re.search("<iframe src='(https?://www\.tumblr\.com/video/[^']+)", html).group(1)
+	frame_html = grabhtml(frame_src, referer=url)
+	source_src = re.search('<source src="([^"]+)', frame_html).group(1)
+	source_src = re.sub("/\d+$", "", source_src)
+	return source_src
 	
 def transform(url):
 	"""Map thumbnail to full size"""
