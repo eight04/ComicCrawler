@@ -20,8 +20,14 @@ noepfolder = True
 config = {
 	"full_size": "False",
 	"insecure_http": "False",
-	"cookie_pfx": ""
+	"cookie_pfx": "",
+	"user_agent": ""
 }
+
+header = {}
+
+def load_config():
+	header["User-Agent"] = config["user_agent"]
 
 def check_login(html):
 	if 'href="https://www.tumblr.com/login"' in html:
