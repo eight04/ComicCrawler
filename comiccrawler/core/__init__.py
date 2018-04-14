@@ -729,7 +729,7 @@ class Analyzer:
 			print("Analyzing success!")
 			return
 			
-		self.html = self.downloader.html(self.mission.url, raise_429=False)
+		self.html = self.downloader.html(self.mission.url, retry=True)
 		
 		if not self.mission.title:
 			self.mission.title = self.mission.module.get_title(
@@ -785,7 +785,7 @@ class Analyzer:
 				break
 			url = next_url
 			print('Analyzing {}...'.format(url))
-			self.html = self.downloader.html(url, raise_429=False)
+			self.html = self.downloader.html(url, retry=True)
 			
 		for ep in reversed(new_eps):
 			old_eps.add(ep)

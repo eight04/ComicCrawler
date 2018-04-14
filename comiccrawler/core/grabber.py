@@ -1,6 +1,7 @@
 #! python3
 
 import re
+import time
 import imghdr
 from pprint import pformat
 from urllib.parse import quote, urlsplit, urlunsplit
@@ -47,11 +48,12 @@ def quote_unicode_dict(d):
 	
 def grabber_log(*args):
 	if setting.getboolean("errorlog"):
-		content_write(profile("grabber.log"), pformat(args) + "\n\n", append=True)
+		content = time.strftime("%Y-%m-%dT%H:%M:%S%z") + "\n" + pformat(args) + "\n\n"
+		content_write(profile("grabber.log"), content, append=True)
 
 sessions = {}
 def grabber(url, header=None, *, referer=None, cookie=None,
-		raise_429=True, params=None, done=None, proxy=None,
+		retry=False, params=None, done=None, proxy=None,
 		method="GET", data=None):
 	"""Request url, return text or bytes of the content."""
 	_scheme, netloc, _path, _query, _frag = urlsplit(url)
@@ -77,14 +79,17 @@ def grabber(url, header=None, *, referer=None, cookie=None,
 		proxies = {'http': proxy, 'https': proxy}
 	else:
 		proxies = proxy
-	r = await_(do_request, s, url, params, proxies, method, data, raise_429)
+	r = await_(do_request, s, url, params, proxies, method, data, retry)
 	
 	if done:
 		done(s, r)
 	
 	return r
-		
-def do_request(s, url, params, proxies, method, data, raise_429):
+	
+RETRYABLE_HTTP_CODES = (423, 429)
+	
+def do_request(s, url, params, proxies, method, data, retry):
+	sleep_time = 5
 	while True:
 		r = s.request(method, url, timeout=20, params=params,
 			data=data, proxies=proxies)
@@ -98,7 +103,7 @@ def do_request(s, url, params, proxies, method, data, raise_429):
 						.format(content_length=content_length, actual=r.raw.tell())
 				)
 			break
-		if r.status_code != 429 or raise_429:
+		if not retry or r.status_code not in RETRYABLE_HTTP_CODES:
 			r.raise_for_status()
 		# 302 error without location header
 		if r.status_code == 302:
@@ -112,7 +117,9 @@ def do_request(s, url, params, proxies, method, data, raise_429):
 				raise Exception("status 302 without location header")
 			url = match.group(1)
 			continue
-		sleep(5)
+		print("retry after {sleep_time} seconds".format(sleep_time=sleep_time))
+		sleep(sleep_time)
+		sleep_time *= 2
 	return r
 	
 def grabhtml(*args, **kwargs):
