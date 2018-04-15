@@ -334,6 +334,11 @@ Todos
 Changelog
 ---------
 
+-  2018.4.16
+
+   -  Add: support user page. (weibo)
+   -  Change: remove ``raise_429`` arg in ``grabhtml``. Add ``retry``.
+
 -  2018.4.8
 
    -  Add: allow users to login. (tumblr)
