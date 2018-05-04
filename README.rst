@@ -334,6 +334,13 @@ Todos
 Changelog
 ---------
 
+-  2018.5.5
+
+   -  Add: range reverse.
+   -  Add: xznj120 module.
+   -  Add: gelbooru module.
+   -  Fix: cannot analyze episode list in md5.
+
 -  2018.4.16
 
    -  Add: support user page. (weibo)
