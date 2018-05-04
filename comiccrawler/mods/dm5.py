@@ -29,7 +29,7 @@ def get_title(html, url):
 def get_episodes(html, url):
 	s = []
 
-	for match in finditer('<li><a href="(/m\d+/)"[^>]*>([^<]+)', html):
+	for match in finditer('<li>\s*<a href="(/m\d+/)"[^>]*>([^<]+)', html):
 		s.append(Episode(
 			match.group(2).strip(),
 			urljoin(url, match.group(1))
