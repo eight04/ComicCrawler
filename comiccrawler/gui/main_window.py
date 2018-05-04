@@ -10,6 +10,7 @@ from tkinter import ttk, font, messagebox
 
 import desktop
 from worker import current, WorkerExit
+from belfrywidgets import ToolTip
 
 from ..mods import list_domain, get_module, load_config, domain_index
 from ..config import setting, config
@@ -72,6 +73,10 @@ def select_title(parent, mission):
 
 def select_episodes(parent, mission):
 	"""Create dialog to select episodes."""
+	class Anchor:
+		def __init__(self):
+			self.index = None
+			
 	class _Dialog(Dialog):
 		def create_body(self):
 			xscrollbar = ttk.Scrollbar(self.body, orient="horizontal")
@@ -82,7 +87,7 @@ def select_episodes(parent, mission):
 			)
 
 			self.checks = []
-
+			
 			def set_page(check, start, end):
 				def callback():
 					if check.instate(("selected",)):
@@ -93,10 +98,11 @@ def select_episodes(parent, mission):
 					for i in range(start, end):
 						self.checks[i][1].state(value)
 				return callback
-
+				
 			window = None
 			window_column = 0
 			window_left = 0
+			anchor = Anchor()
 			for i, ep in enumerate(mission.episodes):
 				# create a new window for every 200 items
 				if i % 200 == 0:
@@ -108,7 +114,23 @@ def select_episodes(parent, mission):
 					canvas.create_window((window_left, 0), window=window,
 						anchor="nw")
 			
+				def handle_click(event, index=i):
+					if event.state & 0x0001 and anchor.index is not None: # shift
+						start = min(anchor.index, index)
+						end = max(anchor.index, index)
+						for i in range(start, end + 1):
+							if i == index or i == anchor.index:
+								continue
+							check = self.checks[i][1]
+							if check.instate(("selected", )):
+								check.state(("!selected", ))
+							else:
+								check.state(("selected", ))
+					else:
+						anchor.index = index
+						
 				check = ttk.Checkbutton(window, text=safe_tk(ep.title))
+				check.bind("<ButtonRelease-1>", handle_click)
 				check.state(("!alternate",))
 				if not ep.skip:
 					check.state(("selected",))
@@ -154,9 +176,9 @@ def select_episodes(parent, mission):
 			xscrollbar.pack(fill="x")
 
 		def create_buttons(self):
-			ttk.Button(
-				self.btn_bar, text="反相", command=self.toggle
-			).pack(side="left")
+			btn = ttk.Button(self.btn_bar, text="反相", command=self.toggle)
+			btn.pack(side="left")
+			ToolTip(btn, "點擊任意項目後，Shift + 點擊另一項目，會對其間的項目反相")
 			super().create_buttons()
 
 		def apply(self):
