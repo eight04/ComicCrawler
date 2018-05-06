@@ -144,13 +144,13 @@ def select_episodes(parent, mission):
 				# checkbutton for each column
 				if i % 20 == 19 or i == len(mission.episodes) - 1:
 					check = ttk.Checkbutton(window)
+					check.config(command=set_page(check, i - 19, i + 1))
 					check.state(("!alternate", "selected"))
 					check.grid(
 						column=(i // 20) - window_column,
 						row=20,
 						sticky="w"
 					)
-					check.config(command=set_page(check, i - 19, i + 1))
 					
 			# Resize canvas
 			canvas.update_idletasks()
