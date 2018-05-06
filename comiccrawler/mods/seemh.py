@@ -6,6 +6,7 @@ http://tw.manhuagui.com/comic/25713/351280.html#p=1
 """
 
 import re
+import time #require for time.sleep()
 from urllib.parse import urljoin, urlencode
 
 from node_vm2 import VM, eval
@@ -38,6 +39,7 @@ def get_list(html, cid):
 
 
 def get_episodes(html, url):
+	time.sleep(5) #add delay to prevent IP ban when analysis/update lot of title
 	episodes = None
 	cid = re.search(r"comic/(\d+)", url).group(1)
 	
