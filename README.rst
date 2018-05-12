@@ -337,6 +337,13 @@ Todos
 Changelog
 ---------
 
+-  2018.5.13
+
+   -  Add: selectall option.
+   -  Fix: the column check button operates on a wrong range.
+   -  Fix: the column check button appearance.
+   -  Fix: download error in tumblr.
+
 -  2018.5.5
 
    -  Add: range reverse.
