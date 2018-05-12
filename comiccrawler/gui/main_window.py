@@ -88,17 +88,6 @@ def select_episodes(parent, mission):
 
 			self.checks = []
 			
-			def set_page(check, start, end):
-				def callback():
-					if check.instate(("selected",)):
-						value = ("selected", )
-					else:
-						value = ("!selected", )
-
-					for i in range(start, end):
-						self.checks[i][1].state(value)
-				return callback
-				
 			window = None
 			window_column = 0
 			window_left = 0
@@ -144,12 +133,23 @@ def select_episodes(parent, mission):
 				# checkbutton for each column
 				if i % 20 == 19 or i == len(mission.episodes) - 1:
 					check = ttk.Checkbutton(window)
-					check.config(command=set_page(check, i - 19, i + 1))
-					check.state(("!alternate", "selected"))
+					def check_col(check=check, end=i):
+						start = end // 20 * 20
+						if check.instate(("selected",)):
+							state = ("selected",)
+						else:
+							state = ("!selected",)
+						for (_ep, ep_check) in self.checks[start:end + 1]:
+							ep_check.state(state)
+					check.config(command=check_col)
+					state = ("!alternate",)
+					if mission.module.config.getboolean("selectall"):
+						state += ("selected",)
+					check.state(state)
 					check.grid(
 						column=(i // 20) - window_column,
 						row=20,
-						sticky="w"
+						sticky="we"
 					)
 					
 			# Resize canvas
