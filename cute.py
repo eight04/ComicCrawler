@@ -1,13 +1,18 @@
 #! python3
 
-import pathlib
-import datetime
-import re
+from xcute import cute, split_version, conf
 
-from xcute import cute, split_version, conf, exc
-
+def readme():
+	"""Live reload readme"""
+	from livereload import Server
+	server = Server()
+	server.watch("README.rst", "py cute.py readme_build")
+	server.serve(open_url_delay=1, root="build/readme")
+	
 def bump():
 	"""My bump task"""
+	import datetime
+	import pathlib
 	path = pathlib.Path('comiccrawler/__pkginfo__.py')
 	text = path.read_text('utf-8')
 	left, old_version, right = split_version(text)
@@ -24,6 +29,7 @@ def bump():
 	
 def split_domains(text):
 	"""Split text into left, domains, right"""
+	import re
 	match = re.search(r'\.\. DOMAINS\s*\.\.\s*([\s\S]+?)\s*\.\. END DOMAINS', text)
 	i = match.start(1)
 	j = match.end(1)
@@ -31,6 +37,7 @@ def split_domains(text):
 	
 def domains():
 	"""Update domains"""
+	import pathlib
 	from comiccrawler.mods import list_domain
 	domains = " ".join(list_domain())
 	path = pathlib.Path('README.rst')
@@ -62,12 +69,10 @@ cute(
 	install = 'pip install -e .',
 	install_err = 'elevate -c -w pip install -e .',
 	readme_build = [
-		'python setup.py --long-description | x-pipe build/ld.rst',
-		'rst2html --no-raw --exit-status=1 --verbose '
-			'build/ld.rst build/ld.html'
+		'{python} setup.py --long-description | x-pipe build/readme/index.rst',
+		'rst2html5.py --no-raw --exit-status=1 --verbose '
+			'build/readme/index.rst build/readme/index.html'
 	],
-	readme_build_err = ['readme_show', exc],
-	readme_show = 'start build/ld.html',
-	readme = 'readme_build',
-	readme_post = 'readme_show'
+	readme_pre = "readme_build",
+	readme = readme,
 )
