@@ -13,7 +13,7 @@ def bump():
 	"""My bump task"""
 	import datetime
 	import pathlib
-	path = pathlib.Path('comiccrawler/__pkginfo__.py')
+	path = pathlib.Path(conf["version_file"])
 	text = path.read_text('utf-8')
 	left, old_version, right = split_version(text)
 	old_version = tuple(int(token) for token in old_version.split("."))
@@ -24,8 +24,9 @@ def bump():
 	elif version == old_version:
 		version += (1,)
 	version = ".".join(map(str, version))
-	conf["version"] = version
 	path.write_text(left + version + right, 'utf-8')
+	conf["old_version"] = conf["version"]
+	conf["version"] = version
 	
 def split_domains(text):
 	"""Split text into left, domains, right"""
@@ -69,7 +70,7 @@ cute(
 	install = 'pip install -e .',
 	install_err = 'elevate -c -w pip install -e .',
 	readme_build = [
-		'{python} setup.py --long-description | x-pipe build/readme/index.rst',
+		'python setup.py --long-description | x-pipe build/readme/index.rst',
 		'rst2html5.py --no-raw --exit-status=1 --verbose '
 			'build/readme/index.rst build/readme/index.html'
 	],
