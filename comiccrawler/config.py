@@ -19,7 +19,8 @@ class Config:
 		"libraryautocheck": "true",
 		"autosave": "5",
 		"errorlog": "false",
-		"lastcheckupdate": "0"
+		"lastcheckupdate": "0",
+		"selectall": "true"
 	}
 	def __init__(self, path):
 		self.path = expanduser(path)

@@ -650,6 +650,9 @@ class MainWindow(ViewMixin, EventMixin):
 				uninit_episode(mission)
 				return
 				
+			if not mission.module.config.getboolean("selectall"):
+				for ep in mission.episodes:
+					ep.skip = True
 			if not select_episodes(self.root, mission):
 				mission_manager.remove("view", mission)
 
