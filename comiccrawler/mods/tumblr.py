@@ -2,8 +2,9 @@
 
 """this is konachan module for tumblr
 
-Ex:
+Example:
 	http://otn-pct.tumblr.com/
+	https://shonep.tumblr.com/
 
 """
 
@@ -49,26 +50,32 @@ def get_episodes(html, url):
 	return s[::-1]
 			
 def get_images(html, url):
-	type = re.search('meta property="og:type" content="tumblr-feed:([^"]+)', html).group(1)
-	if type == "photo":
-		return try_get_images(html)
-	elif type == "video":
-		return try_get_videos(html, url)
-	raise SkipEpisodeError
-		
+	images = []
+	images.extend(try_get_videos(html, url))
+	images.extend(try_get_images(html))
+	if not images:
+		raise SkipEpisodeError
+	return images
+
 def try_get_images(html):
 	s = re.search('<script type="application/ld\+json">([^<]*)</script>', html).group(1)
 	o = json.loads(s)
+	if "image" not in o:
+		return
 	if isinstance(o["image"], str):
-		return transform(o["image"])
-	return [transform(u) for u in o["image"]["@list"]]
+		yield transform(o["image"])
+	else:
+		yield from (transform(u) for u in o["image"]["@list"])
 	
 def try_get_videos(html, url):
-	frame_src = re.search("<iframe src='(https?://www\.tumblr\.com/video/[^']+)", html).group(1)
+	match = re.search("<iframe src='(https?://www\.tumblr\.com/video/[^']+)", html)
+	if not match:
+		return
+	frame_src = match.group(1)
 	frame_html = grabhtml(frame_src, referer=url)
 	source_src = re.search('<source src="([^"]+)', frame_html).group(1)
 	source_src = re.sub("/\d+$", "", source_src)
-	return source_src
+	yield source_src
 	
 def transform(url):
 	"""Map thumbnail to full size"""
