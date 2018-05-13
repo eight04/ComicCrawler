@@ -10,7 +10,6 @@ from tkinter import ttk, font, messagebox
 
 import desktop
 from worker import current, WorkerExit
-from belfrywidgets import ToolTip
 
 from ..mods import list_domain, get_module, load_config, domain_index
 from ..config import setting, config
@@ -27,6 +26,7 @@ from ..channel import download_ch, mission_ch, message_ch
 from .table import Table
 from .dialog import Dialog
 from .core import get_scale, safe_tk, STATE
+from .select_episodes import select_episodes
 
 def create_mission_table(parent):
 	return Table(
@@ -71,136 +71,6 @@ def select_title(parent, mission):
 	with edit_mission_id(mission):
 		mission.title = new_title
 
-def select_episodes(parent, mission):
-	"""Create dialog to select episodes."""
-	class Anchor:
-		def __init__(self):
-			self.index = None
-			
-	class _Dialog(Dialog):
-		def create_body(self):
-			xscrollbar = ttk.Scrollbar(self.body, orient="horizontal")
-			canvas = tk.Canvas(
-				self.body,
-				xscrollcommand=xscrollbar.set,
-				highlightthickness="0"
-			)
-
-			self.checks = []
-			
-			window = None
-			window_column = 0
-			window_left = 0
-			anchor = Anchor()
-			for i, ep in enumerate(mission.episodes):
-				# create a new window for every 200 items
-				if i % 200 == 0:
-					if window:
-						window.update_idletasks()
-						window_left += window.winfo_reqwidth()
-						window_column = i // 20
-					window = ttk.Frame(canvas)
-					canvas.create_window((window_left, 0), window=window,
-						anchor="nw")
-			
-				def handle_click(event, index=i):
-					if event.state & 0x0001 and anchor.index is not None: # shift
-						start = min(anchor.index, index)
-						end = max(anchor.index, index)
-						for i in range(start, end + 1):
-							if i == index or i == anchor.index:
-								continue
-							check = self.checks[i][1]
-							if check.instate(("selected", )):
-								check.state(("!selected", ))
-							else:
-								check.state(("selected", ))
-					else:
-						anchor.index = index
-						
-				check = ttk.Checkbutton(window, text=safe_tk(ep.title))
-				check.bind("<ButtonRelease-1>", handle_click)
-				check.state(("!alternate",))
-				if not ep.skip:
-					check.state(("selected",))
-				check.grid(
-					column=(i // 20) - window_column,
-					row=i % 20,
-					sticky="w"
-				)
-				self.checks.append((ep, check))
-				
-				# checkbutton for each column
-				if i % 20 == 19 or i == len(mission.episodes) - 1:
-					check = ttk.Checkbutton(window)
-					def check_col(check=check, end=i):
-						start = end // 20 * 20
-						if check.instate(("selected",)):
-							state = ("selected",)
-						else:
-							state = ("!selected",)
-						for (_ep, ep_check) in self.checks[start:end + 1]:
-							ep_check.state(state)
-					check.config(command=check_col)
-					state = ("!alternate",)
-					if mission.module.config.getboolean("selectall"):
-						state += ("selected",)
-					check.state(state)
-					check.grid(
-						column=(i // 20) - window_column,
-						row=20,
-						sticky="we"
-					)
-					
-			# Resize canvas
-			canvas.update_idletasks()
-			cord = canvas.bbox("all")
-			canvas.config(
-				scrollregion=cord,
-				height=cord[3],
-				width=cord[2]
-			)
-
-			# caculates canvas's size then deside whether to show scrollbar
-			def decide_scrollbar(_event):
-				if canvas.winfo_width() >= canvas.winfo_reqwidth():
-					xscrollbar.pack_forget()
-					canvas.unbind("<Configure>")
-			canvas.bind("<Configure>", decide_scrollbar)
-
-			# draw innerframe on canvas then show
-			canvas.pack()
-
-			# link scrollbar to canvas then show
-			xscrollbar.config(command=canvas.xview)
-			xscrollbar.pack(fill="x")
-
-		def create_buttons(self):
-			btn = ttk.Button(self.btn_bar, text="反相", command=self.toggle)
-			btn.pack(side="left")
-			ToolTip(btn, "點擊任意項目後，Shift + 點擊另一項目，會對其間的項目反相")
-			super().create_buttons()
-
-		def apply(self):
-			count = 0
-			for ep, ck in self.checks:
-				ep.skip = not ck.instate(("selected",))
-				count += not ep.skip
-			return count
-
-		def toggle(self):
-			for _ep, ck in self.checks:
-				if ck.instate(("selected", )):
-					ck.state(("!selected", ))
-				else:
-					ck.state(("selected", ))
-
-	init_episode(mission)
-	select_count = _Dialog(parent, title="選擇集數").wait()
-	uninit_episode(mission)
-	
-	return select_count
-	
 class ViewMixin:
 	"""Create main window view"""
 	def create_view(self):
