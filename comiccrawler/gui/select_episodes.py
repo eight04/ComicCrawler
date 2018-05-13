@@ -12,8 +12,6 @@ from .dialog import Dialog
 
 class SelectEpisodeDialog(Dialog):
 	def __init__(self, parent, title=None, mission=None):
-		super().__init__(parent, title)
-		
 		self.mission = mission
 		
 		self.checks = []
@@ -23,6 +21,8 @@ class SelectEpisodeDialog(Dialog):
 		self.window = None
 		self.window_column = 0
 		self.window_left = 0
+		
+		super().__init__(parent, title)
 		
 	def create_window(self, column):
 		if self.window:
