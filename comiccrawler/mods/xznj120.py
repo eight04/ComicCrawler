@@ -7,12 +7,13 @@ Example:
 
 """
 
-from base64 import b64decode
 from html import unescape
 import re
 
+from node_vm2 import eval
+
 from ..url import urljoin
-from ..core import Episode
+from ..core import Episode, grabhtml
 
 domain = ["www.xznj120.com"]
 name = "受漫畫"
@@ -28,7 +29,16 @@ def get_episodes(html, url):
 	return s[::-1]
 	
 def get_images(html, url):
-	data = re.search('qTcms_S_m_murl_e="([^"]+)', html).group(1)
-	imgs = b64decode(data).decode("latin-1").split("$qingtiandy$")
-	return [urljoin(url, i) for i in imgs]
-	
+	script = re.search(r'<script>\s*(var qTcms_Cur[\s\S]+?)</script>', html).group(1)
+	show_js_src = re.search(r'src="([^"]+?show\.\d+\.js[^"]*)', html).group(1)
+	show_js = grabhtml(urljoin(url, show_js_src))
+	real_pic_fn = re.search(r'(function f_qTcms_Pic_curUrl_realpic[\s\S]+?)function', show_js).group(1)
+	code = """
+	{script}
+	{real_pic_fn}
+	Buffer.from(qTcms_S_m_murl_e, "base64")
+		.toString()
+		.split("$qingtiandy$")
+		.map(f_qTcms_Pic_curUrl_realpic);
+	""".format(script=script, real_pic_fn=real_pic_fn)
+	return [urljoin(url, i) for i in eval(code)]
