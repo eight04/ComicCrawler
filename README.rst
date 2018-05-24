@@ -337,6 +337,11 @@ Todos
 Changelog
 ---------
 
+-  2018.5.24
+
+   -  Fix: fail to get images from xznj.
+   -  Refactor: split out select_episodes.
+
 -  2018.5.13
 
    -  Add: selectall option.
