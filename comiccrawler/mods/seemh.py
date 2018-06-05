@@ -17,6 +17,7 @@ name = "看漫畫"
 config = {
 	"nowebp": "False"
 }
+rest_analyze = 3
 
 def get_title(html, url):
 	return re.search(r'<h1>([^<]*)', html).group(1)
