@@ -809,6 +809,7 @@ class Analyzer:
 				break
 			url = next_url
 			print('Analyzing {}...'.format(url))
+			sleep(getattr(self.mission.module, "rest_analyze", 0))
 			self.html = self.downloader.html(url, retry=True)
 			
 		for ep in reversed(new_eps):
