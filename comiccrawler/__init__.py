@@ -31,7 +31,8 @@ from .__pkginfo__ import __version__
 
 def console_download(url, savepath):
 	"""Download url to savepath."""
-	from .core import Mission, download, analyze
+	from .core import Mission, download
+	from .analyzer import analyze
 
 	mission = Mission(url=url)
 	analyze(mission)

@@ -4,27 +4,25 @@ import hashlib
 from itertools import cycle
 import json
 import re
-import string
 from threading import Lock
-from time import time
 import traceback
 from os.path import join as path_join, split as path_split, splitext
 
-from worker import sleep, WorkerExit, Worker
-from requests.utils import dict_from_cookiejar
+from worker import sleep, WorkerExit
 
 from ..safeprint import print
 from ..error import (
-	ModuleError, PauseDownloadError, LastPageError, SkipEpisodeError, is_http,
-	SkipPageError
+	ModuleError, PauseDownloadError, LastPageError, SkipEpisodeError, is_http
 )
 from ..io import content_write, content_read, path_each
 from ..channel import download_ch, mission_ch
 from ..config import setting
 from ..profile import get as profile
+from ..episode import Episode # pylint: disable=unused-import
+from ..util import safefilepath
+from ..module_grabber import ModuleGrabber
 
-from .grabber import grabhtml, grabimg
-from .mission_manager import load_episodes
+from .grabber import grabhtml # pylint: disable=unused-import
 
 mission_lock = Lock()
 
@@ -107,23 +105,6 @@ def url_extract_filename(url):
 def create_mission(url):
 	return MissionProxy(Mission(url=url))
 
-class Episode:
-	"""Create Episode object. Contains information of an episode."""
-
-	def __init__(self, title=None, url=None, current_url=None, current_page=0,
-			skip=False, complete=False, total=0, image=None):
-		"""Construct."""
-		self.title = title
-		self.url = url
-		self.current_url = current_url
-		# position of images on current page
-		self.current_page = current_page
-		self.skip = skip
-		self.complete = complete
-		# total number of images in this episode
-		self.total = total
-		self.image = image
-
 def format_escape(s):
 	"""Escape {} to {{}}"""
 	return re.sub("([{}])", r"\1\1", s)
@@ -138,34 +119,6 @@ VALID_FILE_TYPES = (
 	# json
 	".json"
 )
-
-def create_safefilepath_table():
-	table = {}
-	table.update({
-		"/": "／",
-		"\\": "＼",
-		"?": "？",
-		"|": "｜",
-		"<": "＜",
-		">": "＞",
-		":": "：",
-		"\"": "＂",
-		"*": "＊"
-	})
-	table.update({
-		c: None for c in set([chr(i) for i in range(128)]).difference(string.printable)
-	})
-	return str.maketrans(table)
-	
-safefilepath_table = create_safefilepath_table()
-dot_table = str.maketrans({".": "．"})
-
-def safefilepath(s):
-	"""Return a safe directory name."""
-	s = s.strip().translate(safefilepath_table)
-	if s[-1] == ".":
-		s = s.translate(dot_table)
-	return s
 
 def download(mission, savepath):
 	"""Download mission to savepath."""
@@ -230,59 +183,6 @@ def get_checksum(b):
 
 def get_file_checksum(file):
 	return get_checksum(content_read(file, raw=True))
-
-class Downloader:
-	"""Bind grabber with module's header, cookie..."""
-	def __init__(self, mod):
-		self.mod = mod
-		
-	def html(self, url, **kwargs):
-		return grabhtml(
-			url,
-			header=self.get_header(),
-			cookie=self.get_cookie(),
-			done=self.handle_grab,
-			proxy=self.mod.config.get("proxy"),
-			**kwargs
-		)
-	
-	def img(self, url, **kwargs):
-		return grabimg(
-			url,
-			header=self.get_header(),
-			cookie=self.get_cookie(),
-			done=self.handle_grab,
-			proxy=self.mod.config.get("proxy"),
-			**kwargs
-		)
-		
-	def get_header(self):
-		"""Return downloader header."""
-		return getattr(self.mod, "header", None)
-
-	def get_cookie(self):
-		"""Return downloader cookie."""
-		cookie = getattr(self.mod, "cookie", {})
-		config = getattr(self.mod, "config", {})
-		
-		for key, value in config.items():
-			if key.startswith("cookie_"):
-				name = key[7:]
-				cookie[name] = value
-				
-		return cookie
-		
-	def handle_grab(self, session, _response):
-		cookie = dict_from_cookiejar(session.cookies)
-		config = getattr(self.mod, "config", None)
-		if not config:
-			return
-			
-		for key in config:
-			if key.startswith("cookie_"):
-				name = key[7:]
-				if name in cookie:
-					config[key] = cookie[name]
 
 class SavePath:
 	def __init__(self, root, mission, ep, escape=safefilepath):
@@ -351,7 +251,7 @@ class Crawler:
 		self.ep = ep
 		self.savepath = SavePath(savepath, mission, ep)
 		self.mod = mission.module
-		self.downloader = Downloader(mission.module)
+		self.downloader = ModuleGrabber(mission.module)
 		self.checksums = None
 		self.is_init = False
 		self.html = None
@@ -589,85 +489,6 @@ def error_loop(process, handle_error=None, limit=10):
 		else:
 			errorcount = 0
 
-def analyze(mission):
-	"""Analyze mission."""
-	try:
-		Analyzer(mission).analyze()
-
-	except WorkerExit:
-		raise
-
-	except Exception as err: # pylint: disable=broad-except
-		traceback.print_exc()
-		download_ch.pub("ANALYZE_FAILED", (err, mission))
-
-	except PauseDownloadError as err:
-		download_ch.pub("ANALYZE_INVALID", (err, mission))
-
-	else:
-		download_ch.pub("ANALYZE_FINISHED", mission)
-		
-class BatchAnalyzer:
-	def __init__(
-		self,
-		gen_missions,
-		stop_on_error=True,
-		done_item=None,
-		done=None
-	):
-		self.thread = Worker(self.analyze)
-		self.gen_missions = gen_missions
-		self.done = done
-		self.done_item = done_item
-		self.stop_on_error = stop_on_error
-		self.cooldown = {}
-		self.last_err = None
-		
-	def start(self):
-		self.thread.start()
-		return self
-		
-	def stop(self):
-		self.thread.stop()
-		return self
-		
-	def get_cooldown(self, mission):
-		if not hasattr(mission.module, "rest_analyze"):
-			return 0
-		pre_ts = self.cooldown.get(mission.module.name)
-		if pre_ts is None:
-			return 0
-		cooldown = mission.module.rest_analyze - (time() - pre_ts)
-		return cooldown if cooldown > 0 else 0
-		
-	def analyze(self):
-		self.last_err = None
-		try:
-			self.do_analyze()
-		finally:
-			if self.done:
-				self.done(self.last_err)
-			
-	def do_analyze(self):
-		for mission in self.gen_missions:
-			try:
-				sleep(self.get_cooldown(mission))
-				with load_episodes(mission):
-					Analyzer(mission).analyze()
-			except BaseException as err: # catch PauseDownloadError and WorkerExit?
-				self.last_err = err
-				if self.done_item:
-					self.done_item(err, mission)
-				if self.stop_on_error and (not callable(self.stop_on_error) or self.stop_on_error(err)):
-					break
-				if isinstance(err, WorkerExit):
-					raise
-			else:
-				if self.done_item:
-					self.done_item(None, mission)
-			finally:
-				self.cooldown[mission.module.name] = time()		
-
 def remove_duplicate_episode(mission):
 	"""Remove duplicate episodes."""
 	s = set()
@@ -680,172 +501,6 @@ def remove_duplicate_episode(mission):
 			result.append(ep)
 	mission.episodes = result
 	
-class EpisodeList:
-	def __init__(self, eps=()):
-		self.list = []
-		self.title_set = set()
-		self.url_set = set()
-		for ep in eps:
-			self.add(ep)
-	
-	def add(self, ep):
-		if ep in self:
-			return False
-		self.list.append(ep)
-		self.url_set.add(ep.url)
-		self.title_set.add(ep.title)
-		return True
-		
-	def __contains__(self, ep):
-		if ep.url in self.url_set:
-			return True
-		if ep.title in self.title_set:
-			return True
-		return False
-		
-	def __iter__(self):
-		return iter(self.list)
-		
-	def __len__(self):
-		return len(self.list)
-		
-	def __reversed__(self):
-		return reversed(self.list)
-
-def first(s):
-	return next(iter(s))
-	
-class Analyzer:
-	"""Analyze mission"""
-	def __init__(self, mission):
-		self.mission = mission
-		self.downloader = Downloader(mission.module)
-		self.old_urls = None
-		self.old_titles = None
-		self.is_new = not mission.episodes
-		self.html = None
-		
-	def analyze(self):
-		"""Start analyze"""
-		try:
-			self.do_analyze()
-		except BaseException:
-			# correctly handle mission state
-			self.mission.state = "ERROR"
-			raise
-		
-	def do_analyze(self):
-		"""Analyze inner"""
-		print("Start analyzing {}".format(self.mission.url))
-
-		self.mission.state = "ANALYZING"
-		
-		# one-time mission
-		if self.is_onetime():
-			print("It's one-time mission")
-			ep = self.mission.episodes[0]
-			if ep.skip or ep.complete:
-				self.mission.state = "FINISHED"
-			else:
-				self.mission.state = "UPDATE"
-			print("Analyzing success!")
-			return
-			
-		self.html = self.downloader.html(self.mission.url, retry=True)
-		
-		if not self.mission.title:
-			self.mission.title = self.mission.module.get_title(
-				self.html, self.mission.url)
-				
-		self.analyze_pages()
-				
-		if self.is_new:
-			self.mission.state = "ANALYZED"
-			
-		elif all(e.complete or e.skip for e in self.mission.episodes):
-			self.mission.state = "FINISHED"
-			
-		else:
-			self.mission.state = "UPDATE"
-
-		print("Analyzing success!")
-		
-	def analyze_pages(self):
-		"""Crawl for each pages"""
-		url = self.mission.url
-		old_eps = EpisodeList(self.mission.episodes or ())
-		new_eps = EpisodeList()
-		
-		while True:
-			try:
-				eps = self.mission.module.get_episodes(self.html, url)
-			except SkipPageError:
-				pass
-			else:
-				if not eps:
-					print("Warning: get_episodes returns an empty list")
-				self.transform_title(eps)
-				
-				eps = EpisodeList(eps)
-				
-				# add result episodes into new_eps in new to old order.
-				for ep in reversed(eps):
-					new_eps.add(ep)
-					
-				# FIXME: do we really need this check?
-				# one-time mission?
-				if self.is_onetime(new_eps):
-					break
-					
-				# duplicate with old_eps
-				if any(e in old_eps for e in eps):
-					break
-				
-			# get next page
-			next_url = self.get_next_page(self.html, url)
-			if not next_url:
-				break
-			url = next_url
-			print('Analyzing {}...'.format(url))
-			sleep(getattr(self.mission.module, "rest_analyze", 0))
-			self.html = self.downloader.html(url, retry=True)
-			
-		for ep in reversed(new_eps):
-			old_eps.add(ep)
-		self.mission.episodes = list(old_eps)
-		
-		if not self.mission.episodes:
-			raise Exception("Episode list is empty")
-			
-	def get_next_page(self, html, url):
-		if not hasattr(self.mission.module, "get_next_page"):
-			return None
-		return self.mission.module.get_next_page(html, url)
-			
-	def transform_title(self, eps):
-		format = self.mission.module.config.get("titlenumberformat")
-		if not format:
-			return
-		for ep in eps:
-			# ignore mission title if exists
-			title = list(ep.title.partition(self.mission.title))
-			for i in (0, 2):
-				title[i] = format_number(title[i], format)
-			ep.title = "".join(title)
-			
-	def is_onetime(self, it=None):
-		"""Check if the mission should only be analyze once"""
-		if it is None:
-			it = self.mission.episodes
-		return it and len(it) and first(it).url == self.mission.url
-
-def format_number(title, format):
-	"""第3卷 --> 第003卷"""
-	def replacer(match):
-		number = match.group()
-		return format.format(int(number))
-	return re.sub(r"\d+", replacer, title)
-
 class CycleList:
 	"""Create a cycled list"""
 	def __init__(self, list):

@@ -2,107 +2,17 @@
 
 """Mission Manager"""
 
-import json
-import hashlib
-
 from collections import OrderedDict
 from threading import Lock
-from contextlib import suppress, contextmanager
 
 from worker import current
 
 from .safeprint import print
-from .core import Mission, Episode, MissionProxy, safefilepath, mission_lock
-from .io import backup, open, remove, move
+from .core import Mission, Episode, MissionProxy, mission_lock
+from .io import backup, json_load, json_dump
 from .profile import get as profile
 from .channel import mission_ch
-
-def get_mission_id(mission):
-	"""Use title and sha1 of URL as mission id"""
-	return "{title} [{sha1}]".format(
-		title=mission.title,
-		sha1=hashlib.sha1(mission.url.encode("utf-8")).hexdigest()[:6]
-	)
-	
-@contextmanager
-def edit_mission_id(mission):
-	"""A contextmanager for changing mission title."""
-	old_id = get_mission_id(mission)
-	yield
-	new_id = get_mission_id(mission)
-	
-	if old_id == new_id:
-		return
-	
-	old_path = make_ep_path(old_id)
-	new_path = make_ep_path(new_id)
-	
-	move(old_path, new_path)
-	
-def make_ep_path(id):
-	"""Construct ep path with id"""
-	return profile("pool/" + safefilepath(id + ".json"))
-	
-def get_ep_path(mission):
-	"""Return episode save file path"""
-	return make_ep_path(get_mission_id(mission))
-	
-load_episodes_status = {}
-load_episodes_lock = Lock()
-
-@contextmanager
-def load_episodes(mission):
-	mission_id = id(mission)
-	with load_episodes_lock:
-		if not mission.episodes:
-			eps = load(get_ep_path(mission))
-			if eps:
-				mission.episodes = [Episode(**e) for e in eps]
-		if mission_id in load_episodes_status:
-			load_episodes_status[mission_id] += 1
-		else:
-			load_episodes_status[mission_id] = 1
-	try:
-		yield
-	finally:
-		with load_episodes_lock:
-			if mission.episodes and load_episodes_status[mission_id] == 1:
-				file = get_ep_path(mission)
-				dump(mission.episodes, file)
-				mission.episodes = None
-				del load_episodes_status[mission_id]
-			else:
-				load_episodes_status[mission_id] -= 1
-
-def cleanup_episode(mission):
-	"""Remove episode save file. (probably because the mission is removed from
-	the mission manager)
-	"""
-	remove(get_ep_path(mission))
-		
-def load(file):
-	"""My json.load"""
-	with suppress(OSError):
-		with open(file) as fp:
-			return json.load(fp)
-				
-def dump(data, file):
-	"""My json.dump"""
-	
-	def encoder(object):
-		"""Encode any object to json."""
-		if hasattr(object, "tojson"):
-			return object.tojson()
-		return vars(object)
-		
-	with open(file, "w") as fp:
-		json.dump(
-			data,
-			fp,
-			indent=4,
-			ensure_ascii=False,
-			default=encoder
-		)
+from .episode_loader import cleanup_episode
 
 class MissionManager:
 	"""Since check_update thread might grab mission from mission_manager, we
@@ -141,9 +51,9 @@ class MissionManager:
 			return
 
 		with mission_lock:
-			dump(list(self.pool.values()), profile("pool.json"))
-			dump(list(self.view), profile("view.json"))
-			dump(list(self.library), profile("library.json"))
+			json_dump(list(self.pool.values()), profile("pool.json"))
+			json_dump(list(self.view), profile("view.json"))
+			json_dump(list(self.library), profile("library.json"))
 			
 		self.edit = False
 		print("Session saved")
@@ -163,9 +73,9 @@ class MissionManager:
 
 	def _load(self):
 		"""Load missions from json. Called by MissionManager.load."""
-		pool = load(profile("pool.json")) or []
-		view = load(profile("view.json")) or []
-		library = load(profile("library.json")) or []
+		pool = json_load(profile("pool.json")) or []
+		view = json_load(profile("view.json")) or []
+		library = json_load(profile("library.json")) or []
 
 		for m_data in pool:
 			# reset state

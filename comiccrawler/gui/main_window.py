@@ -14,14 +14,15 @@ from worker import current, WorkerExit
 from ..mods import list_domain, get_module, load_config, domain_index
 from ..config import setting, config
 from ..safeprint import print, printer
-from ..core import safefilepath, create_mission
+from ..core import create_mission
 from ..error import ModuleError
 from ..profile import get as profile
+from ..util import safefilepath
 
 from ..download_manager import download_manager
-from ..mission_manager import (mission_manager, load_episodes,
-	edit_mission_id)
+from ..mission_manager import mission_manager
 from ..channel import download_ch, mission_ch, message_ch
+from ..episode_loader import load_episodes, edit_mission_id
 
 from .table import Table
 from .dialog import Dialog
