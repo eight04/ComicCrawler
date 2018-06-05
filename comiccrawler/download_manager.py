@@ -42,7 +42,6 @@ class DownloadManager:
 		self.analyze_threads = set()
 		self.library_thread = None
 		self.library_err_count = None
-		self.library_cooldown_timestamp = {}
 		self.batch_analyzer = None
 		
 		thread = current()
