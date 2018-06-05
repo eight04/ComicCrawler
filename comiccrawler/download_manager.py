@@ -35,6 +35,7 @@ class DownloadManager:
 		self.analyze_threads = set()
 		self.library_thread = None
 		self.library_err_count = None
+		self.library_cooldown_timestamp = {}
 		self.batch_analyzer = None
 		
 		thread = current()
@@ -109,6 +110,8 @@ class DownloadManager:
 				_err, mission = event.data
 			except TypeError:
 				mission = event.data
+				
+			self.library_cooldown_timestamp[mission.module.name] = time()
 				
 			if event.target is self.library_thread:
 				uninit_episode(mission)
@@ -239,7 +242,11 @@ class DownloadManager:
 		mission = mission_manager.get_by_state("library", ("ANALYZE_INIT", "ERROR"))
 		if mission:
 			init_episode(mission)
-			self.library_thread = Worker(analyze).start(mission)
+			self.library_thread = later(
+				analyze,
+				get_analyze_cooldown(self.library_cooldown_timestamp, mission),
+				mission
+			)
 		else:
 			self.library_thread = None
 			print("Update checking done")
@@ -252,5 +259,14 @@ class DownloadManager:
 
 	def is_downloading(self):
 		return self.download_thread is not None
+		
+def get_analyze_cooldown(map, mission):
+	if not hasattr(mission.module, "rest_analyze"):
+		return 0
+	pre_ts = map.get(mission.module.name)
+	if pre_ts is None:
+		return 0
+	cooldown = mission.module.rest_analyze - (time() - pre_ts)
+	return cooldown if cooldown > 0 else 0
 		
 download_manager = DownloadManager()
