@@ -20,7 +20,7 @@ from .core import download, analyze, safefilepath, BatchAnalyzer, create_mission
 from .profile import get as profile
 from .error import PauseDownloadError
 
-from .mission_manager import mission_manager, init_episode, uninit_episode
+from .mission_manager import mission_manager, load_episodes
 from .channel import download_ch
 
 def quote(item):
@@ -43,19 +43,6 @@ class DownloadManager:
 		thread = current()
 		
 		download_ch.sub(thread)
-		
-		@thread.listen("DOWNLOAD_PAUSE")
-		@thread.listen("DOWNLOAD_INVALID")
-		@thread.listen("DOWNLOAD_ERROR")
-		@thread.listen("DOWNLOAD_FINISHED")
-		def _(event):
-			try:
-				_err, mission = event.data
-			except TypeError:
-				mission = event.data
-
-			if mission.url in mission_manager.pool:
-				uninit_episode(mission)
 		
 		@thread.listen("DOWNLOAD_ERROR")
 		def _(event):
@@ -109,7 +96,6 @@ class DownloadManager:
 			"""After analyze, add to view (view analyzer)"""
 			if event.target in self.analyze_threads:
 				mission = event.data
-				uninit_episode(mission)
 				mission_manager.add("view", mission)
 				download_ch.pub("ANALYZE_NEW_MISSION", mission)
 
@@ -127,11 +113,10 @@ class DownloadManager:
 		mission = mission_manager.get_by_state("view", ("ANALYZED", "PAUSE", "ERROR", "UPDATE"))
 		if mission:
 			print("Start download " + mission.title)
-			init_episode(mission)
-			self.download_thread = Worker(download).start(
-				mission,
-				profile(mission.module.config["savepath"])
-			)
+			def do_download():
+				with load_episodes(mission):
+					download(mission, profile(mission.module.config["savepath"]))
+			self.download_thread = Worker(do_download).start()
 		else:
 			print("所有任務已下載完成")
 
@@ -148,8 +133,10 @@ class DownloadManager:
 			print(
 				"Invalid state to analyze: {state}".format(state=mission.state))
 			return
-		init_episode(mission)
-		thread = Worker(analyze).start(mission)
+		def do_analyze():
+			with load_episodes(mission):
+				analyze(mission)
+		thread = Worker(do_analyze).start()
 		self.analyze_threads.add(thread)
 		
 	def start_batch_analyze(self, missions):
@@ -218,13 +205,10 @@ class DownloadManager:
 				mission = mission_manager.get_by_state("library", ("ANALYZE_INIT", "ERROR"))
 				if not mission:
 					return
-				init_episode(mission)
 				yield mission
-				# uninit in done_item
 				
 		self.library_err_count = 0
 		def done_item(err, mission):
-			uninit_episode(mission)
 			if mission.state == "UPDATE":
 				mission_manager.lift("library", mission)
 			elif mission.state == "ERROR":

@@ -19,7 +19,7 @@ from ..error import ModuleError
 from ..profile import get as profile
 
 from ..download_manager import download_manager
-from ..mission_manager import (mission_manager, init_episode, uninit_episode,
+from ..mission_manager import (mission_manager, load_episodes,
 	edit_mission_id)
 from ..channel import download_ch, mission_ch, message_ch
 
@@ -346,8 +346,9 @@ class EventMixin:
 			@bind_menu("重新選擇集數")
 			def _():
 				for mission in table.selected():
-					if select_episodes(self.root, mission):
-						mission.state = "ANALYZED"
+					with load_episodes(mission):
+						if select_episodes(self.root, mission):
+							mission.state = "ANALYZED"
 
 			@bind_menu("開啟資料夾")
 			def start_explorer(event=None):
@@ -514,17 +515,14 @@ class MainWindow(ViewMixin, EventMixin):
 		@self.thread.listen("ANALYZE_NEW_MISSION")
 		def _(event):
 			mission = event.data
-			
-			init_episode(mission)
-			if len(mission.episodes) == 1:
-				uninit_episode(mission)
-				return
-				
-			if not mission.module.config.getboolean("selectall"):
-				for ep in mission.episodes:
-					ep.skip = True
-			if not select_episodes(self.root, mission):
-				mission_manager.remove("view", mission)
+			with load_episodes(mission):
+				if len(mission.episodes) == 1:
+					return
+				if not mission.module.config.getboolean("selectall"):
+					for ep in mission.episodes:
+						ep.skip = True
+				if not select_episodes(self.root, mission):
+					mission_manager.remove("view", mission)
 
 		@self.thread.listen("ANALYZE_FAILED", priority=100)
 		def _(event):

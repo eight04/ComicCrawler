@@ -47,46 +47,33 @@ def get_ep_path(mission):
 	"""Return episode save file path"""
 	return make_ep_path(get_mission_id(mission))
 	
-episode_loader_cache = {}
-class EpisodeLoader:
-	"""Context manager. Load episode info."""
-	def __init__(self, mission):
-		self.mission = mission
-		
-	def __enter__(self):
-		self.load()
-		
-	def __exit__(self, _type, _value, _traceback):
-		self.unload()
-		
-	def load(self):
-		if self.mission not in episode_loader_cache:
-			episode_loader_cache[self.mission] = 0
-		# self.lock = episode_loader_cache.setdefault(self.mission, 0)
-		if not episode_loader_cache[self.mission]:
-			init_episode(self.mission)
-		episode_loader_cache[self.mission] += 1
-		
-	def unload(self):
-		episode_loader_cache[self.mission] -= 1
-		if not episode_loader_cache[self.mission]:
-			uninit_episode(self.mission)
-			del episode_loader_cache[self.mission]
+load_episodes_status = {}
+load_episodes_lock = Lock()
 
-def init_episode(mission):
-	"""Construct mission.episodes"""
-	if not mission.episodes:
-		eps = load(get_ep_path(mission))
-		if eps:
-			mission.episodes = [Episode(**e) for e in eps]
+@contextmanager
+def load_episodes(mission):
+	mission_id = id(mission)
+	with load_episodes_lock:
+		if not mission.episodes:
+			eps = load(get_ep_path(mission))
+			if eps:
+				mission.episodes = [Episode(**e) for e in eps]
+		if mission_id in load_episodes_status:
+			load_episodes_status[mission_id] += 1
+		else:
+			load_episodes_status[mission_id] = 1
+	try:
+		yield
+	finally:
+		with load_episodes_lock:
+			if mission.episodes and load_episodes_status[mission_id] == 1:
+				file = get_ep_path(mission)
+				dump(mission.episodes, file)
+				mission.episodes = None
+				del load_episodes_status[mission_id]
+			else:
+				load_episodes_status[mission_id] -= 1
 
-def uninit_episode(mission):
-	"""Destruct mission.episodes to save memory"""
-	if mission.episodes:
-		file = get_ep_path(mission)
-		dump(mission.episodes, file)
-		mission.episodes = None
-		
 def cleanup_episode(mission):
 	"""Remove episode save file. (probably because the mission is removed from
 	the mission manager)
@@ -210,9 +197,6 @@ class MissionManager:
 				m_data["episodes"] = episodes
 			mission = MissionProxy(Mission(**m_data))
 			
-			if mission.episodes:
-				uninit_episode(mission)
-				
 			self.pool[mission.url] = mission
 
 		for url in view:

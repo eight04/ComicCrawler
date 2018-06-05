@@ -5,8 +5,6 @@ import tkinter.ttk as ttk
 
 from belfrywidgets import ToolTip
 
-from ..mission_manager import init_episode, uninit_episode
-
 from .core import safe_tk
 from .dialog import Dialog
 
@@ -149,9 +147,6 @@ class SelectEpisodeDialog(Dialog):
 		
 def select_episodes(parent, mission):
 	"""Create dialog to select episodes."""
-	init_episode(mission)
 	select_count = SelectEpisodeDialog(
 		parent, title="選擇集數", mission=mission).wait()
-	uninit_episode(mission)
-	
 	return select_count

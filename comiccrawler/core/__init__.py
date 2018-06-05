@@ -24,6 +24,7 @@ from ..config import setting
 from ..profile import get as profile
 
 from .grabber import grabhtml, grabimg
+from .mission_manager import load_episodes
 
 mission_lock = Lock()
 
@@ -47,10 +48,6 @@ class Mission:
 		self.module = get_module(url)
 		if not self.module:
 			raise ModuleError("Get module failed!")
-			
-	def load_episode(self):
-		from ..mission_manager import EpisodeLoader
-		return EpisodeLoader(self)
 			
 class MissionProxy:
 	"""Publish MISSION_PROPERTY_CHANGED event when property changed"""
@@ -655,7 +652,8 @@ class BatchAnalyzer:
 		for mission in self.gen_missions:
 			try:
 				sleep(self.get_cooldown(mission))
-				Analyzer(mission).analyze()
+				with load_episodes(mission):
+					Analyzer(mission).analyze()
 			except BaseException as err: # catch PauseDownloadError and WorkerExit?
 				self.last_err = err
 				if self.done_item:
