@@ -8,7 +8,8 @@ from threading import Lock
 from worker import current
 
 from .safeprint import print
-from .core import Mission, Episode, MissionProxy, mission_lock
+from .mission import create_mission, mission_lock
+from .episode import Episode
 from .io import backup, json_load, json_dump
 from .profile import get as profile
 from .channel import mission_ch
@@ -105,7 +106,7 @@ class MissionManager:
 							
 					episodes.append(Episode(**ep_data))
 				m_data["episodes"] = episodes
-			mission = MissionProxy(Mission(**m_data))
+			mission = create_mission(**m_data)
 			
 			self.pool[mission.url] = mission
 

@@ -18,7 +18,8 @@ from .analyzer import analyze
 from .safeprint import print
 from .batch_analyzer import BatchAnalyzer
 from .config import setting
-from .core import download, create_mission
+from .mission import create_mission
+from .crawler import download
 from .profile import get as profile
 from .error import PauseDownloadError
 from .util import safefilepath

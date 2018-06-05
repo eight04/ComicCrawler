@@ -14,7 +14,7 @@ from worker import current, WorkerExit
 from ..mods import list_domain, get_module, load_config, domain_index
 from ..config import setting, config
 from ..safeprint import print, printer
-from ..core import create_mission
+from ..mission import create_mission
 from ..error import ModuleError
 from ..profile import get as profile
 from ..util import safefilepath

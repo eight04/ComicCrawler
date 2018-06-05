@@ -7,11 +7,12 @@ Ex:
 
 """
 
+from itertools import cycle
 import re
 
 from node_vm2 import VM
 
-from ..core import Episode, grabhtml, CycleList
+from ..core import Episode, grabhtml
 from ..url import urlparse, urlupdate, urljoin
 from ..error import is_http
 
@@ -68,9 +69,9 @@ def get_images(html, url):
 	global servers
 	servers = re.search('sDS = "([^"]+)', ds).group(1).split("^")
 	servers = [s.split("|")[1] for s in servers]
-	servers = CycleList(servers)
-	
-	return (servers.get() + s_path + f for f in arr_files)
+	servers = cycle(servers)
+	server = next(servers)
+	return (server + s_path + f for f in arr_files)
 	
 def errorhandler(err, crawler):
 	if not is_http(err):
@@ -79,5 +80,5 @@ def errorhandler(err, crawler):
 	if not crawler.image or not crawler.image.url:
 		return
 		
-	servers.next()
-	crawler.image = urlupdate(crawler.image, netloc=servers.get())
+	server = next(servers)
+	crawler.image = urlupdate(crawler.image, netloc=server)

@@ -1,6 +1,6 @@
 from requests.utils import dict_from_cookiejar
 
-from .core.grabber import grabhtml, grabimg
+from .grabber import grabhtml, grabimg
 
 class ModuleGrabber:
 	"""Bind grabber with module's header, cookie..."""

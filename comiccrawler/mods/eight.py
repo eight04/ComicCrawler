@@ -11,7 +11,8 @@ from urllib.parse import urljoin
 
 from node_vm2 import VM
 
-from ..core import Episode, grabhtml, clean_tags
+from ..core import Episode, grabhtml
+from ..util import clean_tags
 
 domain = ["www.8comic.com", "www.comicvip.com", "www.comicbus.com"]
 name = "無限"

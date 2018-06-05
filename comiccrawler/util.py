@@ -1,4 +1,9 @@
+import re
 import string
+
+from .config import setting
+from .io import content_write
+from .profile import get as profile
 
 def create_safefilepath_table():
 	table = {}
@@ -27,3 +32,17 @@ def safefilepath(s):
 	if s[-1] == ".":
 		s = s.translate(dot_table)
 	return s
+
+def debug_log(*args):
+	if setting.getboolean("errorlog"):
+		content_write(profile("debug.log"), ", ".join(args) + "\n", append=True)
+
+def url_extract_filename(url):
+	filename = url.rpartition("/")[2]
+	filename = re.sub(r"\.\w{3,4}$", "", filename)
+	return filename
+
+def clean_tags(html):
+	html = re.sub("<script.+?</script>", "", html)
+	html = re.sub("<.+?>", "", html)
+	return html.strip()
