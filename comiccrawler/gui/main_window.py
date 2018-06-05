@@ -276,7 +276,7 @@ class EventMixin:
 				return
 					
 			try:
-				mission = create_mission(url)
+				mission = create_mission(url=url)
 			except ModuleError:
 				messagebox.showerror(
 					"Comic Crawler",

@@ -152,21 +152,18 @@ class DownloadManager:
 			
 		if isinstance(missions, str):
 			missions = [
-				create_mission(m) for m in re.split("\s+", missions) if m]
+				create_mission(url=m) for m in re.split("\s+", missions) if m]
 		missions = deque(missions)
 				
 		def gen_missions():
 			while missions:
-				mission = missions.popleft()
-				download_ch.pub("BATCH_ANALYZE_UPDATE", list(missions))
-				yield mission
+				yield missions[0]
 				
 		def done_item(err, mission):
-			if err:
-				missions.appendleft(mission)
-				download_ch.pub("BATCH_ANALYZE_UPDATE", list(missions))
 			if not err:
+				missions.popleft()
 				mission_manager.add("view", mission)
+				download_ch.pub("BATCH_ANALYZE_UPDATE", list(missions))
 			
 		def done(err):
 			self.batch_analyzer = None
