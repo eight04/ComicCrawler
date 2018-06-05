@@ -1,12 +1,12 @@
 #! python3
 
-from collections import deque
 import hashlib
 from itertools import cycle
 import json
 import re
 import string
-from threading import Lock, RLock
+from threading import Lock
+from time import time
 import traceback
 from os.path import join as path_join, split as path_split, splitext
 
@@ -611,10 +611,20 @@ def analyze(mission):
 		download_ch.pub("ANALYZE_FINISHED", mission)
 		
 class BatchAnalyzer:
-	def __init__(self, missions):
+	def __init__(
+		self,
+		gen_missions,
+		stop_on_error=True,
+		done_item=None,
+		done=None
+	):
 		self.thread = Worker(self.analyze)
-		self.missions = deque(missions)
-		self.lock = RLock()
+		self.gen_missions = gen_missions
+		self.done = done
+		self.done_item = done_item
+		self.stop_on_error = stop_on_error
+		self.cooldown = {}
+		self.last_err = None
 		
 	def start(self):
 		self.thread.start()
@@ -622,29 +632,43 @@ class BatchAnalyzer:
 		
 	def stop(self):
 		self.thread.stop()
+		return self
+		
+	def get_cooldown(self, mission):
+		if not hasattr(mission.module, "rest_analyze"):
+			return 0
+		pre_ts = self.cooldown.get(mission.module.name)
+		if pre_ts is None:
+			return 0
+		cooldown = mission.module.rest_analyze - (time() - pre_ts)
+		return cooldown if cooldown > 0 else 0
 		
 	def analyze(self):
-		err = None
-		
-		while self.missions:
-			mission = None
-			with self.lock:
-				mission = self.missions.popleft()
-			with mission.load_episode():
-				try:
-					Analyzer(mission).analyze()
-				except BaseException as _err:
-					with self.lock:
-						self.missions.appendleft(mission)
-					err = _err
+		self.last_err = None
+		try:
+			self.do_analyze()
+		finally:
+			if self.done:
+				self.done(self.last_err)
+			
+	def do_analyze(self):
+		for mission in self.gen_missions:
+			try:
+				sleep(self.get_cooldown(mission))
+				Analyzer(mission).analyze()
+			except BaseException as err: # catch PauseDownloadError and WorkerExit?
+				self.last_err = err
+				if self.done_item:
+					self.done_item(err, mission)
+				if self.stop_on_error and (not callable(self.stop_on_error) or self.stop_on_error(err)):
 					break
-				download_ch.pub("BATCH_ANALYZE_ITEM_FINISHED", (self, mission))
-				
-		download_ch.pub("BATCH_ANALYZE_END", (self, err))
-		
-	def to_urls(self):
-		with self.lock:
-			return [m.url for m in self.missions]
+				if isinstance(err, WorkerExit):
+					raise
+			else:
+				if self.done_item:
+					self.done_item(None, mission)
+			finally:
+				self.cooldown[mission.module.name] = time()		
 
 def remove_duplicate_episode(mission):
 	"""Remove duplicate episodes."""

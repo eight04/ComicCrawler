@@ -2,6 +2,7 @@
 
 """Download Manager"""
 
+from collections import deque
 import re
 import subprocess # nosec
 import shlex
@@ -11,12 +12,13 @@ import traceback
 from os.path import join as path_join
 from time import time
 
-from worker import Worker, current, later, await_
+from worker import Worker, current, await_
 
 from .safeprint import print
 from .config import setting
 from .core import download, analyze, safefilepath, BatchAnalyzer, create_mission
 from .profile import get as profile
+from .error import PauseDownloadError
 
 from .mission_manager import mission_manager, init_episode, uninit_episode
 from .channel import download_ch
@@ -102,44 +104,6 @@ class DownloadManager:
 				self.download_thread = None
 				print("停止下載")
 
-		@thread.listen("ANALYZE_FAILED")
-		@thread.listen("ANALYZE_FINISHED")
-		def _(event):
-			"""After analyze, continue next (library)"""
-			try:
-				_err, mission = event.data
-			except TypeError:
-				mission = event.data
-				
-			self.library_cooldown_timestamp[mission.module.name] = time()
-				
-			if event.target is self.library_thread:
-				uninit_episode(mission)
-				if mission.state == "UPDATE":
-					mission_manager.lift("library", mission)
-					
-				if mission.state == "ERROR":
-					if self.library_err_count > 10:
-						print("Too many error!")
-						download_ch.pub("LIBRARY_CHECK_UPDATE_FAILED")
-						self.library_thread = None
-					else:
-						self.library_err_count += 1
-						mission_manager.drop("library", mission)
-						later(self.do_check_update, 5, target=thread)
-					return
-					
-				self.do_check_update()
-				
-		@thread.listen("ANALYZE_INVALID")
-		def _(event):
-			"""Cleanup library thread with PauseDownloadError"""
-			_err, mission = event.data
-			if event.target is self.library_thread:
-				uninit_episode(mission)
-				self.library_thread = None
-				print("Failed to check update")
-
 		@thread.listen("ANALYZE_FINISHED")
 		def _(event):
 			"""After analyze, add to view (view analyzer)"""
@@ -155,15 +119,6 @@ class DownloadManager:
 			if event.target in self.analyze_threads:
 				self.analyze_threads.remove(event.target)
 				
-		@thread.listen("BATCH_ANALYZE_END")
-		def _(event):
-			self.batch_analyzer = None
-			
-		@thread.listen("BATCH_ANALYZE_ITEM_FINISHED")
-		def _(event):
-			_analyzer, mission = event.data
-			mission_manager.add("view", mission)
-
 	def start_download(self):
 		"""Start downloading."""
 		if self.download_thread:
@@ -200,14 +155,37 @@ class DownloadManager:
 	def start_batch_analyze(self, missions):
 		"""Start batch analyze"""
 		if self.batch_analyzer:
-			print("There is already a working batch analyzer")
+			print("Batch analyzer is already running")
 			return
 			
 		if isinstance(missions, str):
 			missions = [
 				create_mission(m) for m in re.split("\s+", missions) if m]
+		missions = deque(missions)
+				
+		def gen_missions():
+			while missions:
+				mission = missions.popleft()
+				download_ch.pub("BATCH_ANALYZE_UPDATE", list(missions))
+				yield mission
+				
+		def done_item(err, mission):
+			if err:
+				missions.appendleft(mission)
+				download_ch.pub("BATCH_ANALYZE_UPDATE", list(missions))
+			if not err:
+				mission_manager.add("view", mission)
 			
-		self.batch_analyzer = BatchAnalyzer(missions).start()
+		def done(err):
+			self.batch_analyzer = None
+			download_ch.pub("BATCH_ANALYZE_END", err)
+			
+		self.batch_analyzer = BatchAnalyzer(
+			gen_missions=gen_missions(),
+			done_item=done_item,
+			done=done
+		)
+		self.batch_analyzer.start()
 		
 	def stop_batch_analyze(self):
 		"""Stop batch analyzer"""
@@ -228,29 +206,51 @@ class DownloadManager:
 		if self.library_thread:
 			print("Already checking update")
 			return
-
-		self.library_err_count = 0
+			
+		# set mission state to ANALYZE_INIT
 		setting["lastcheckupdate"] = str(time())
 		for mission in mission_manager.library.values():
 			if mission.state not in ("DOWNLOADING", "ANALYZING"):
 				mission.state = "ANALYZE_INIT"
 				
-		self.do_check_update()
-	
-	def do_check_update(self):
-		"""Check library update"""
-		mission = mission_manager.get_by_state("library", ("ANALYZE_INIT", "ERROR"))
-		if mission:
-			init_episode(mission)
-			self.library_thread = later(
-				analyze,
-				get_analyze_cooldown(self.library_cooldown_timestamp, mission),
-				mission
-			)
-		else:
+		def gen_missions():
+			while True:
+				mission = mission_manager.get_by_state("library", ("ANALYZE_INIT", "ERROR"))
+				if not mission:
+					return
+				init_episode(mission)
+				yield mission
+				# uninit in done_item
+				
+		self.library_err_count = 0
+		def done_item(err, mission):
+			uninit_episode(mission)
+			if mission.state == "UPDATE":
+				mission_manager.lift("library", mission)
+			elif mission.state == "ERROR":
+				mission_manager.drop("library", mission)
+				self.library_err_count += 1
+				
+		def stop_on_error(err):
+			return self.library_err_count > 10 or isinstance(err, PauseDownloadError)
+				
+		def done(err):
 			self.library_thread = None
-			print("Update checking done")
-			
+			if err:
+				if self.library_err_count > 10:
+					download_ch.pub("LIBRARY_CHECK_UPDATE_FAILED")
+				print("Failed to check update")
+			else:
+				print("Update checking done")
+				
+		self.library_thread = BatchAnalyzer(
+			gen_missions=gen_missions(),
+			done_item=done_item,
+			done=done,
+			stop_on_error=stop_on_error
+		)
+		self.library_thread.start()
+	
 	def stop_check_update(self):
 		"""Stop checking update"""
 		if self.library_thread:
@@ -259,14 +259,5 @@ class DownloadManager:
 
 	def is_downloading(self):
 		return self.download_thread is not None
-		
-def get_analyze_cooldown(map, mission):
-	if not hasattr(mission.module, "rest_analyze"):
-		return 0
-	pre_ts = map.get(mission.module.name)
-	if pre_ts is None:
-		return 0
-	cooldown = mission.module.rest_analyze - (time() - pre_ts)
-	return cooldown if cooldown > 0 else 0
 		
 download_manager = DownloadManager()

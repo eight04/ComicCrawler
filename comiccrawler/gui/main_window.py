@@ -557,26 +557,21 @@ class MainWindow(ViewMixin, EventMixin):
 		def _(event):
 			messagebox.showerror("Comic Crawler", "檢查更新未完成，已重試 10 次")
 			
-		@self.thread.listen("BATCH_ANALYZE_ITEM_FINISHED")
+		@self.thread.listen("BATCH_ANALYZE_UPDATE")
 		def _(event):
-			analyzer, _mission = event.data
-			self.update_batch_text(analyzer)
+			self.update_batch_text(event.data)
 			
 		@self.thread.listen("BATCH_ANALYZE_END")
 		def _(event):
-			analyzer, err = event.data
-			self.update_batch_text(analyzer)
-			
+			err = event.data
 			if err and not isinstance(err, WorkerExit):
 				messagebox.showerror(
 					"Comic Crawler", "批次加入失敗！{}".format(err))
-					
 			self.text_batch_analyze.config(state="normal")
 			print("Batch analyze ended")
 			
-	def update_batch_text(self, analyzer):
-		# print(analyzer.to_urls())
-		text = "\n".join(analyzer.to_urls())
+	def update_batch_text(self, missions):
+		text = "\n".join(m.url for m in missions)
 		self.text_batch_analyze.config(state="normal")
 		self.text_batch_analyze.delete("1.0", "end")
 		self.text_batch_analyze.insert("1.0", text)
