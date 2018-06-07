@@ -1,5 +1,6 @@
 #! python3
 
+from contextlib import contextmanager
 import os
 import webbrowser
 import sys
@@ -9,7 +10,7 @@ import tkinter as tk
 from tkinter import ttk, font, messagebox
 
 import desktop
-from worker import current, WorkerExit
+import worker
 
 from ..mods import list_domain, get_module, load_config, domain_index
 from ..config import setting, config
@@ -72,6 +73,28 @@ def select_title(parent, mission):
 	with edit_mission_id(mission):
 		mission.title = new_title
 
+class TkinterLoop:
+	def __init__(self, root, do_stuff, delay=100):
+		self.root = root
+		self.delay = delay
+		self.do_stuff = do_stuff
+		
+	def start(self):
+		self.root.after_id = self.root.after(self.delay, self.after)
+		self.root.mainloop()
+		
+	def after(self):
+		self.root.after_id = self.root.after(self.delay, self.after)
+		self.do_stuff()
+		
+	@contextmanager
+	def pause(self):
+		self.root.after_cancel(self.root.after_id)
+		try:
+			yield
+		finally:
+			self.root.after_id = self.root.after(self.delay, self.after)
+			
 class ViewMixin:
 	"""Create main window view"""
 	def create_view(self):
@@ -254,7 +277,8 @@ class EventMixin:
 		self.entry_url.bind("<Return>", entrykeypress)
 
 		def ask_analyze_update(mission):
-			return messagebox.askyesno(
+			return self.messagebox(
+				"yesno",
 				"Comic Crawler",
 				safe_tk(mission.title) + "\n\n任務已存在，要檢查更新嗎？",
 				default="yes"
@@ -278,7 +302,8 @@ class EventMixin:
 			try:
 				mission = create_mission(url=url)
 			except ModuleError:
-				messagebox.showerror(
+				self.messagebox(
+					"error",
 					"Comic Crawler",
 					"建立任務失敗！不支援的網址！"
 				)
@@ -325,7 +350,7 @@ class EventMixin:
 			# add commands...
 			@bind_menu("刪除")
 			def _():
-				if messagebox.askyesno("Comic Crawler", "確定刪除？"):
+				if self.messagebox("yesno", "Comic Crawler", "確定刪除？"):
 					self.remove(name, *table.selected())
 
 			@bind_menu("移至頂部")
@@ -392,7 +417,7 @@ class EventMixin:
 		def lib_download_update():
 			missions = mission_manager.get_all_by_state("library", ("UPDATE",))
 			if not missions:
-				messagebox.showerror("Comic Crawler", "沒有新更新的任務")
+				self.messagebox("error", "Comic Crawler", "沒有新更新的任務")
 				return
 			mission_manager.add("view", *missions)
 			download_manager.start_download()
@@ -409,8 +434,7 @@ class EventMixin:
 			try:
 				download_manager.start_batch_analyze(text)
 			except Exception as err: # pylint: disable=broad-except
-				messagebox.showerror(
-					"Comic Crawler", "Failed to batch: {}".format(err))
+				self.messagebox("error", "Comic Crawler", "Failed to batch: {}".format(err))
 				return
 					
 			self.text_batch_analyze.config(state="disabled")
@@ -423,9 +447,7 @@ class EventMixin:
 		# close window event
 		def beforequit():
 			if download_manager.is_downloading():
-				if not messagebox.askokcancel(
-						"Comic Crawler",
-						"任務下載中，確定結束？"):
+				if not self.messagebox("okcancel", "Comic Crawler", "任務下載中，確定結束？"):
 					return
 					
 			# going to quit
@@ -450,7 +472,8 @@ class MainWindow(ViewMixin, EventMixin):
 		self.create_view()
 		self.bind_event()
 		
-		self.thread = current()
+		self.thread = worker.current()
+		self.loop = TkinterLoop(self.root, worker.update)
 
 		self.pool_index = {
 			id(mission_manager.view): self.view_table,
@@ -469,14 +492,19 @@ class MainWindow(ViewMixin, EventMixin):
 		self.update_table(mission_manager.library)
 		
 		self.save()
-		self.update()
-		self.root.mainloop()
+		self.loop.start()
 		
-	def update(self):
-		"""Cleanup message every 100 milliseconds."""
-		self.thread.update()
-		self.root.after(100, self.update)
-		
+	def messagebox(self, type, *args):
+		"""Pause the loop when using messagebox"""
+		name = None
+		if type in ("okcancel", "yesno", "yesnocancel", "retrycancel"):
+			name = "ask" + type
+		else:
+			name = "show" + type
+		func = getattr(messagebox, name)
+		with self.loop.pause():
+			return func(*args)
+			
 	def save(self):
 		"""Save mission periodly"""
 		mission_manager.save()
@@ -530,14 +558,16 @@ class MainWindow(ViewMixin, EventMixin):
 			if event.target not in download_manager.analyze_threads:
 				return
 			error, mission = event.data
-			messagebox.showerror(
+			self.messagebox(
+				"error",
 				mission.module.name,
 				"解析錯誤！\n{}".format(error)
 			)
 
 		@self.thread.listen("MISSION_POOL_LOAD_FAILED")
 		def _(event):
-			messagebox.showerror(
+			self.messagebox(
+				"error",
 				"Comic Crawler",
 				"讀取存檔失敗！\n{}".format(event.data)
 			)
@@ -545,16 +575,16 @@ class MainWindow(ViewMixin, EventMixin):
 		@self.thread.listen("DOWNLOAD_INVALID")
 		def _(event):
 			err, mission = event.data
-			messagebox.showerror(mission.module.name, err)
+			self.messagebox("error", mission.module.name, err)
 
 		@self.thread.listen("ANALYZE_INVALID")
 		def _(event):
 			err, mission = event.data
-			messagebox.showerror(mission.module.name, err)
+			self.messagebox("error", mission.module.name, err)
 			
 		@self.thread.listen("LIBRARY_CHECK_UPDATE_FAILED")
 		def _(event):
-			messagebox.showerror("Comic Crawler", "檢查更新未完成，已重試 10 次")
+			self.messagebox("error", "Comic Crawler", "檢查更新未完成，已重試 10 次")
 			
 		@self.thread.listen("BATCH_ANALYZE_UPDATE")
 		def _(event):
@@ -563,9 +593,8 @@ class MainWindow(ViewMixin, EventMixin):
 		@self.thread.listen("BATCH_ANALYZE_END")
 		def _(event):
 			err = event.data
-			if err and not isinstance(err, WorkerExit):
-				messagebox.showerror(
-					"Comic Crawler", "批次加入失敗！{}".format(err))
+			if err and not isinstance(err, worker.WorkerExit):
+				self.messagebox("error", "Comic Crawler", "批次加入失敗！{}".format(err))
 			self.text_batch_analyze.config(state="normal")
 			print("Batch analyze ended")
 			
@@ -580,7 +609,7 @@ class MainWindow(ViewMixin, EventMixin):
 		"""Wrap mission_manager.remove."""
 		for mission in missions:
 			if mission.state in ("DOWNLOADING", "ANALYZING"):
-				messagebox.showerror("Comic Crawler", "刪除任務失敗！任務使用中")
+				self.messagebox("error", "Comic Crawler", "刪除任務失敗！任務使用中")
 		mission_manager.remove(pool_name, *missions)
 
 	def sp_callback(self, text):
