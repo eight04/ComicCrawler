@@ -158,20 +158,20 @@ class DownloadManager:
 			while missions:
 				yield missions[0]
 				
-		def done_item(err, mission):
+		def on_item_finished(err, mission):
 			if not err:
 				missions.popleft()
 				mission_manager.add("view", mission)
 				download_ch.pub("BATCH_ANALYZE_UPDATE", list(missions))
 			
-		def done(err):
+		def on_finished(err):
 			self.batch_analyzer = None
 			download_ch.pub("BATCH_ANALYZE_END", err)
 			
 		self.batch_analyzer = BatchAnalyzer(
 			gen_missions=gen_missions(),
-			done_item=done_item,
-			done=done
+			on_item_finished=on_item_finished,
+			on_finished=on_finished
 		)
 		self.batch_analyzer.start()
 		
@@ -209,7 +209,7 @@ class DownloadManager:
 				yield mission
 				
 		self.library_err_count = 0
-		def done_item(err, mission):
+		def on_item_finished(err, mission):
 			if mission.state == "UPDATE":
 				mission_manager.lift("library", mission)
 			elif mission.state == "ERROR":
@@ -219,7 +219,7 @@ class DownloadManager:
 		def stop_on_error(err):
 			return self.library_err_count > 10 or isinstance(err, PauseDownloadError)
 				
-		def done(err):
+		def on_finished(err):
 			self.library_thread = None
 			if err:
 				if self.library_err_count > 10:
@@ -230,8 +230,8 @@ class DownloadManager:
 				
 		self.library_thread = BatchAnalyzer(
 			gen_missions=gen_missions(),
-			done_item=done_item,
-			done=done,
+			on_item_finished=on_item_finished,
+			on_finished=on_finished,
 			stop_on_error=stop_on_error
 		)
 		self.library_thread.start()

@@ -10,13 +10,13 @@ class BatchAnalyzer:
 		self,
 		gen_missions,
 		stop_on_error=True,
-		done_item=None,
-		done=None
+		on_item_finished=None,
+		on_finished=None
 	):
 		self.thread = Worker(self.analyze)
 		self.gen_missions = gen_missions
-		self.done = done
-		self.done_item = done_item
+		self.on_finished = on_finished
+		self.on_item_finished = on_item_finished
 		self.stop_on_error = stop_on_error
 		self.cooldown = {}
 		self.last_err = None
@@ -43,8 +43,8 @@ class BatchAnalyzer:
 		try:
 			self.do_analyze()
 		finally:
-			if self.done:
-				self.done(self.last_err)
+			if self.on_finished:
+				self.on_finished(self.last_err)
 			
 	def do_analyze(self):
 		for mission in self.gen_missions:
@@ -54,14 +54,14 @@ class BatchAnalyzer:
 					Analyzer(mission).analyze()
 			except BaseException as err: # catch PauseDownloadError and WorkerExit?
 				self.last_err = err
-				if self.done_item:
-					self.done_item(err, mission)
+				if self.on_item_finished:
+					self.on_item_finished(err, mission)
 				if self.stop_on_error and (not callable(self.stop_on_error) or self.stop_on_error(err)):
 					break
 				if isinstance(err, WorkerExit):
 					raise
 			else:
-				if self.done_item:
-					self.done_item(None, mission)
+				if self.on_item_finished:
+					self.on_item_finished(None, mission)
 			finally:
 				self.cooldown[mission.module.name] = time()		
