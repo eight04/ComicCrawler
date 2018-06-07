@@ -54,10 +54,11 @@ def load_episodes(mission):
 		yield
 	finally:
 		with load_episodes_lock:
-			if mission.episodes and load_episodes_status[mission_id] == 1:
-				file = get_ep_path(mission)
-				json_dump(mission.episodes, file)
-				mission.episodes = None
+			if load_episodes_status[mission_id] == 1:
+				if mission.episodes:
+					file = get_ep_path(mission)
+					json_dump(mission.episodes, file)
+					mission.episodes = None
 				del load_episodes_status[mission_id]
 			else:
 				load_episodes_status[mission_id] -= 1
