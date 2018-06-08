@@ -325,6 +325,7 @@ Changelog
    -  Fix: new interface in pixiv.
    -  Add: "Check update" command in the library contextmenu.
    -  Add: rest_analyze constant in modules.
+   -  Drop: migrate command.
 
 -  2018.5.24
 
