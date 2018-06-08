@@ -15,7 +15,7 @@ from time import time
 
 from worker import Worker, current, await_, create_worker
 
-from .analyzer import analyze
+from .analyzer import Analyzer
 from .safeprint import print
 from .batch_analyzer import BatchAnalyzer
 from .config import setting
@@ -23,7 +23,7 @@ from .mission import create_mission
 from .crawler import download
 from .profile import get as profile
 from .error import PauseDownloadError
-from .util import safefilepath
+from .util import safefilepath, debug_log
 
 from .mission_manager import mission_manager
 from .channel import download_ch
@@ -122,8 +122,10 @@ class DownloadManager:
 		if mission:
 			print("Start download " + mission.title)
 			def do_download():
+				debug_log("do_download")
 				with load_episodes(mission):
 					download(mission, profile(mission.module.config["savepath"]))
+					
 			self.download_thread = Worker(do_download).start()
 		else:
 			print("所有任務已下載完成")
@@ -147,8 +149,8 @@ class DownloadManager:
 			err = None
 			with load_episodes(mission):
 				try:
-					analyze(mission)
-				except Exception as _err:
+					Analyzer(mission).analyze()
+				except BaseException as _err:
 					err = _err
 					raise
 				else:

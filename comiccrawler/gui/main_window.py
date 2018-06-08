@@ -608,12 +608,13 @@ class MainWindow(ViewMixin, EventMixin):
 			
 		def on_finished(err):
 			if err:
-				self.thread.later(
-					self.messagebox,
-					"error",
-					mission.module.name,
-					"解析錯誤！\n{}".format(err)
-				)
+				if not isinstance(err, worker.WorkerExit):
+					self.thread.later(
+						self.messagebox,
+						"error",
+						mission.module.name,
+						"解析錯誤！\n{}".format(err)
+					)
 				return
 				
 			if len(mission.episodes) == 1:

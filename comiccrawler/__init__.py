@@ -32,11 +32,11 @@ from .__pkginfo__ import __version__
 def console_download(url, savepath):
 	"""Download url to savepath."""
 	from .mission import Mission
-	from .analyzer import analyze
+	from .analyzer import Analyzer
 	from .crawler import download
 
 	mission = Mission(url=url)
-	analyze(mission)
+	Analyzer(mission).analyze()
 	download(mission, savepath)
 
 def console_init():

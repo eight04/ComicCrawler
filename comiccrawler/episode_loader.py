@@ -3,7 +3,7 @@ import hashlib
 import threading
 
 from .io import json_load, json_dump, move, remove
-from .util import safefilepath
+from .util import safefilepath, debug_log
 from .profile import get as profile_get
 from .episode import Episode
 
@@ -50,6 +50,7 @@ def load_episodes(mission):
 			load_episodes_status[mission_id] += 1
 		else:
 			load_episodes_status[mission_id] = 1
+	debug_log("LOAD_EPISODES")
 	try:
 		yield
 	finally:
@@ -62,6 +63,7 @@ def load_episodes(mission):
 				del load_episodes_status[mission_id]
 			else:
 				load_episodes_status[mission_id] -= 1
+		debug_log("UNLOAD_EPISODES")
 
 def cleanup_episode(mission):
 	"""Remove episode save file. (probably because the mission is removed from

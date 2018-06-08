@@ -16,7 +16,8 @@ from zipfile import ZipFile
 from node_vm2 import eval
 
 from ..core import Episode, grabhtml
-from ..error import SkipEpisodeError, PauseDownloadError, is_403
+# from ..error import SkipEpisodeError, PauseDownloadError, is_403
+from ..error import PauseDownloadError
 from ..url import urljoin
 
 domain = ["www.pixiv.net"]
@@ -36,10 +37,13 @@ def get_title(html, url):
 		except AttributeError:
 			pass
 	return "[pixiv] " + unescape(re.search("<title>([^<]+)", html).group(1))
+	
+def check_login(html):
+	if "pixiv.user.loggedIn = true" not in html and "login: 'yes'" not in html:
+		raise PauseDownloadError("you didn't login!")	
 
 def get_episodes(html, url):
-	if "pixiv.user.loggedIn = true" not in html:
-		raise PauseDownloadError("you didn't login!")
+	check_login(html)
 	s = []
 	for m in re.finditer(r'<a href="([^"]+)"><h1 class="title" title="([^"]+)">', html):
 		ep_url, title = m.groups()
@@ -57,96 +61,42 @@ def get_episodes(html, url):
 			))
 			
 	# single image
-	match = re.search(r'pixiv\.context\.illustId\s*=\s*"(\d+)', html)
-	if match:
+	if "member_illust.php?mode=medium&illust_id" in url:
 		s.append(Episode("image", url))
 		
 	return s[::-1]
 	
 cache = {}
 
-def get_images_old(html, url):
-	match = re.search(r'"works_display"><a (?:class="[^"]*" )?href="([^"]+)"', html)
-	
-	if not match:
-		return
-		
-	inner_url = match.group(1)
-	html = grabhtml(urljoin(url, inner_url), referer=url)
-
-	if "mode=big" in inner_url:
-		# single image
-		img = re.search(r'src="([^"]+)"', html).group(1)
-		return [img]
-
-	if "mode=manga" in inner_url:
-		# multiple image
-		imgs = []
-		
-		def create_grabber(url):
-			def grabber():
-				html = grabhtml(url)
-				return re.search(r'img src="([^"]+)"', html).group(1)
-			return grabber
-
-		for match in re.finditer(r'a href="(/member_illust\.php\?mode=manga_big[^"]+)"', html):
-			imgs.append(create_grabber(urljoin(url, match.group(1))))
-
-		# New manga reader (2015/3/18)
-		# http://www.pixiv.net/member_illust.php?mode=manga&illust_id=19254298
-		if not imgs:
-			for match in re.finditer(r'originalImages\[\d+\] = ("[^"]+")', html):
-				img = eval(match.group(1))
-				imgs.append(img)
-
-		return imgs
+def get_nth_img(url, i):
+	return re.sub(r"_p0(\.\w+)$", r"_p{}\1".format(i), url)
 
 def get_images(html, url):
-	if "pixiv.user.loggedIn = true" not in html:
-		raise PauseDownloadError("you didn't login!")
-
-	# ugoku
-	rs = re.search(r"pixiv\.context\.ugokuIllustFullscreenData\s+= ([^;]+)", html)
-	if rs:
-		json = rs.group(1)
-		o = eval("(" + json + ")")
-		cache["frames"] = o["frames"]
-		return [o["src"]]
-
-	# new image layout (2014/12/14)
-	rs = re.search(r'class="big" data-src="([^"]+)"', html)
-	if rs:
-		return [rs.group(1)]
-
-	rs = re.search(r'data-src="([^"]+)" class="original-image"', html)
-	if rs:
-		return [rs.group(1)]
-
-	# old image layout
-	imgs = get_images_old(html, url)
-	if imgs:
-		return imgs
+	check_login(html)
+	init_data = re.search(r"(var globalInitData[\s\S]+?)</script>", html).group(1)
+	init_data = eval("""
+	Object.freeze = null;
+	""" + init_data + """
+	globalInitData;
+	""")
+	illust_id = re.search("illust_id=(\d+)", url).group(1)
+	illust = init_data["preload"]["illust"][illust_id]
 	
-	# restricted
-	rs = re.search('<section class="restricted-content">', html)
-	if rs:
-		raise SkipEpisodeError
+	if illust["illustType"] != 2: # normal images
+		first_img = illust["urls"]["original"]
+		return [get_nth_img(first_img, i) for i in range(illust["pageCount"])]
+		
+	# https://www.pixiv.net/member_illust.php?mode=medium&illust_id=44298524
+	ugoira_meta = "https://www.pixiv.net/ajax/illust/{}/ugoira_meta".format(illust_id)
+	ugoira_meta = json.loads(grabhtml(ugoira_meta))
+	cache["frames"] = ugoira_meta["body"]["frames"]
+	return ugoira_meta["body"]["originalSrc"]
 
-	# error page
-	rs = re.search('class="error"', html)
-	if rs:
-		raise SkipEpisodeError
-
-	# id doesn't exist
-	rs = re.search("pixiv.context.illustId", html)
-	if not rs:
-		raise SkipEpisodeError
-
-def errorhandler(er, crawler):
+# def errorhandler(er, crawler):
 	# http://i1.pixiv.net/img21/img/raven1109/10841650_big_p0.jpg
 	# Private page?
-	if is_403(er):
-		raise SkipEpisodeError
+	# if is_403(er):
+		# raise SkipEpisodeError
 			
 def imagehandler(ext, bin):
 	"""Append index info to ugoku zip"""
