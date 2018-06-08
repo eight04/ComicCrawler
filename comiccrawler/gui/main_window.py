@@ -294,7 +294,7 @@ class EventMixin:
 
 		def cleanfinished():
 			# mission_manager.clean_finished()
-			missions = mission_manager.get_all_by_state("view", ("FINISHED",))
+			missions = mission_manager.get_all("view", lambda m: m.state == "FINISHED")
 			if not missions:
 				return
 			mission_manager.remove("view", *missions)
@@ -386,7 +386,7 @@ class EventMixin:
 		self.btn_update["command"] = lib_check_update
 
 		def lib_download_update():
-			missions = mission_manager.get_all_by_state("library", ("UPDATE",))
+			missions = mission_manager.get_all("library", lambda m: m.state == "UPDATE")
 			if not missions:
 				self.messagebox("error", "Comic Crawler", "沒有新更新的任務")
 				return
@@ -581,6 +581,19 @@ class MainWindow(ViewMixin, EventMixin):
 				
 		table.rearrange(missions)
 		
+	def add_analyze(self, mission, on_success=None):
+		def on_finished(err):
+			if err and not isinstance(err, worker.WorkerExit):
+				self.thread.later(
+					self.messagebox,
+					"error",
+					mission.module.name,
+					"解析錯誤！\n{}".format(err)
+				)
+			if on_success:
+				on_success()
+		download_manager.start_analyze(mission, on_finished=on_finished)
+		
 	def add_url(self, url):
 		try:
 			mission = mission_manager.get_by_url(url)
@@ -594,7 +607,7 @@ class MainWindow(ViewMixin, EventMixin):
 				default="yes"
 			):
 				mission.state = 'ANALYZE_INIT'
-				download_manager.start_analyze(mission)
+				self.add_analyze(mission)
 			return
 		try:
 			mission = create_mission(url=url)
@@ -606,17 +619,7 @@ class MainWindow(ViewMixin, EventMixin):
 			)
 			return
 			
-		def on_finished(err):
-			if err:
-				if not isinstance(err, worker.WorkerExit):
-					self.thread.later(
-						self.messagebox,
-						"error",
-						mission.module.name,
-						"解析錯誤！\n{}".format(err)
-					)
-				return
-				
+		def on_success():
 			if len(mission.episodes) == 1:
 				return
 				
@@ -630,8 +633,8 @@ class MainWindow(ViewMixin, EventMixin):
 			self.thread.later(select_episodes, self.root, mission, on_closed=defer.resolve)
 			if not defer.get():
 				mission_manager.remove("view", mission)
-			
-		download_manager.start_analyze(mission, on_finished=on_finished)
+				
+		self.add_analyze(mission, on_success=on_success)
 		
 def create_scrollable_text(parent):
 	scrbar = ttk.Scrollbar(parent)

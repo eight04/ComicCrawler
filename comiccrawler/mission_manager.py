@@ -165,23 +165,18 @@ class MissionManager:
 				pool.move_to_end(mission.url)
 		mission_ch.pub("MISSION_LIST_REARRANGED", pool)
 		self.edit = True
-
-	def get_by_state(self, pool_name, states):
-		"""Get first mission matching states."""
+		
+	def get_all(self, pool_name, test=None):
+		"""Get all missions matching condition."""
 		with self.lock:
-			for mission in getattr(self, pool_name).values():
-				if mission.state in states:
-					return mission
-			return None
+			return [m for m in getattr(self, pool_name).values() if not test or test(m)]
 			
-	def get_all_by_state(self, pool_name, states):
-		"""Get all missions matching states"""
+	def get(self, pool_name, test=None):
+		"""Get the first mission matching condition."""
 		with self.lock:
-			output = []
 			for mission in getattr(self, pool_name).values():
-				if mission.state in states:
-					output.append(mission)
-			return output
+				if not test or test(mission):
+					return mission
 
 	def get_by_url(self, url, pool_name=None):
 		"""Get mission by url."""

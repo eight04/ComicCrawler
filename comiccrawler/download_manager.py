@@ -118,7 +118,7 @@ class DownloadManager:
 		if self.download_thread:
 			return
 
-		mission = mission_manager.get_by_state("view", ("ANALYZED", "PAUSE", "ERROR", "UPDATE"))
+		mission = mission_manager.get("view", lambda m: m.state in ("ANALYZED", "PAUSE", "ERROR", "UPDATE"))
 		if mission:
 			print("Start download " + mission.title)
 			def do_download():
@@ -207,7 +207,7 @@ class DownloadManager:
 			thread.stop()
 			self.analyze_threads.remove(thread)
 
-	def start_check_update(self):
+	def start_check_update(self, missions=None):
 		"""Start checking library update."""
 		if self.library_thread:
 			print("Already checking update")
@@ -215,13 +215,18 @@ class DownloadManager:
 			
 		# set mission state to ANALYZE_INIT
 		setting["lastcheckupdate"] = str(time())
-		for mission in mission_manager.library.values():
-			if mission.state not in ("DOWNLOADING", "ANALYZING"):
-				mission.state = "ANALYZE_INIT"
+		
+		if missions is None:
+			missions = mission_manager.get_all("library", lambda m: m.state not in ("DOWNLOADING", "ANALYZING"))
+			
+		for mission in missions:
+			mission.state = "ANALYZE_INIT"
+			
+		missions = set(missions)
 				
 		def gen_missions():
 			while True:
-				mission = mission_manager.get_by_state("library", ("ANALYZE_INIT", "ERROR"))
+				mission = mission_manager.get("library", lambda m: m.state in ("ANALYZE_INIT", "ERROR") and m in missions)
 				if not mission:
 					return
 				yield mission
