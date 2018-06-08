@@ -32,6 +32,17 @@ def quote(item):
 	if sys.platform == "win32":
 		return subprocess.list2cmdline([item])
 	return shlex.quote(item)
+	
+class ThreadSafe:
+	def __init__(self, obj):
+		lock = Lock()
+		for meth_name in dir(set):
+			if meth_name.startswith("_"):
+				continue
+			def new_meth(*args, **kwargs, old_meth=getattr(obj, meth_name)):
+				with lock:
+					return old_meth(*args, **kwargs)
+			setattr(self, meth_name, new_meth)
 
 class DownloadManager:
 	"""Create a download manager used in GUI. Manage threads."""
@@ -39,7 +50,7 @@ class DownloadManager:
 	def __init__(self):
 		"""Construct."""
 		self.download_thread = None
-		self.analyze_threads = set()
+		self.analyze_threads = ThreadSafe(set())
 		self.library_thread = None
 		self.library_err_count = None
 		self.batch_analyzer = None
@@ -95,20 +106,6 @@ class DownloadManager:
 				self.download_thread = None
 				print("停止下載")
 
-		@thread.listen("ANALYZE_FINISHED")
-		def _(event):
-			"""After analyze, add to view (view analyzer)"""
-			if event.target in self.analyze_threads:
-				mission = event.data
-				mission_manager.add("view", mission)
-				download_ch.pub("ANALYZE_NEW_MISSION", mission)
-
-		@thread.listen("ANALYZE_FINISHED")
-		@thread.listen("ANALYZE_FAILED")
-		def _(event):
-			if event.target in self.analyze_threads:
-				self.analyze_threads.remove(event.target)
-				
 	def start_download(self):
 		"""Start downloading."""
 		if self.download_thread:
@@ -131,17 +128,29 @@ class DownloadManager:
 			self.download_thread = None
 			print("Stop downloading")
 			
-	def start_analyze(self, mission):
+	def start_analyze(self, mission, on_finished=None):
 		"""Start analyzing"""
 		if mission.state not in ("ANALYZE_INIT", "INIT"):
 			print(
 				"Invalid state to analyze: {state}".format(state=mission.state))
 			return
-		def do_analyze():
+			
+		@create_worker
+		def analyze_thread():
+			err = None
 			with load_episodes(mission):
-				analyze(mission)
-		thread = Worker(do_analyze).start()
-		self.analyze_threads.add(thread)
+				try:
+					analyze(mission)
+				except Exception as _err:
+					err = _err
+					raise
+				finally:
+					if on_finished:
+						on_finished(err)
+					self.analyze_threads.remove(analyze_thread)
+				else:
+					mission_manager.add("view", mission)
+		self.analyze_threads.add(analyze_thread)
 		
 	def start_batch_analyze(self, missions):
 		"""Start batch analyze"""
