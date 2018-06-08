@@ -465,7 +465,7 @@ class MainWindow(ViewMixin, EventMixin):
 		self.save()
 		self.loop.start()
 		
-	def messagebox(self, type, *args):
+	def messagebox(self, type, *args, **kwargs):
 		"""Pause the loop when using messagebox"""
 		name = None
 		if type in ("okcancel", "yesno", "yesnocancel", "retrycancel"):
@@ -474,7 +474,7 @@ class MainWindow(ViewMixin, EventMixin):
 			name = "show" + type
 		func = getattr(messagebox, name)
 		with self.loop.pause():
-			return func(*args)
+			return func(*args, **kwargs)
 			
 	def save(self):
 		"""Save mission periodly"""
@@ -511,17 +511,6 @@ class MainWindow(ViewMixin, EventMixin):
 		@self.thread.listen("MISSION_LIST_REARRANGED")
 		def _(event):
 			self.update_table(event.data)
-
-		@self.thread.listen("ANALYZE_FAILED", priority=100)
-		def _(event):
-			if event.target not in download_manager.analyze_threads:
-				return
-			error, mission = event.data
-			self.messagebox(
-				"error",
-				mission.module.name,
-				"解析錯誤！\n{}".format(error)
-			)
 
 		@self.thread.listen("MISSION_POOL_LOAD_FAILED")
 		def _(event):
@@ -619,6 +608,12 @@ class MainWindow(ViewMixin, EventMixin):
 			
 		def on_finished(err):
 			if err:
+				self.thread.later(
+					self.messagebox,
+					"error",
+					mission.module.name,
+					"解析錯誤！\n{}".format(err)
+				)
 				return
 				
 			if len(mission.episodes) == 1:

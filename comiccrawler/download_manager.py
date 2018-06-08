@@ -8,11 +8,12 @@ import subprocess # nosec
 import shlex
 import sys
 import traceback
+from threading import Lock
 
 from os.path import join as path_join
 from time import time
 
-from worker import Worker, current, await_
+from worker import Worker, current, await_, create_worker
 
 from .analyzer import analyze
 from .safeprint import print
@@ -33,16 +34,22 @@ def quote(item):
 		return subprocess.list2cmdline([item])
 	return shlex.quote(item)
 	
-class ThreadSafe:
-	def __init__(self, obj):
-		lock = Lock()
-		for meth_name in dir(set):
-			if meth_name.startswith("_"):
-				continue
-			def new_meth(*args, **kwargs, old_meth=getattr(obj, meth_name)):
-				with lock:
-					return old_meth(*args, **kwargs)
-			setattr(self, meth_name, new_meth)
+class ThreadSafeSet:
+	def __init__(self):
+		self.lock = Lock()
+		self.obj = set()
+		
+	def add(self, item):
+		with self.lock:
+			return self.obj.add(item)
+			
+	def remove(self, item):
+		with self.lock:
+			return self.obj.remove(item)
+			
+	def copy(self):
+		with self.lock:
+			return self.obj.copy()
 
 class DownloadManager:
 	"""Create a download manager used in GUI. Manage threads."""
@@ -50,7 +57,7 @@ class DownloadManager:
 	def __init__(self):
 		"""Construct."""
 		self.download_thread = None
-		self.analyze_threads = ThreadSafe(set())
+		self.analyze_threads = ThreadSafeSet()
 		self.library_thread = None
 		self.library_err_count = None
 		self.batch_analyzer = None
@@ -144,12 +151,12 @@ class DownloadManager:
 				except Exception as _err:
 					err = _err
 					raise
+				else:
+					mission_manager.add("view", mission)
 				finally:
 					if on_finished:
 						on_finished(err)
 					self.analyze_threads.remove(analyze_thread)
-				else:
-					mission_manager.add("view", mission)
 		self.analyze_threads.add(analyze_thread)
 		
 	def start_batch_analyze(self, missions):
