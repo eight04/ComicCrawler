@@ -21,30 +21,6 @@ Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管�
    -  node_vm2 用 `vm2 <https://github.com/patriksimek/vm2>`__ 執行 JavaScript，比 execjs 多了一層沙箱防護。
    -  vm2 需要 Node.js >= 6。
 
-2016.12.20 更新
-----------------
-
--  此版本修改了檔案的命名規則
-
-   -  原先檔名若包含不合法的字元 ``/\?|<>:"*``，會被替換成底線 ``_``
-   -  改版後則會替換為對應的全型字元 ``／＼？｜＜＞：＂＊``
-   -  若是有包含這類字元的存檔，會因為替換規則不同而讀不到舊版底線的檔案
-   -  請在更新後執行 ``comiccrawler migrate`` 指令，會自動對舊版的存檔重命名
-   
--  此版本修改了設定檔的格式
-
-   -  項目名稱區分大小寫
-   -  若是要求填入 cookie 資訊，會以 ``cookie_`` 為前綴
-    
-2016.6.4 更新
---------------
-
--  此版本修改了存檔的運作方式，建議在更新前先將存檔備份
--  改版後，所有「未使用中」的任務資料會存到 ``~/comiccrawler/pool/`` 資料夾
--  ``~/comiccrawler/pool.json`` 不再儲存 episode 相關資訊
--  任務下載時，會再從 pool 資料夾中讀出 episode 相關資訊
--  目的為減少不必要的記憶體使用量
-
 下載和安裝（Windows）
 ---------------------
 
@@ -110,8 +86,7 @@ As a CLI tool:
      comiccrawler [--profile=<profile>] (
        domains |
        download <url> [--dest=<save_path>] |
-       gui |
-       migrate
+       gui
      )
      comiccrawler (--help | --version)
 
@@ -119,7 +94,6 @@ As a CLI tool:
      domains    列出支援的網址
      download   下載指定的 url
      gui        啟動主視窗
-     migrate    將舊存檔更名為新存檔
 
    Options:
      --profile  指定設定檔存放的資料夾（預設為 "~/comiccrawler"）
@@ -212,8 +186,7 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
 
     import re
     from urllib.parse import urljoin
-    from comiccrawler.core import Episode
-    from configparser import ConfigParser
+    from comiccrawler.episode import Episode
 
     # The header used in grabber method. Optional.
     header = {}
@@ -234,6 +207,10 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
 
     # Wait 5 seconds before downloading another image. Optional, default to 0.
     rest = 5
+    
+    # Wait 5 seconds before analyzing the next page in the analyzer. Optional,
+    # default to 0.
+    rest_analyze = 5
 
     # User settings which could be modified from setting.ini. The keys are
     # case-sensitive.
