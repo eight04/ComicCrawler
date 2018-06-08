@@ -369,6 +369,12 @@ class EventMixin:
 					titles = [ m.title for m in missions ]
 					mission_manager.add("library", *missions)
 					print("已加入圖書館︰{}".format(", ".join(titles)))
+					
+			if name == "library":
+				@bind_menu("檢查更新")
+				def _():
+					missions = table.selected()
+					download_manager.start_check_update(missions)
 
 			# menu call
 			def tvmenucall(event):
