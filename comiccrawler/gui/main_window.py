@@ -276,40 +276,11 @@ class EventMixin:
 			addurl()
 		self.entry_url.bind("<Return>", entrykeypress)
 
-		def ask_analyze_update(mission):
-			return self.messagebox(
-				"yesno",
-				"Comic Crawler",
-				safe_tk(mission.title) + "\n\n任務已存在，要檢查更新嗎？",
-				default="yes"
-			)
-
 		# interface for download manager
 		def addurl():
 			url = self.entry_url.get()
 			self.entry_url.delete(0, "end")
-
-			try:
-				mission = mission_manager.get_by_url(url)
-			except KeyError:
-				pass
-			else:
-				if ask_analyze_update(mission):
-					mission.state = 'ANALYZE_INIT'
-					download_manager.start_analyze(mission)
-				return
-					
-			try:
-				mission = create_mission(url=url)
-			except ModuleError:
-				self.messagebox(
-					"error",
-					"Comic Crawler",
-					"建立任務失敗！不支援的網址！"
-				)
-			else:
-				download_manager.start_analyze(mission)
-
+			self.add_url(url)
 		self.btn_addurl["command"] = addurl
 
 		def startdownload():
@@ -541,18 +512,6 @@ class MainWindow(ViewMixin, EventMixin):
 		def _(event):
 			self.update_table(event.data)
 
-		@self.thread.listen("ANALYZE_NEW_MISSION")
-		def _(event):
-			mission = event.data
-			with load_episodes(mission):
-				if len(mission.episodes) == 1:
-					return
-				if not mission.module.config.getboolean("selectall"):
-					for ep in mission.episodes:
-						ep.skip = True
-				if not select_episodes(self.root, mission):
-					mission_manager.remove("view", mission)
-
 		@self.thread.listen("ANALYZE_FAILED", priority=100)
 		def _(event):
 			if event.target not in download_manager.analyze_threads:
@@ -632,6 +591,51 @@ class MainWindow(ViewMixin, EventMixin):
 				}, key=mission)
 				
 		table.rearrange(missions)
+		
+	def add_url(self, url):
+		try:
+			mission = mission_manager.get_by_url(url)
+		except KeyError:
+			pass
+		else:
+			if self.messagebox(
+				"yesno",
+				"Comic Crawler",
+				safe_tk(mission.title) + "\n\n任務已存在，要檢查更新嗎？",
+				default="yes"
+			):
+				mission.state = 'ANALYZE_INIT'
+				download_manager.start_analyze(mission)
+			return
+		try:
+			mission = create_mission(url=url)
+		except ModuleError:
+			self.messagebox(
+				"error",
+				"Comic Crawler",
+				"建立任務失敗！不支援的網址！"
+			)
+			return
+			
+		def on_finished(err):
+			if err:
+				return
+				
+			if len(mission.episodes) == 1:
+				return
+				
+			if not mission.module.config.getboolean("selectall"):
+				for ep in mission.episodes:
+					ep.skip = True
+					
+			# note that on_finished is called in the analyzer thread, we can't
+			# call select_episodes directly.
+			defer = worker.Defer()
+			self.thread.later(select_episodes, self.root, mission, on_closed=defer.resolve)
+			if not defer.get():
+				mission_manager.remove("view", mission)
+			
+		download_manager.start_analyze(mission, on_finished=on_finished)
 		
 def create_scrollable_text(parent):
 	scrbar = ttk.Scrollbar(parent)
