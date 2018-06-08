@@ -1,5 +1,5 @@
 docutils~=0.12
 livereload>=2.5.2,<3
 pyxcute>=0.5.1,<0.6
-pylint~=1.8.2
+pylint>=1.8.2,<2
 twine>=1.9.1,<2
