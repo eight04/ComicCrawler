@@ -7,6 +7,11 @@ Comic Crawler
 
 Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管理員、圖書館功能、 與方便的擴充能力。
 
+2018.6.8 更新
+-------------
+
+-  此版本對程式結構進行了較大幅度的調整，建議在更新前備份存檔。
+
 2017.3.25 更新
 ----------------
 
@@ -336,6 +341,13 @@ Todos
 
 Changelog
 ---------
+
+-  2018.6.8
+
+   -  Refactor: comiccrawler.core is exploded.
+   -  Fix: new interface in pixiv.
+   -  Add: "Check update" command in the library contextmenu.
+   -  Add: rest_analyze constant in modules.
 
 -  2018.5.24
 
