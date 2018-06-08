@@ -8,6 +8,7 @@ import pprint
 import glob
 import time
 import shutil
+import json
 
 from contextlib import contextmanager, suppress
 
@@ -176,3 +177,27 @@ def remove(file):
 	file = path.expanduser(file)
 	with suppress(FileNotFoundError):
 		os.remove(file)
+
+def json_load(file):
+	"""My json.load"""
+	with suppress(OSError):
+		with open(file) as fp:
+			return json.load(fp)
+				
+def json_dump(data, file):
+	"""My json.dump"""
+	
+	def encoder(object):
+		"""Encode any object to json."""
+		if hasattr(object, "tojson"):
+			return object.tojson()
+		return vars(object)
+		
+	with open(file, "w") as fp:
+		json.dump(
+			data,
+			fp,
+			indent=4,
+			ensure_ascii=False,
+			default=encoder
+		)

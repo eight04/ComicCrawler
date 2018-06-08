@@ -6,9 +6,10 @@ from tkinter import ttk
 from .core import safe_tk
 
 class Dialog:
-	def __init__(self, parent, title="Dialog"):
+	def __init__(self, parent, title="Dialog", on_closed=None):
 		self.parent = parent
 		self.result = None
+		self.on_closed = on_closed
 	
 		# root
 		self.root = tk.Toplevel(parent)
@@ -50,11 +51,17 @@ class Dialog:
 		self.result = self.apply()
 		self.parent.focus_set()
 		self.root.destroy()
+		self.emit_closed()
 		
 	def reject(self, _event=None):
 		"""Destroy dialog."""
 		self.parent.focus_set()
 		self.root.destroy()
+		self.emit_closed()
+		
+	def emit_closed(self):
+		if self.on_closed:
+			self.on_closed(self.result)
 		
 	def apply(self):
 		return True

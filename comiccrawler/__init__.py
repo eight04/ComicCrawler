@@ -6,8 +6,7 @@ Usage:
   comiccrawler [--profile=<profile>] (
     domains |
     download <url> [--dest=<save_path>] |
-    gui |
-    migrate
+    gui
   )
   comiccrawler (--help | --version)
 
@@ -15,7 +14,6 @@ Commands:
   domains             List supported domains.
   download <url>      Download from the URL.
   gui                 Launch TKinter GUI.
-  migrate             Convert old file path to new file path.
 
 Options:
   --profile=<profile> Set profile location. [default: ~/comiccrawler]
@@ -33,7 +31,9 @@ from .__pkginfo__ import __version__
 
 def console_download(url, savepath):
 	"""Download url to savepath."""
-	from .core import Mission, download, analyze
+	from .mission import Mission
+	from .analyzer import analyze
+	from .crawler import download
 
 	mission = Mission(url=url)
 	analyze(mission)
@@ -59,37 +59,3 @@ def console_init():
 
 	elif arguments["download"]:
 		console_download(arguments["<url>"], arguments["--dest"])
-		
-	elif arguments["migrate"]:
-		migrate()
-
-def migrate():
-	import re
-	
-	from .mission_manager import mission_manager, get_mission_id
-	from .core import safefilepath
-	from .io import move
-	from .safeprint import print
-	from .profile import get as profile
-	
-	def safefilepath_old(file):
-		"""Return a safe directory name."""
-		return re.sub(r"[/\?|<>:\"*]", "_", file).strip()
-		
-	def rename(to_rename):
-		for src, dst in to_rename:
-			if src != dst:
-				print("\n" + src + "\n" + dst)
-				move(src, dst)
-		
-	mission_manager.load()
-	to_rename = []
-	
-	for mission in mission_manager.pool.values():
-		id = get_mission_id(mission)
-		old_ep = profile("pool/" + safefilepath_old(id + ".json"))
-		new_ep = profile("pool/" + safefilepath(id + ".json"))
-		to_rename.append((old_ep, new_ep))
-		
-	rename(to_rename)
-	

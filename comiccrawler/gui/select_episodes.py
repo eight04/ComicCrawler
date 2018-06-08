@@ -5,13 +5,11 @@ import tkinter.ttk as ttk
 
 from belfrywidgets import ToolTip
 
-from ..mission_manager import init_episode, uninit_episode
-
 from .core import safe_tk
 from .dialog import Dialog
 
 class SelectEpisodeDialog(Dialog):
-	def __init__(self, parent, title=None, mission=None):
+	def __init__(self, parent, title=None, mission=None, on_closed=None):
 		self.mission = mission
 		
 		self.checks = []
@@ -22,7 +20,7 @@ class SelectEpisodeDialog(Dialog):
 		self.window_column = 0
 		self.window_left = 0
 		
-		super().__init__(parent, title)
+		super().__init__(parent, title, on_closed=on_closed)
 		
 	def create_window(self, column):
 		if self.window:
@@ -147,11 +145,14 @@ class SelectEpisodeDialog(Dialog):
 			else:
 				ck.state(("selected", ))
 		
-def select_episodes(parent, mission):
+def select_episodes(parent, mission, on_closed=None):
 	"""Create dialog to select episodes."""
-	init_episode(mission)
-	select_count = SelectEpisodeDialog(
-		parent, title="選擇集數", mission=mission).wait()
-	uninit_episode(mission)
-	
-	return select_count
+	dialog = SelectEpisodeDialog(
+		parent,
+		title="選擇集數",
+		mission=mission,
+		on_closed=on_closed
+	)
+	if on_closed:
+		return None
+	return dialog.wait()

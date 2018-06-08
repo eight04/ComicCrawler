@@ -6,17 +6,19 @@ http://tw.manhuagui.com/comic/25713/351280.html#p=1
 """
 
 import re
+from itertools import cycle
 from urllib.parse import urljoin, urlencode
 
 from node_vm2 import VM, eval
 
-from ..core import Episode, grabhtml, CycleList
+from ..core import Episode, grabhtml
 
 domain = ["seemh.com", "ikanman.com", "manhuagui.com"]
 name = "看漫畫"
 config = {
 	"nowebp": "False"
 }
+rest_analyze = 3
 
 def get_title(html, url):
 	return re.search(r'<h1>([^<]*)', html).group(1)
@@ -114,9 +116,9 @@ def get_images(html, url):
 	servs = [host["h"] for category in servs for host in category["hosts"]]
 	
 	global servers
-	servers = CycleList(servs)
+	servers = cycle(servs)
 
-	host = servers.get()
+	host = next(servers)
 	
 	utils = re.search(r"SMH\.(utils=.+?),SMH\.imgData=", corejs).group(1)
 	
@@ -149,8 +151,7 @@ def get_images(html, url):
 def errorhandler(err, crawler):
 	"""Change host"""
 	if crawler.image and crawler.image.url:
-		servers.next()
-		host = servers.get()
+		host = next(servers)
 		crawler.image.url = re.sub(
 			r"://.+?\.",
 			"://{host}.".format(host=host),

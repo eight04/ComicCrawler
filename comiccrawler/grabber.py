@@ -10,9 +10,9 @@ from mimetypes import guess_extension
 import requests
 from worker import await_, sleep
 
-from ..config import setting
-from ..io import content_write
-from ..profile import get as profile
+from .config import setting
+from .io import content_write
+from .profile import get as profile
 
 default_header = {
 	"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0",

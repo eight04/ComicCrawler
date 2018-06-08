@@ -3,8 +3,9 @@
 import re
 from html import unescape
 
-from ..core import Episode, clean_tags
+from ..core import Episode
 from ..url import urljoin
+from ..util import clean_tags
 
 domain = ["nijie.info"]
 name = "nijie"

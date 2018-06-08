@@ -10,7 +10,9 @@ from html import unescape
 from urllib.parse import urljoin
 from configparser import ConfigParser
 
-from ..core import Episode, Image, url_extract_filename
+from ..episode import Episode
+from ..image import Image
+from ..util import url_extract_filename
 from ..error import PauseDownloadError
 
 domain = ["exhentai.org", "e-hentai.org"]
