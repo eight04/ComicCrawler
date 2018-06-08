@@ -6,6 +6,7 @@ from worker import WorkerExit, sleep
 from .channel import download_ch
 from .module_grabber import ModuleGrabber
 from .error import SkipPageError, PauseDownloadError
+from .safeprint import print
 
 class EpisodeList:
 	def __init__(self, eps=()):

@@ -11,6 +11,7 @@ from .error import LastPageError, PauseDownloadError, SkipEpisodeError, is_http
 from .io import path_each, content_read, content_write
 from .util import url_extract_filename, debug_log
 from .channel import download_ch, mission_ch
+from .safeprint import print
 
 VALID_FILE_TYPES = (
 	# images
