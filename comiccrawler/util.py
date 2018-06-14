@@ -34,7 +34,6 @@ def safefilepath(s):
 	s = s.strip().translate(safefilepath_table)
 	if s[-1] == ".":
 		s = s.translate(dot_table)
-	s = re.sub(r"\s+", " ", s)
 	return s
 
 def debug_log(*args):
