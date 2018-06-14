@@ -21,6 +21,9 @@ def create_safefilepath_table():
 	table.update({
 		c: None for c in set([chr(i) for i in range(128)]).difference(string.printable)
 	})
+	table.update({
+		chr(i): " " for i in range(32) if chr(i) not in table
+	})
 	return str.maketrans(table)
 	
 safefilepath_table = create_safefilepath_table()
@@ -31,7 +34,6 @@ def safefilepath(s):
 	s = s.strip().translate(safefilepath_table)
 	if s[-1] == ".":
 		s = s.translate(dot_table)
-	s = re.sub(r"\s+", " ", s)
 	return s
 
 def debug_log(*args):
