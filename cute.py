@@ -1,6 +1,6 @@
 #! python3
 
-from xcute import cute, split_version, conf
+from xcute import cute, Bump
 
 def readme():
 	"""Live reload readme"""
@@ -9,24 +9,17 @@ def readme():
 	server.watch("README.rst", "py cute.py readme_build")
 	server.serve(open_url_delay=1, root="build/readme")
 	
-def bump():
+def date_bumper(old_version):
 	"""My bump task"""
-	import datetime
-	import pathlib
-	path = pathlib.Path(conf["version_file"])
-	text = path.read_text('utf-8')
-	left, old_version, right = split_version(text)
+	from datetime import datetime
 	old_version = tuple(int(token) for token in old_version.split("."))
-	date = datetime.datetime.now()
+	date = datetime.now()
 	version = (date.year, date.month, date.day)
 	if version < old_version:
 		version += (old_version[3] + 1,)
 	elif version == old_version:
 		version += (1,)
-	version = ".".join(map(str, version))
-	path.write_text(left + version + right, 'utf-8')
-	conf["old_version"] = conf["version"]
-	conf["version"] = version
+	return ".".join(map(str, version))
 	
 def split_domains(text):
 	"""Split text into left, domains, right"""
@@ -53,7 +46,7 @@ cute(
 	default = "python -m comiccrawler gui",
 	test = ['pylint comiccrawler', 'readme_build'],
 	bump_pre = 'test',
-	bump = bump,
+	bump = Bump("{version_file}", date_bumper),
 	bump_post = ['domains', 'dist', 'release', 'publish', 'install'],
 	domains = domains,
 	dist = 'rm -r build dist & python setup.py sdist bdist_wheel',
