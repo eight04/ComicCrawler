@@ -21,6 +21,9 @@ def create_safefilepath_table():
 	table.update({
 		c: None for c in set([chr(i) for i in range(128)]).difference(string.printable)
 	})
+	table.update({
+		chr(i): " " for i in range(32) if chr(i) not in table
+	})
 	return str.maketrans(table)
 	
 safefilepath_table = create_safefilepath_table()
