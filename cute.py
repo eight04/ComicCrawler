@@ -47,7 +47,7 @@ cute(
 	test = ['pylint comiccrawler', 'readme_build'],
 	bump_pre = 'test',
 	bump = Bump("{version_file}", date_bumper),
-	# bump_post = ['domains', 'dist', 'release', 'publish', 'install'],
+	bump_post = ['domains', 'dist', 'release', 'publish', 'install'],
 	domains = domains,
 	dist = 'rm -r build dist & python setup.py sdist bdist_wheel',
 	release = [
