@@ -11,8 +11,9 @@ def readme():
 	
 def date_bumper(old_version):
 	"""My bump task"""
+	from datetime import datetime
 	old_version = tuple(int(token) for token in old_version.split("."))
-	date = datetime.datetime.now()
+	date = datetime.now()
 	version = (date.year, date.month, date.day)
 	if version < old_version:
 		version += (old_version[3] + 1,)
