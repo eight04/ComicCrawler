@@ -1,4 +1,5 @@
 import re
+import time
 import traceback
 
 from worker import WorkerExit, sleep
@@ -134,10 +135,15 @@ class Analyzer:
 			print('Analyzing {}...'.format(url))
 			sleep(getattr(self.mission.module, "rest_analyze", 0))
 			self.html = self.grabber.html(url, retry=True)
-			
+		
+		has_new_ep = False
 		for ep in reversed(new_eps):
-			old_eps.add(ep)
+			if old_eps.add(ep):
+				has_new_ep = True
 		self.mission.episodes = list(old_eps)
+		
+		if has_new_ep:
+			self.mission.last_update = time.time()
 		
 		if not self.mission.episodes:
 			raise Exception("Episode list is empty")

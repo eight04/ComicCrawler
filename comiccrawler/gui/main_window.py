@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import os
 import webbrowser
 import sys
-from time import time
+from time import time, strftime, localtime
 
 import tkinter as tk
 from tkinter import ttk, font, messagebox
@@ -18,7 +18,7 @@ from ..safeprint import print, printer
 from ..mission import create_mission
 from ..error import ModuleError
 from ..profile import get as profile
-from ..util import safefilepath
+from ..util import safefilepath, MIN
 
 from ..download_manager import download_manager
 from ..mission_manager import mission_manager
@@ -29,6 +29,11 @@ from .table import Table
 from .dialog import Dialog
 from .core import get_scale, safe_tk, STATE
 from .select_episodes import select_episodes
+
+def draw_last_update(t):
+	if not t:
+		return "無"
+	return strftime("%Y/%m/%d", localtime(t))
 
 def create_mission_table(parent):
 	return Table(
@@ -50,6 +55,12 @@ def create_mission_table(parent):
 			"text": "狀態",
 			"width": 70,
 			"anchor": "center"
+		}, {
+			"id": "last_update",
+			"text": "更新",
+			"width": 70,
+			"anchor": "center",
+			"sort": "DESC"
 		}]
 	)
 	
@@ -349,7 +360,16 @@ class EventMixin:
 
 			@bind_menu("開啟資料夾")
 			def start_explorer(event=None):
-				for mission in table.selected():
+				if event:
+					mission = table.identify_row(event.y)
+					if not mission:
+						# click on header
+						return
+					missions = [mission]
+				else:
+					missions = table.selected()
+					
+				for mission in missions:
 					savepath = profile(mission.module.config["savepath"])
 					folder = os.path.join(savepath, safefilepath(mission.title))
 					folder = os.path.expanduser(folder)
@@ -375,7 +395,7 @@ class EventMixin:
 				def _():
 					missions = table.selected()
 					download_manager.start_check_update(missions)
-
+					
 			# menu call
 			def tvmenucall(event):
 				menu.tk_popup(event.x_root, event.y_root)
@@ -383,6 +403,20 @@ class EventMixin:
 
 			# dubleclick to start explorer
 			table.tv.bind("<Double-Button-1>", start_explorer)
+			
+			# sort
+			def on_sort(table):
+				def key_func(m):
+					if table.sort_on == "host":
+						return m.module.name
+					if table.sort_on == "name":
+						return m.title
+					if table.sort_on == "state":
+						return m.state
+					if table.sort_on == "last_update":
+						return m.last_update or MIN
+				mission_manager.sort(name, key_func, reverse=table.sort_mode == "DESC")
+			table.on("sort", on_sort)
 
 		create_menu_set("view", self.view_table)
 
@@ -494,7 +528,8 @@ class MainWindow(ViewMixin, EventMixin):
 		table.update(
 			mission,
 			name=safe_tk(mission.title),
-			state=STATE[mission.state]
+			state=STATE[mission.state],
+			last_update=draw_last_update(mission.last_update)
 		)
 
 	def register_listeners(self):
@@ -582,7 +617,8 @@ class MainWindow(ViewMixin, EventMixin):
 				table.add({
 					"name": safe_tk(mission.title),
 					"host": mission.module.name,
-					"state": STATE[mission.state]
+					"state": STATE[mission.state],
+					"last_update": draw_last_update(mission.last_update)
 				}, key=mission)
 				
 		table.rearrange(missions)
