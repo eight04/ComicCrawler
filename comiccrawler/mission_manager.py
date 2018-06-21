@@ -166,6 +166,14 @@ class MissionManager:
 		mission_ch.pub("MISSION_LIST_REARRANGED", pool)
 		self.edit = True
 		
+	def sort(self, pool_name, key, reverse=False):
+		pool = getattr(self, pool_name)
+		with self.lock:
+			for mission in sorted(pool.values(), key=key):
+				pool.move_to_end(mission.url, last=not reverse)
+		mission_ch.pub("MISSION_LIST_REARRANGED", pool)
+		self.edit = True
+		
 	def get_all(self, pool_name, test=None):
 		"""Get all missions matching condition."""
 		with self.lock:

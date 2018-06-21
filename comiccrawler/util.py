@@ -1,5 +1,6 @@
 import re
 import string
+from functools import total_ordering
 
 from .config import setting
 from .io import content_write
@@ -49,3 +50,13 @@ def clean_tags(html):
 	html = re.sub("<script.+?</script>", "", html)
 	html = re.sub("<.+?>", "", html)
 	return html.strip()
+
+@total_ordering	
+class MinimumAny:
+	def __le__(self, other):
+		return True
+		
+	def __eq__(self, other):
+		return self is other
+
+MIN = MinimumAny()

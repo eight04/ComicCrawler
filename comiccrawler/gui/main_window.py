@@ -18,7 +18,7 @@ from ..safeprint import print, printer
 from ..mission import create_mission
 from ..error import ModuleError
 from ..profile import get as profile
-from ..util import safefilepath
+from ..util import safefilepath, MIN
 
 from ..download_manager import download_manager
 from ..mission_manager import mission_manager
@@ -394,7 +394,7 @@ class EventMixin:
 				def _():
 					missions = table.selected()
 					download_manager.start_check_update(missions)
-
+					
 			# menu call
 			def tvmenucall(event):
 				menu.tk_popup(event.x_root, event.y_root)
@@ -402,6 +402,20 @@ class EventMixin:
 
 			# dubleclick to start explorer
 			table.tv.bind("<Double-Button-1>", start_explorer)
+			
+			# sort
+			def on_sort(table):
+				def key_func(m):
+					if table.sort_on == "host":
+						return m.module.name
+					if table.sort_on == "name":
+						return m.title
+					if table.sort_on == "state":
+						return m.state
+					if table.sort_on == "last_update":
+						return m.last_update or MIN
+				mission_manager.sort(name, key_func, reverse=table.sort_mode == "DESC")
+			table.on("sort", on_sort)
 
 		create_menu_set("view", self.view_table)
 

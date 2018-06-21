@@ -37,6 +37,8 @@ class Table:
 		self.listeners["on_" + event_name] = listener
 		
 	def sort_table(self, id=None):
+		if id == "#0":
+			return
 		if self.sort_on == id:
 			if self.sort_mode == "ASC":
 				self.sort_mode = "DESC"
@@ -45,7 +47,7 @@ class Table:
 		else:
 			if self.sort_on:
 				# reset text
-				self.tv.heading(self.sort_on, text=self.cols[id]["text"])
+				self.tv.heading(self.sort_on, text=self.cols[self.sort_on]["text"])
 			self.sort_mode = self.cols[id].get("sort", "ASC")
 			self.sort_on = id
 			
