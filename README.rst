@@ -326,6 +326,12 @@ Todos
 Changelog
 ---------
 
+-  2018.6.21
+
+   -  Add: make table sortable.
+   -  Add: last_update attribute.
+   -  Fix: analyze error in senmanga.
+
 -  2018.6.14
 
    -  Revert: do not normalize whitespaces.
