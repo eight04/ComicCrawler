@@ -361,10 +361,11 @@ class EventMixin:
 			@bind_menu("開啟資料夾")
 			def start_explorer(event=None):
 				if event:
-					missions = [table.identify_row(event.y)]
-					if missions[0] is None:
+					mission = table.identify_row(event.y)
+					if not mission:
 						# click on header
 						return
+					missions = [mission]
 				else:
 					missions = table.selected()
 					
