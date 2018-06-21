@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import os
 import webbrowser
 import sys
-from time import time
+from time import time, strftime, localtime
 
 import tkinter as tk
 from tkinter import ttk, font, messagebox
@@ -30,6 +30,11 @@ from .dialog import Dialog
 from .core import get_scale, safe_tk, STATE
 from .select_episodes import select_episodes
 
+def draw_last_update(t):
+	if not t:
+		return "無"
+	return strftime("%Y/%m/%d", localtime(t))
+
 def create_mission_table(parent):
 	return Table(
 		parent,
@@ -48,6 +53,11 @@ def create_mission_table(parent):
 		}, {
 			"id": "state",
 			"text": "狀態",
+			"width": 70,
+			"anchor": "center"
+		}, {
+			"id": "last_update",
+			"text": "更新",
 			"width": 70,
 			"anchor": "center"
 		}]
@@ -494,7 +504,8 @@ class MainWindow(ViewMixin, EventMixin):
 		table.update(
 			mission,
 			name=safe_tk(mission.title),
-			state=STATE[mission.state]
+			state=STATE[mission.state],
+			last_update=draw_last_update(mission.last_update)
 		)
 
 	def register_listeners(self):
@@ -582,7 +593,8 @@ class MainWindow(ViewMixin, EventMixin):
 				table.add({
 					"name": safe_tk(mission.title),
 					"host": mission.module.name,
-					"state": STATE[mission.state]
+					"state": STATE[mission.state],
+					"last_update": draw_last_update(mission.last_update)
 				}, key=mission)
 				
 		table.rearrange(missions)

@@ -6,7 +6,7 @@ from .channel import mission_ch
 class Mission:
 	"""Create Mission object. Contains information of the mission."""
 
-	def __init__(self, title=None, url=None, episodes=None, state="INIT"):
+	def __init__(self, title=None, url=None, episodes=None, state="INIT", last_update=None):
 		"""Construct."""
 		from .mods import get_module
 
@@ -17,6 +17,7 @@ class Mission:
 		self.episodes = episodes
 		self.state = state
 		self.module = get_module(url)
+		self.last_update = last_update
 		if not self.module:
 			raise ModuleError("Get module failed!")
 			
