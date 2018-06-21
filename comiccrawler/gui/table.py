@@ -71,3 +71,7 @@ class Table:
 		
 	def contains(self, key):
 		return key in self.key_index
+		
+	def identify_row(self, y):
+		iid = self.tv.identify_row(y)
+		return self.iid_index.get(iid, None)

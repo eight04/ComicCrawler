@@ -359,7 +359,15 @@ class EventMixin:
 
 			@bind_menu("開啟資料夾")
 			def start_explorer(event=None):
-				for mission in table.selected():
+				if event:
+					missions = [table.identify_row(event.y)]
+					if missions[0] is None:
+						# click on header
+						return
+				else:
+					missions = table.selected()
+					
+				for mission in missions:
 					savepath = profile(mission.module.config["savepath"])
 					folder = os.path.join(savepath, safefilepath(mission.title))
 					folder = os.path.expanduser(folder)
