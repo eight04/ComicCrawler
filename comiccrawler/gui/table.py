@@ -1,9 +1,15 @@
 #! python3
 
 from tkinter import ttk
+from functools import partial
 
 class Table:
 	def __init__(self, parent, *, tv_opt={}, columns=[]):
+		self.sort_mode = None
+		self.sort_on = None
+		self.listeners = {}
+		self.cols = {c["id"]: c for c in columns}
+		
 		# scrollbar
 		scrbar = ttk.Scrollbar(parent)
 		scrbar.pack(side="right", fill="y")
@@ -17,7 +23,7 @@ class Table:
 			**tv_opt
 		)
 		for c in columns:
-			tv.heading(c["id"], text=c["text"])
+			tv.heading(c["id"], text=c["text"], command=partial(self.sort_table, id=c["id"]))
 			tv.column(c["id"], **{k: v for k, v in c.items() if k in ("width", "anchor")})
 		tv.pack(expand=True, fill="both")
 		self.tv = tv
@@ -26,6 +32,32 @@ class Table:
 		
 		self.key_index = {}
 		self.iid_index = {}
+		
+	def on(self, event_name, listener):
+		self.listeners["on_" + event_name] = listener
+		
+	def sort_table(self, id=None):
+		if self.sort_on == id:
+			if self.sort_mode == "ASC":
+				self.sort_mode = "DESC"
+			else:
+				self.sort_mode = "ASC"
+		else:
+			if self.sort_on:
+				# reset text
+				self.tv.heading(self.sort_on, text=self.cols[id]["text"])
+			self.sort_mode = self.cols[id].get("sort", "ASC")
+			self.sort_on = id
+			
+		if self.sort_mode == "ASC":
+			arrow = "▴"
+		else:
+			arrow = "▾"
+		self.tv.heading(id, text=self.cols[id]["text"] + arrow)
+		
+		listener = self.listeners.get("on_sort")
+		if listener:
+			listener(self)
 		
 	def add(self, row, *, key=None):
 		if key and key in self.key_index:

@@ -59,7 +59,8 @@ def create_mission_table(parent):
 			"id": "last_update",
 			"text": "更新",
 			"width": 70,
-			"anchor": "center"
+			"anchor": "center",
+			"sort": "DESC"
 		}]
 	)
 	

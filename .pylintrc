@@ -38,6 +38,7 @@ max-nested-blocks=5
 argument-rgx=(([a-z][a-z0-9_]{,30})|(_[a-z0-9_]*))$
 attr-rgx=(([a-z][a-z0-9_]{1,30})|(_[a-z0-9_]*))$
 const-rgx=^(([A-Z_][A-Z0-9_]*)|(__.*__)|[a-z_][a-z0-9_]*)$
+method-rgx=(([a-z][a-z0-9_]{1,30})|(_[a-z0-9_]*))$
 variable-rgx=(([a-z][a-z0-9_]{,30})|(_[a-z0-9_]*))$
 
 [FORMAT]
