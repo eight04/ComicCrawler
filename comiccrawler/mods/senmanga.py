@@ -13,23 +13,27 @@ domain = ["raw.senmanga.com"]
 name = "senmanga"
 
 def get_title(html, url):
-	return re.search(r'<h1 itemprop="name"><a[^>]*>([^<]+)', html).group(1)
+	return re.search(r'<h1 class="title"><a[^>]*>([^<]+)', html).group(1)
 
 def get_episodes(html, url):
-	start = html.index("<h1>Chapters List</h1>")
-	end = html.index('<aside id="sidebar">')
-	html = html[start:end]
+	prefix = re.escape(url)
 	s = []
-	
-	for m in re.finditer(r'<a href="([^"]+)"[^>]*>([^<]+)', html):
+	for m in re.finditer(r'<a href="({}/[^/"]+/[^"]+)"[^>]*>([^<]+)'.format(prefix), html):
 		ep_url, title = m.groups()
 		s.append(Episode(title, urljoin(url, ep_url)))
 	return s[::-1]
 
 def get_images(html, url):
-	return url.replace("raw.senmanga.com", "raw.senmanga.com/viewer")
+	return re.search(r'<img src="([^"]+?/viewer/[^"]+)', html).group(1)
 	
 def get_next_page(html, url):
-	match = re.search('<a href="([^"]+)"><span >Next Page</span>', html)
+	match = re.search('<a href="([^"]+)"><[^>]+>Next Page</span>', html)
 	if match:
-		return urljoin(url, match.group(1))
+		next_page_url = urljoin(url, match.group(1))
+		if get_ep_from_url(url) == get_ep_from_url(next_page_url):
+			return next_page_url
+
+def get_ep_from_url(url):
+	match = re.match("https://raw\.senmanga\.com/([^/]+)/([^/]+)(?:/([^/]+))?", url)
+	_name, ep, _page = match.groups()
+	return ep
