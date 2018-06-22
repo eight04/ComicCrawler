@@ -252,6 +252,7 @@ def crawl(mission, savepath):
 		except LastPageError:
 			print("Episode download complete!")
 			ep.complete = True
+			crawler.rest()
 			download_ch.pub("DOWNLOAD_EP_COMPLETE", (mission, ep))
 
 		except SkipEpisodeError as err:
