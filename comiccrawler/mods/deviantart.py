@@ -13,7 +13,7 @@ from html import unescape
 
 from ..error import PauseDownloadError
 from ..core import Episode
-from ..url import update_qs, urlparse
+from ..url import update_qs
 
 domain = ["deviantart.com"]
 name = "dA"
@@ -34,10 +34,8 @@ def check_login(html, url):
 def get_episodes(html, url):
 	check_login(html, url)
 	
-	hostname = urlparse(url).hostname
 	s = []
-	pattern = '<a class="torpedo-thumb-link" href="(https?://{hostname}/art/[^"]+?(\d+))".+?class="title">([^<]*)'
-	pattern = pattern.format(hostname=re.escape(hostname))
+	pattern = r'<a class="torpedo-thumb-link" href="([^"]+/art/[^"]+?(\d+))".+?class="title">([^<]*)'
 
 	for match in re.finditer(pattern, html, re.DOTALL):
 		ep_url, id, title = match.groups()
