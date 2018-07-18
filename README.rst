@@ -326,6 +326,11 @@ Todos
 Changelog
 ---------
 
+-  2018.7.18
+
+   -  Add: new domain in xznj120.
+   -  Fix: get_episodes returns empty list in deviantart.
+
 -  2018.6.21
 
    -  Add: make table sortable.
