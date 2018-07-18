@@ -4,6 +4,7 @@
 
 Example:
 	http://www.xznj120.com/lianai/591/
+	http://www.33am.cn/gushi/2026/
 
 """
 
@@ -15,7 +16,7 @@ from node_vm2 import eval
 from ..url import urljoin
 from ..core import Episode, grabhtml
 
-domain = ["www.xznj120.com"]
+domain = ["www.xznj120.com", "www.33am.cn"]
 name = "受漫畫"
 
 def get_title(html, url):
