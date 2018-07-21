@@ -20,7 +20,7 @@ cookie = {
 	"fastshow": "true",
 	"ComicHistoryitem_zh": "ViewType=1"
 }
-domain = ["www.dm5.com", "tel.dm5.com","hk.dm5.com"]
+domain = ["www.dm5.com", "tel.dm5.com", "hk.dm5.com"]
 name = "動漫屋"
 
 def get_title(html, url):
