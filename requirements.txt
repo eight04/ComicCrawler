@@ -3,3 +3,4 @@ livereload>=2.5.2,<3
 pyxcute>=0.5.2,<0.6
 pylint>=1.8.2,<2
 twine>=1.9.1,<2
+-e .
