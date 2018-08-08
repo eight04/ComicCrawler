@@ -12,6 +12,7 @@ import re
 
 from ..core import Episode
 from ..url import urljoin
+from ..error import SkipEpisodeError, is_http
 
 domain = ["tw.weibo.com"]
 name = "weibo"
@@ -47,3 +48,7 @@ def get_next_page(html, url):
 	match = re.search('class="pgNext"><a href="([^"]+)"', html)
 	if match:
 		return urljoin(url, match.group(1))
+		
+def errorhandler(err, crawler):
+	if is_http(err, 404) and re.search("weibo\.com/[^/]+/[^/]+$", err.request.url):
+		raise SkipEpisodeError
