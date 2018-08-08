@@ -139,15 +139,6 @@ def guess_encoding(r):
 	
 def _get_ext(r):
 	"""Get file extension"""
-	if "Content-Type" in r.headers:
-		mime = re.search("^(.*?)(;|$)", r.headers["Content-Type"]).group(1)
-		mime = mime.strip()
-
-		if mime and mime != "application/octet-stream":
-			ext = guess_extension(mime)
-			if ext:
-				return ext
-			
 	b = r.content
 	ext = imghdr.what("", b)
 	if ext:
@@ -170,6 +161,15 @@ def _get_ext(r):
 	if (b[:16] == b"\x30\x26\xB2\x75\x8E\x66\xCF\x11"
 			b"\xA6\xD9\x00\xAA\x00\x62\xCE\x6C"):
 		return ".wmv"
+		
+	if "Content-Type" in r.headers:
+		mime = re.search("^(.*?)(;|$)", r.headers["Content-Type"]).group(1)
+		mime = mime.strip()
+
+		if mime and mime != "application/octet-stream":
+			ext = guess_extension(mime)
+			if ext:
+				return ext
 		
 def get_ext(r):
 	"""Get file extension"""
