@@ -329,6 +329,17 @@ Todos
 Changelog
 ---------
 
+-  2018.8.10
+
+   -  Add: mh160 module.
+   -  Add: youhui module.
+   -  Add: grabber_cooldown module constant.
+   -  Add: domain hk.dm5.com in dm5.
+   -  Add: travis.
+   -  Fix: skip 404 pages in weibo.
+   -  Fix: guess the file extension from the content then from the header.
+   -  Change: use a newer user agent.
+
 -  2018.7.18
 
    -  Add: new domain in xznj120.
