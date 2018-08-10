@@ -13,6 +13,7 @@ from sys import version_info
 
 from ..config import config
 from ..profile import get as profile
+from ..grabber import cooldown
 
 def import_module_file(ns, file):
 	if version_info < (3, 5):
@@ -52,6 +53,7 @@ if isdir(user_mods_dir):
 for mod in mods:
 	for url in mod.domain:
 		domain_index[url] = mod
+	cooldown.update(getattr(mod, "grabber_cooldown", {}))
 
 def load_config():
 	"""Reload config for mods"""

@@ -3,12 +3,14 @@
 import re
 import time
 import imghdr
+from contextlib import contextmanager
 from pprint import pformat
+from threading import Lock
 from urllib.parse import quote, urlsplit, urlunsplit
 from mimetypes import guess_extension
 
 import requests
-from worker import await_, sleep
+from worker import async_, await_, sleep, Defer
 
 from .config import setting
 from .io import content_write
@@ -19,6 +21,30 @@ default_header = {
 	"Accept-Language": "zh-tw,zh;q=0.8,en-us;q=0.5,en;q=0.3",
 	"Accept-Encoding": "gzip, deflate"
 }
+
+cooldown = {}
+grabber_pool = {}
+grabber_pool_lock = Lock()
+
+@contextmanager
+def get_request_lock(url):
+	domain = urlsplit(url).hostname
+	defer = Defer()
+	try:
+		with grabber_pool_lock:
+			last_defer = grabber_pool.get(domain)
+			grabber_pool[domain] = defer
+		if last_defer:
+			last_defer.get()
+		yield
+	except Exception as err:
+		defer.reject(err)
+		raise
+	finally:
+		@async_
+		def _():
+			time.sleep(cooldown.get(domain, 0))
+			defer.resolve(None)
 
 def quote_unicode(s):
 	"""Quote unicode characters only."""
@@ -79,6 +105,7 @@ def grabber(url, header=None, *, referer=None, cookie=None,
 		proxies = {'http': proxy, 'https': proxy}
 	else:
 		proxies = proxy
+		
 	r = await_(do_request, s, url, params, proxies, method, data, retry)
 	
 	if done:
@@ -91,8 +118,9 @@ RETRYABLE_HTTP_CODES = (423, 429)
 def do_request(s, url, params, proxies, method, data, retry):
 	sleep_time = 5
 	while True:
-		r = s.request(method, url, timeout=20, params=params,
-			data=data, proxies=proxies)
+		with get_request_lock(url):
+			r = s.request(method, url, timeout=20, params=params,
+				data=data, proxies=proxies)
 		grabber_log(url, r.url, r.request.headers, r.headers)
 
 		if r.status_code == 200:
