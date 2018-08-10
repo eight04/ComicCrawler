@@ -329,6 +329,10 @@ Todos
 Changelog
 ---------
 
+-  2018.8.11
+
+   -  Fix: title and image URLs in eight.
+
 -  2018.8.10
 
    -  Add: mh160 module.
