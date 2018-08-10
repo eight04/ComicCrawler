@@ -18,7 +18,7 @@ domain = ["www.8comic.com", "www.comicvip.com", "www.comicbus.com"]
 name = "無限"
 
 def get_title(html, url):
-	return re.search("<title>([^<]+?)漫畫,",html).group(1)
+	return re.search("<title>([^<]+?)免費漫畫,",html).group(1)
 
 def get_episodes(html, url):
 	html = html.replace("\n", "")
@@ -108,4 +108,4 @@ def get_images(html, url):
 	with VM(js) as vm:
 		images = vm.call("getImages", url)
 	
-	return images
+	return [urljoin(url, i) for i in images]
