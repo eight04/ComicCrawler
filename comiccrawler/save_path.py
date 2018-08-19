@@ -8,7 +8,10 @@ class SavePath:
 		self.root = root
 		self.mission_title = escape(mission.title)
 		self.ep_title = escape(ep.title)
-		self.noepfolder = getattr(mission.module, "noepfolder", False)
+		self.noepfolder = mission.module.config.getboolean(
+			"noepfolder",
+			fallback=getattr(mission.module, "noepfolder", False)
+		)
 		self.files = None
 		self.escape = escape
 		
