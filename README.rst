@@ -174,6 +174,9 @@ or you can use it in your python script:
     
     ; 加入新任務時，預設選擇所有集數
     selectall = true
+    
+    ; 不要根據各集名稱建立子資料夾，將所有圖片放在任務資料夾內
+    noepfolder = true
 
 -  設定檔位於 ``~\comiccrawler\setting.ini``。可以在執行時指定 ``--profile`` 選項以變更預設的位置。（在 Windows 中 ``~`` 會被展開為 ``%HOME%`` 或 ``%USERPROFILE%``）
 -  執行一次 ``comiccrawler gui`` 後關閉，設定檔會自動產生。若 Comic Crawler 更新後有新增的設定，在關閉後會自動將新設定加入設定檔。
