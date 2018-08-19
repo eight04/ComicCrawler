@@ -332,6 +332,10 @@ Todos
 Changelog
 ---------
 
+-  2018.8.20
+
+   -  Add: new option "noepfolder".
+
 -  2018.8.11
 
    -  Fix: title and image URLs in eight.
