@@ -37,9 +37,6 @@ def get_request_lock(url):
 		if last_defer:
 			last_defer.get()
 		yield
-	except Exception as err:
-		defer.reject(err)
-		raise
 	finally:
 		@async_
 		def _():
