@@ -245,8 +245,7 @@ class DownloadManager:
 		def on_finished(err):
 			self.library_thread = None
 			if err:
-				if self.library_err_count > 10:
-					download_ch.pub("LIBRARY_CHECK_UPDATE_FAILED")
+				download_ch.pub("LIBRARY_CHECK_UPDATE_FAILED", err)
 				print("Failed to check update")
 			else:
 				print("Update checking done")

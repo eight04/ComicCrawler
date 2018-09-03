@@ -573,7 +573,11 @@ class MainWindow(ViewMixin, EventMixin):
 			
 		@self.thread.listen("LIBRARY_CHECK_UPDATE_FAILED")
 		def _(event):
-			self.messagebox("error", "Comic Crawler", "檢查更新未完成，已重試 10 次")
+			if hasattr(event.data, "mission"):
+				title = event.data.mission.module.name
+			else:
+				title = "Comic Crawler"
+			self.messagebox("error", title, str(event.data))
 			
 		@self.thread.listen("BATCH_ANALYZE_UPDATE")
 		def _(event):
