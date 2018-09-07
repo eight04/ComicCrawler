@@ -332,6 +332,12 @@ Todos
 Changelog
 ---------
 
+-  2018.9.7
+
+   -  Fix: domains of eight module.
+   -  Fix: batch analyze error is not shown.
+   -  Fix: connection error would crash the entire application.
+
 -  2018.8.20
 
    -  Add: new option "noepfolder".
