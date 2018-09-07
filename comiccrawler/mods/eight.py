@@ -14,7 +14,7 @@ from node_vm2 import VM
 from ..core import Episode, grabhtml
 from ..util import clean_tags
 
-domain = ["www.8comic.com", "www.comicvip.com", "www.comicbus.com"]
+domain = ["www.8comic.com", "www.comicvip.com", "comicbus.com"]
 name = "無限"
 
 def get_title(html, url):
