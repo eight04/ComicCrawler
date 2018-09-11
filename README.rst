@@ -332,6 +332,11 @@ Todos
 Changelog
 ---------
 
+-  2018.9.11
+
+   -  Fix: failed to get next page in gelbooru.
+   -  Add: gufeng module.
+
 -  2018.9.7
 
    -  Fix: domains of eight module.
