@@ -81,7 +81,7 @@ Supported domains
 .. DOMAINS
 ..
 
-    99.hhxxee.com ac.qq.com chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com comicbus.com danbooru.donmai.us deviantart.com e-hentai.org exhentai.org gelbooru.com hk.dm5.com ikanman.com imgbox.com konachan.com m.dmzj.com m.wuyouhui.net manhua.dmzj.com manhuagui.com nijie.info raw.senmanga.com seemh.com seiga.nicovideo.jp smp.yoedge.com tel.dm5.com tsundora.com tuchong.com tumblr.com tw.weibo.com wix.com www.33am.cn www.8comic.com www.99comic.com www.aacomic.com www.artstation.com www.buka.cn www.cartoonmad.com www.chuixue.com www.comicvip.com www.dm5.com www.dmzj.com www.facebook.com www.flickr.com www.hhcomic.cc www.hhssee.com www.hhxiee.com www.iibq.com www.mh160.com www.pixiv.net www.xznj120.com yande.re
+    99.hhxxee.com ac.qq.com chan.sankakucomplex.com comic.acgn.cc comic.ck101.com comic.sfacg.com comicbus.com danbooru.donmai.us deviantart.com e-hentai.org exhentai.org gelbooru.com hk.dm5.com ikanman.com imgbox.com konachan.com m.dmzj.com m.wuyouhui.net manhua.dmzj.com manhuagui.com nijie.info raw.senmanga.com seemh.com seiga.nicovideo.jp smp.yoedge.com tel.dm5.com tsundora.com tuchong.com tumblr.com tw.weibo.com wix.com www.33am.cn www.8comic.com www.99comic.com www.aacomic.com www.artstation.com www.buka.cn www.cartoonmad.com www.chuixue.com www.comicvip.com www.dm5.com www.dmzj.com www.facebook.com www.flickr.com www.gufengmh.com www.hhcomic.cc www.hhssee.com www.hhxiee.com www.iibq.com www.mh160.com www.pixiv.net www.xznj120.com yande.re
 
 .. END DOMAINS
 
