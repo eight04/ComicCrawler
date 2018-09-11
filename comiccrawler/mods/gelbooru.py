@@ -40,7 +40,7 @@ def get_episodes(html, url):
 	return s[::-1]
 	
 def get_next_page(html, url):
-	paginator_index = html.find('<div id="paginater">')
+	paginator_index = html.find('<div id="paginator">')
 	if paginator_index >= 0:
 		rx = re.compile(r'</b>\s*<a href="([^"]+)')
 		match = rx.search(html, paginator_index)
