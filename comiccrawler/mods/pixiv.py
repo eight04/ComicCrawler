@@ -27,29 +27,74 @@ config = {
 	"cookie_PHPSESSID": "請輸入Cookie中的PHPSESSID"
 }
 
+def get_init_data(html):
+	js = re.search("(var globalInitData =.+?)</script>", html, re.DOTALL).group(1)
+	return eval("""
+	Object.freeze = n => n;
+	""" + js + """
+	globalInitData;
+	""")
+
+def get_title_from_init_data(html, url):
+	init_data = get_init_data(html)
+	user = next(iter(init_data["preload"]["user"].values()))
+	return "{} - {}".format(user["userId"], user["name"])
+
 def get_title(html, url):
-	if ("js-mount-point-search-result-list" not in html and
-		"illust_id=" not in url):
-		try:
-			user = unescape(re.search("class=\"user-name\"[^>]*>([^<]+)", html).group(1))
-			id = re.search(r"pixiv.context.userId = \"(\d+)\"", html).group(1)
-			return "{} - {}".format(id, user)
-		except AttributeError:
-			pass
+	if "globalInitData" in html:
+		return get_title_from_init_data(html, url)
 	return "[pixiv] " + unescape(re.search("<title>([^<]+)", html).group(1))
 	
-def check_login(html):
-	if "pixiv.user.loggedIn = true" not in html and "login: 'yes'" not in html:
-		raise PauseDownloadError("you didn't login!")	
+def check_login(data):
+	if not data.get("userData"):
+		raise PauseDownloadError("you didn't login!")
+		
+def check_login_html(html):
+    if "pixiv.user.loggedIn = true" not in html and "login: 'yes'" not in html:
+        raise PauseDownloadError("you didn't login!")
+		
+def get_episodes_from_user_page(html):
+	init_data = get_init_data(html)
+	check_login(init_data)
+	
+	id = next(iter(init_data["preload"]["user"]))
+	
+	all = grabhtml("https://www.pixiv.net/ajax/user/{}/profile/all".format(id))
+	all = json.loads(all)
+	
+	ep_ids = [int(id) for id in list(all["body"]["illusts"]) + list(all["body"]["manga"])]
+	ep_ids.sort()
+	ep_ids.reverse()
+	
+	ep_data = {}
+	
+	for i in range(0, len(ep_ids), 48):
+		ids = ep_ids[i:i + 48]
+		response = grabhtml(
+			"https://www.pixiv.net/ajax/user/{}/profile/illusts".format(id),
+			params={
+				"ids[]": ids,
+				"is_manga_top": 0
+			}
+		)
+		response = json.loads(response)
+		ep_data.update(response["body"]["works"])
+		
+	result = []
+	for id in ep_ids:
+		data = ep_data[str(id)]
+		result.append(Episode(
+			"{} - {}".format(id, data["title"]),
+			"https://www.pixiv.net/member_illust.php?mode=medium&illust_id={}".format(id)
+		))
+	return result[::-1]
 
 def get_episodes(html, url):
-	check_login(html)
+	if "globalInitData" in html:
+		return get_episodes_from_user_page(html)
+	
+	check_login_html(html)
 	s = []
-	for m in re.finditer(r'<a href="([^"]+)"><h1 class="title" title="([^"]+)">', html):
-		ep_url, title = m.groups()
-		uid = re.search("id=(\d+)", ep_url).group(1)
-		e = Episode("{} - {}".format(uid, unescape(title)), urljoin(url, ep_url))
-		s.append(e)
 	# search result?
 	match = re.search('id="js-mount-point-search-result-list"data-items="([^"]+)', html)
 	if match:
@@ -72,13 +117,8 @@ def get_nth_img(url, i):
 	return re.sub(r"_p0(\.\w+)$", r"_p{}\1".format(i), url)
 
 def get_images(html, url):
-	check_login(html)
-	init_data = re.search(r"(var globalInitData[\s\S]+?)</script>", html).group(1)
-	init_data = eval("""
-	Object.freeze = null;
-	""" + init_data + """
-	globalInitData;
-	""")
+	init_data = get_init_data(html)
+	check_login(init_data)
 	illust_id = re.search("illust_id=(\d+)", url).group(1)
 	illust = init_data["preload"]["illust"][illust_id]
 	
