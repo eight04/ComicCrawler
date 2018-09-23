@@ -332,6 +332,12 @@ Todos
 Changelog
 ---------
 
+-  2018.9.23
+
+   -  Fix: failed to get episodes in pixiv.
+   -  Fix: ``on_success`` is executed when analyzation failed.
+   -  Fix: make 503 error retryable.
+
 -  2018.9.11
 
    -  Fix: failed to get next page in gelbooru.
