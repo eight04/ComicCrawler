@@ -636,7 +636,7 @@ class MainWindow(ViewMixin, EventMixin):
 					mission.module.name,
 					"解析錯誤！\n{}".format(err)
 				)
-			if on_success:
+			if not err and on_success:
 				on_success()
 		download_manager.start_analyze(mission, on_finished=on_finished)
 		
