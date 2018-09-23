@@ -11,14 +11,13 @@ import re
 import json
 from html import unescape
 from io import BytesIO
+from urllib.parse import urljoin, urlencode
 from zipfile import ZipFile
 
 from node_vm2 import eval
 
 from ..core import Episode, grabhtml
-# from ..error import SkipEpisodeError, PauseDownloadError, is_403
 from ..error import PauseDownloadError
-from ..url import urljoin
 
 domain = ["www.pixiv.net"]
 name = "Pixiv"
@@ -50,48 +49,41 @@ def check_login(data):
 		raise PauseDownloadError("you didn't login!")
 		
 def check_login_html(html):
-    if "pixiv.user.loggedIn = true" not in html and "login: 'yes'" not in html:
-        raise PauseDownloadError("you didn't login!")
+	if "pixiv.user.loggedIn = true" not in html and "login: 'yes'" not in html:
+		raise PauseDownloadError("you didn't login!")
 		
-def get_episodes_from_user_page(html):
-	init_data = get_init_data(html)
-	check_login(init_data)
-	
-	id = next(iter(init_data["preload"]["user"]))
-	
-	all = grabhtml("https://www.pixiv.net/ajax/user/{}/profile/all".format(id))
-	all = json.loads(all)
-	
-	ep_ids = [int(id) for id in list(all["body"]["illusts"]) + list(all["body"]["manga"])]
-	ep_ids.sort()
-	ep_ids.reverse()
-	
-	ep_data = {}
-	
-	for i in range(0, len(ep_ids), 48):
-		ids = ep_ids[i:i + 48]
-		response = grabhtml(
-			"https://www.pixiv.net/ajax/user/{}/profile/illusts".format(id),
-			params={
-				"ids[]": ids,
-				"is_manga_top": 0
-			}
-		)
-		response = json.loads(response)
-		ep_data.update(response["body"]["works"])
-		
-	result = []
-	for id in ep_ids:
-		data = ep_data[str(id)]
-		result.append(Episode(
-			"{} - {}".format(id, data["title"]),
-			"https://www.pixiv.net/member_illust.php?mode=medium&illust_id={}".format(id)
-		))
-	return result[::-1]
-
 def get_episodes(html, url):
+	if "ajax/user" in url:
+		works = json.loads(html)["body"]["works"]
+		s = []
+		for id, data in sorted(works.items(), key=lambda i: int(i[0])):
+			s.append(Episode(
+				"{} - {}".format(id, data["title"]),
+				"https://www.pixiv.net/member_illust.php?mode=medium&illust_id={}".format(id)
+			))
+		return s
+
 	if "globalInitData" in html:
-		return get_episodes_from_user_page(html)
+		init_data = get_init_data(html)
+		check_login(init_data)
+		
+		id = int(next(iter(init_data["preload"]["user"])))
+		
+		all = grabhtml("https://www.pixiv.net/ajax/user/{}/profile/all".format(id))
+		all = json.loads(all)
+		
+		ep_ids = [int(id) for id in list(all["body"]["illusts"]) + list(all["body"]["manga"])]
+		ep_ids.sort()
+		ep_ids.reverse()
+		
+		urls = []
+		for i in range(0, len(ep_ids), 48):
+			ids = ep_ids[i:i + 48]
+			query = [("ids[]", str(id)) for id in ids] + [("is_manga_top", "0")]
+			urls.append("https://www.pixiv.net/ajax/user/{}/profile/illusts?{}".format(
+				id, urlencode(query)))
+		cache[id] = iter(urls)
+		return []
 	
 	check_login_html(html)
 	s = []
@@ -156,3 +148,11 @@ def get_next_page(html, url):
 	match = re.search("href=\"([^\"]+)\" rel=\"next\"", html)
 	if match:
 		return urljoin(url, unescape(match.group(1)))
+		
+	match = re.search("ajax/user/(\d+)", url) or re.search("member_illust\.php\?id=(\d+)", url)
+	if match:
+		id = int(match.group(1))
+		try:
+			return next(cache[id])
+		except StopIteration:
+			del cache[id]
