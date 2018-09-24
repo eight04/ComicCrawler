@@ -332,6 +332,10 @@ Todos
 Changelog
 ---------
 
+-  2018.9.24
+
+   -  Add: support user's tag in pixiv.
+
 -  2018.9.23
 
    -  Fix: failed to get episodes in pixiv.
