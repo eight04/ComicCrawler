@@ -332,6 +332,10 @@ Todos
 Changelog
 ---------
 
+-  2018.9.30
+
+   -  Change: prefix ep title with group name in seemh.
+
 -  2018.9.24
 
    -  Add: support user's tag in pixiv.
