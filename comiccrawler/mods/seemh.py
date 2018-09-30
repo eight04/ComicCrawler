@@ -27,18 +27,22 @@ def get_title(html, url):
 	return re.search(r'<h1>([^<]*)', html).group(1)
 
 def get_list(html, cid):
-	ep_re = r'href="(/comic/{}/\d+\.html)" title="([^"]+)"'.format(cid)
+	ep_re = r'href="(/comic/{}/\d+\.html)" title="([^"]+)"|<h4><span>([^<]+)'.format(cid)
 	arr = []
 	try:
 		comment_pos = html.index('class="comment-bar"')
 	except ValueError:
 		comment_pos = len(html)
 
+	prefix = ""
 	for match in re.finditer(ep_re, html):
 		if match.start() >= comment_pos:
 			break
-		ep_url, title = match.groups()
-		arr.append((title, ep_url))
+		ep_url, title, new_prefix = match.groups()
+		if new_prefix:
+			prefix = new_prefix
+			continue
+		arr.append(("{} {}".format(prefix, title), ep_url))
 	return arr
 
 
