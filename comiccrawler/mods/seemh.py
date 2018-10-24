@@ -30,7 +30,7 @@ def get_list(html, cid):
 	ep_re = r'href="(/comic/{}/\d+\.html)" title="([^"]+)"|<h4><span>([^<]+)'.format(cid)
 	arr = []
 	try:
-		comment_pos = html.index('class="comment-bar"')
+		comment_pos = html.index('id="Comment"')
 	except ValueError:
 		comment_pos = len(html)
 
