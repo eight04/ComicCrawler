@@ -332,6 +332,11 @@ Todos
 Changelog
 ---------
 
+-  2018.10.24
+
+   -  Fix: new domain `hhmmoo.com` for hhxiee.
+   -  Fix: ignore comments when analyzing episodes.
+
 -  2018.9.30
 
    -  Change: prefix ep title with group name in seemh.
