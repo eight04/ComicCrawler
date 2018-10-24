@@ -14,7 +14,7 @@ from node_vm2 import VM
 
 from ..core import Episode, grabhtml
 
-domain = ["www.hhxiee.com", "www.hhcomic.cc", "www.hhssee.com"]
+domain = ["www.hhxiee.com", "www.hhcomic.cc", "www.hhssee.com", "www.hhmmoo.com"]
 name = "汗汗"
 
 def get_title(html, url):
