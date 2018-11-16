@@ -37,6 +37,9 @@ def get_images(html, url):
 	code = """
 	{script}
 	{real_pic_fn}
+	function base64_decode(data) {{
+		return Buffer.from(data, "base64").toString();
+	}}
 	Buffer.from(qTcms_S_m_murl_e, "base64")
 		.toString()
 		.split("$qingtiandy$")
