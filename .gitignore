@@ -1,14 +1,8 @@
-*.dat
-*.ini
-*.log
 *.pyc
-*.bak
-.doit*
+*.egg-info
 
-__pycache__/
-download/
-build/
-dist/
-*.egg-info/
+__pycache__
+build
+dist
 
-test*
+.venv
