@@ -2,17 +2,15 @@
 
 """Simple io module depressing exceptions"""
 
+import io
 import os
-import os.path as path
+from os import path
 import pprint
 import glob
 import time
 import shutil
 import json
-
 from contextlib import contextmanager, suppress
-
-import io
 
 CHUNK_LIMIT = 500 * 1000 * 1000
 

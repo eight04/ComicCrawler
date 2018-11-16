@@ -175,7 +175,7 @@ def analyze(mission):
 	try:
 		Analyzer(mission).analyze()
 
-	except WorkerExit:
+	except WorkerExit: # pylint: disable=try-except-raise
 		raise
 
 	except Exception as err: # pylint: disable=broad-except

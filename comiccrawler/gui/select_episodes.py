@@ -1,7 +1,7 @@
 #! python3
 
 import tkinter as tk
-import tkinter.ttk as ttk
+from tkinter import ttk
 
 from belfrywidgets import ToolTip
 
@@ -39,7 +39,7 @@ class SelectEpisodeDialog(Dialog):
 				start = min(self.anchor_index, index)
 				end = max(self.anchor_index, index)
 				for i in range(start, end + 1):
-					if i == index or i == self.anchor_index:
+					if i in (index, self.anchor_index):
 						continue
 					check = self.checks[i]
 					if check.instate(("selected", )):

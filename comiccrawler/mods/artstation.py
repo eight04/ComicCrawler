@@ -36,8 +36,7 @@ def get_episodes(html, url):
 			title="{id} - {title} ({hash_id})".format_map(d),
 			url=d["permalink"],
 		) for d in reversed(json.loads(html)["data"])]
-	else:
-		raise SkipPageError
+	raise SkipPageError
 
 def get_images(html, url):
 	hash = re.search("/artwork/([^/]+)", url).group(1)

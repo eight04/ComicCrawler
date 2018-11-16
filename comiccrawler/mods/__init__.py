@@ -18,7 +18,7 @@ from ..grabber import cooldown
 def import_module_file(ns, file):
 	if version_info < (3, 5):
 		from importlib.machinery import SourceFileLoader
-		# pylint: disable=deprecated-method
+		# pylint: disable=deprecated-method, no-value-for-parameter
 		module = SourceFileLoader(ns, file).load_module()
 	else:
 		from importlib.util import spec_from_file_location, module_from_spec
