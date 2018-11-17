@@ -20,7 +20,8 @@ class Config:
 		"autosave": "5",
 		"errorlog": "false",
 		"lastcheckupdate": "0",
-		"selectall": "true"
+		"selectall": "true",
+		"mission_conflict_action": "update"
 	}
 	def __init__(self, path):
 		self.path = expanduser(path)
