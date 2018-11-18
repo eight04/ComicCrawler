@@ -30,6 +30,11 @@ from .dialog import Dialog
 from .core import get_scale, safe_tk, STATE
 from .select_episodes import select_episodes
 
+def reselect_episodes(root, mission):
+	with load_episodes(mission):
+		if select_episodes(root, mission):
+			mission.state = "ANALYZED"
+
 def draw_last_update(t):
 	if not t:
 		return "無"
@@ -354,9 +359,7 @@ class EventMixin:
 			@bind_menu("重新選擇集數")
 			def _():
 				for mission in table.selected():
-					with load_episodes(mission):
-						if select_episodes(self.root, mission):
-							mission.state = "ANALYZED"
+					reselect_episodes(self.root, mission)
 
 			@bind_menu("開啟資料夾")
 			def start_explorer(event=None):
@@ -646,14 +649,21 @@ class MainWindow(ViewMixin, EventMixin):
 		except KeyError:
 			pass
 		else:
-			if self.messagebox(
-				"yesno",
-				"Comic Crawler",
-				safe_tk(mission.title) + "\n\n任務已存在，要檢查更新嗎？",
-				default="yes"
-			):
-				mission.state = 'ANALYZE_INIT'
-				self.add_analyze(mission)
+			conflict_action = mission.module.config.get("mission_conflict_action")
+			if conflict_action == "update":
+				if self.messagebox(
+					"yesno",
+					"Comic Crawler",
+					safe_tk(mission.title) + "\n\n任務已存在，要檢查更新嗎？",
+					default="yes"
+				):
+					mission.state = 'ANALYZE_INIT'
+					self.add_analyze(mission)
+			elif conflict_action == "reselect_episodes":
+				reselect_episodes(self.root, mission)
+			else:
+				self.messagebox("error", "Comic Crawler", "任務已存在")
+				
 			return
 		try:
 			mission = create_mission(url=url)
