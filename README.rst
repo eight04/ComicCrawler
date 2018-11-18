@@ -337,6 +337,12 @@ Todos
 Changelog
 ---------
 
+-  2018.11.18
+
+   -  Add: mission_conflict_action option.
+   -  Fix: failed to download images in qq.
+   -  Fix: failed to download images in youhui.
+
 -  2018.10.24
 
    -  Fix: new domain `hhmmoo.com` for hhxiee.
