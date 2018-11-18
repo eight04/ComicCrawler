@@ -4,3 +4,4 @@ pygments<3,>=2.2.0
 pylint==2.1.1
 pyxcute<0.6,>=0.5.2
 twine<2,>=1.9.1
+wheel==0.32.2
