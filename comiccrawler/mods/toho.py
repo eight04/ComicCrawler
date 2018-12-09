@@ -28,7 +28,6 @@ def get_episodes(html, url):
 	s = []
 
 	for match in re.finditer(pattern, html):
-		# https://github.com/eight04/ComicCrawler/issues/165
 		if match.start() < start:
 			continue
 		if match.end() > end:
@@ -38,16 +37,14 @@ def get_episodes(html, url):
 	return s[::-1]
 
 def get_images(html, url):
-	# base = re.match("https?://[^/]+/([^/]+)").group(1)
 	did = re.search("did=(\d+)", html).group(1)
 	sid = re.search("sid=(\d+)", html).group(1)
-	target = urljoin(url, "/action/play/read")
-	# iid = re.search("iid = (\d+)", html).group(1)
+	endpoint = urljoin(url, "/action/play/read")
 	pcount = int(re.search("pcount = (\d+)", html).group(1))
 	
 	s = []
 	for i in range(pcount):
-		s.append(create_image_getter(target, did, sid, i + 1))
+		s.append(create_image_getter(endpoint, did, sid, i + 1))
 	return s
 		
 def create_image_getter(url, did, sid, iid):
