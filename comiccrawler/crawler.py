@@ -179,7 +179,7 @@ class Crawler:
 		if isinstance(images, str):
 			images = [images]
 		if not images:
-			raise Exception("get_images is empty")
+			raise Exception("get_images returns empty")
 		try:
 			self.images = iter(images)
 		except TypeError:
