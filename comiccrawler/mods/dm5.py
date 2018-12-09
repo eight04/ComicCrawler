@@ -8,12 +8,13 @@ Ex:
 
 """
 
-from re import search, finditer, DOTALL
+import re
 from urllib.parse import urljoin
 
 from node_vm2 import eval
 
 from ..core import Episode, grabhtml
+from ..util import clean_tags
 
 cookie = {
 	"isAdult": "1",
@@ -24,35 +25,39 @@ domain = ["www.dm5.com", "tel.dm5.com", "hk.dm5.com"]
 name = "動漫屋"
 
 def get_title(html, url):
-	return search('DM5_COMIC_MNAME="([^"]+)', html).group(1)
+	return re.search('DM5_COMIC_MNAME="([^"]+)', html).group(1)
 
 def get_episodes(html, url):
 	s = []
 
-	for match in finditer('<li>\s*<a href="(/m\d+/)"[^>]*>([^<]+)', html):
+	for match in re.finditer('<li>\s*<a href="(/m\d+/)"[^>]*>(.+?)</a>', html, re.DOTALL):
+		# https://github.com/eight04/ComicCrawler/issues/165
+		ep_url, title = match.groups()
 		s.append(Episode(
-			match.group(2).strip(),
-			urljoin(url, match.group(1))
+			clean_tags(title),
+			urljoin(url, ep_url)
 		))
-
+		
+	if "DM5_COMIC_SORT=1" in html:
+		return s
 	return s[::-1]
 
 def get_images(html, url):
-	key = search(r'id="dm5_key".+?<script[^>]+?>\s*eval(.+?)</script>', html, DOTALL)
+	key = re.search(r'id="dm5_key".+?<script[^>]+?>\s*eval(.+?)</script>', html, re.DOTALL)
 	
 	if key:
 		key = eval(key.group(1)).split(";")[1]
-		key = search(r"=(.+)$", key).group(1)
+		key = re.search(r"=(.+)$", key).group(1)
 		key = eval(key)
 		
 	else:
 		key = ""
 		
-	count = int(search("DM5_IMAGE_COUNT=(\d+);", html).group(1))
-	cid = search("DM5_CID=(\d+);", html).group(1)
-	mid = search("DM5_MID=(\d+);", html).group(1)
-	dt = search('DM5_VIEWSIGN_DT="([^"]+)', html).group(1)
-	sign = search('DM5_VIEWSIGN="([^"]+)', html).group(1)
+	count = int(re.search("DM5_IMAGE_COUNT=(\d+);", html).group(1))
+	cid = re.search("DM5_CID=(\d+);", html).group(1)
+	mid = re.search("DM5_MID=(\d+);", html).group(1)
+	dt = re.search('DM5_VIEWSIGN_DT="([^"]+)', html).group(1)
+	sign = re.search('DM5_VIEWSIGN="([^"]+)', html).group(1)
 	
 	pages = {}
 	
