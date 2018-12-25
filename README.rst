@@ -337,6 +337,13 @@ Todos
 Changelog
 ---------
 
+-  2018.12.25
+
+   -  Add: new domain hheess.com for hhcomic module.
+   -  Add: new domain 36rm.cn for xznj module.
+   -  Add: toho module.
+   -  Fix: support new layout in dm5.
+
 -  2018.11.18
 
    -  Add: mission_conflict_action option.
