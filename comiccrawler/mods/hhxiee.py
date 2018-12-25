@@ -4,7 +4,6 @@
 
 Ex:
 	http://www.hhxiee.com/comic/1827966/
-	
 """
 
 import re
@@ -14,7 +13,9 @@ from node_vm2 import VM
 
 from ..core import Episode, grabhtml
 
-domain = ["www.hhxiee.com", "www.hhcomic.cc", "www.hhssee.com", "www.hhmmoo.com"]
+domain = [
+	"www.hhxiee.com", "www.hhcomic.cc", "www.hhssee.com", "www.hhmmoo.com",
+	"www.hheess.com"]
 name = "汗汗"
 
 def get_title(html, url):
