@@ -115,11 +115,13 @@ or you can use it in your python script:
 
 .. code:: python
 
-    from comiccrawler.core import Mission, analyze, download
+    from comiccrawler.mission import Mission
+    from comiccrawler.analyzer import Analyzer
+    from comiccrawler.crawler import download
     
     # create a mission
     m = Mission(url="http://example.com")
-    analyze(m)
+    Analyzer(m).analyze()
     
     # select the episodes you want
     for ep in m.episodes:

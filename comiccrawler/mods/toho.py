@@ -8,7 +8,7 @@ from urllib.parse import urljoin
 
 from ..core import Episode, grabhtml
 
-domain = ["www.tohomh.com"]
+domain = ["www.tohomh.com", "www.tohomh123.com"]
 name = "土豪"
 
 def get_title(html, url):
