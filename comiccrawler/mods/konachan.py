@@ -38,8 +38,7 @@ def get_images(html, url):
 	except AttributeError:
 		if "This post was deleted" in html:
 			raise SkipEpisodeError
-		else:
-			raise
+		raise
 	return urljoin(url, img)
 
 def get_next_page(html, url):
