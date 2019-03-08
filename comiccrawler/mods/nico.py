@@ -60,9 +60,8 @@ def get_images(html, url):
 			image = source_url
 		return [image]
 
-	else:
-		img = re.search(r'href="(/image/source\?id=\d+)', html).group(1)
-		return [urljoin(url, img)]
+	img = re.search(r'href="(/image/source\?id=\d+)', html).group(1)
+	return [urljoin(url, img)]
 
 def get_next_page(html, url):
 	match = re.search(r'href="([^"]+)" rel="next"', html)

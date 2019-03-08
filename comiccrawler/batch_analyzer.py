@@ -59,7 +59,7 @@ class BatchAnalyzer:
 					Analyzer(mission).analyze()
 			except WorkerExit:
 				raise
-			except BaseException as _err:
+			except BaseException as _err: # pylint: disable=broad-except
 				err = _err
 				if self.stop_on_error and (not callable(self.stop_on_error) or self.stop_on_error(err)):
 					err.mission = mission
