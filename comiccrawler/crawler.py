@@ -117,8 +117,7 @@ class Crawler:
 			checksum = get_checksum(self.image_bin)
 			if checksum in self.checksums:
 				raise LastPageError
-			else:
-				self.checksums.add(checksum)
+			self.checksums.add(checksum)
 				
 		try:
 			content_write(self.savepath.full_fn(self.get_filename(), self.image_ext), self.image_bin)
@@ -311,9 +310,8 @@ def crawlpage(crawler):
 			# retry doesn't work with 429 error
 			sleep(5)
 			raise er
-		else:
-			crawler.handle_error(er)
-			sleep(5)
+		crawler.handle_error(er)
+		sleep(5)
 
 	error_loop(download, download_error)
 
