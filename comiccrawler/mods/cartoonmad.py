@@ -22,7 +22,8 @@ def get_episodes(html, url):
 	return s
 
 def get_images(html, url):
-	return re.search('img src="(http://[\w.]*?cartoonmad\.com.+?)"', html).group(1)
+	pic_url = re.search('img src="(comicpic[^"]+)', html).group(1)
+	return urljoin(url, pic_url)
 	
 def get_next_page(html, url):
 	match = re.search('a href="(\d+[^"]*)', html)
