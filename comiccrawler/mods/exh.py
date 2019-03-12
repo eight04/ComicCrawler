@@ -22,6 +22,7 @@ rest = 5
 config = {
 	"cookie_ipb_member_id": "請輸入Cookie中的ipb_member_id",
 	"cookie_ipb_pass_hash": "請輸入Cookie中的ipb_pass_hash",
+	"cookie_igneous": "請輸入Cookie中的igneous",
 	"original": "false"
 }
 
