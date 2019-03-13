@@ -5,6 +5,7 @@
 Example:
 
 http://www.gufengmh.com/manhua/jueshiliandanshi/
+https://www.gufengmh8.com/manhua/wodedabaojian/
 """
 
 from html import unescape
@@ -14,8 +15,9 @@ import re
 from node_vm2 import eval
 
 from ..episode import Episode
+from ..grabber import grabhtml
 
-domain = ["www.gufengmh.com"]
+domain = ["www.gufengmh.com", "www.gufengmh8.com"]
 name = "古風"
 
 def get_title(html, url):
@@ -33,8 +35,14 @@ def get_episodes(html, url):
 
 def get_images(html, url):
 	js = re.search('(var siteName.+?)</script>', html, re.DOTALL).group(1)
-	return eval(js + """
-	// http://www.gufengmh.com/js/config.js
-	chapterImages.map(i => `http://res.gufengmh.com/${chapterPath}${i}`);
+	# http://www.gufengmh.com/js/config.js
+	config = grabhtml(urljoin(url, "/js/config.js"))
+	return eval("""
+	const toastr = {
+		options: {}
+	};
+	""" + config + js + """
+	const domain = SinConf.resHost[0].domain[0];
+	chapterImages.map(i => `${domain}/${chapterPath}${i}`);
 	""")
 	
