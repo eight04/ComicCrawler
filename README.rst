@@ -339,6 +339,14 @@ Todos
 Changelog
 ---------
 
+-  2019.3.13
+
+   -  Add: new domain gufengmh8.com for gufeng module.
+   -  Add: new domain tohomh123.com for toho module
+   -  Add: new cookie igneous for exh module.
+   -  Fix: download images in cartoonmad.
+   -  Change: drop ck101 module.
+
 -  2018.12.25
 
    -  Add: new domain hheess.com for hhcomic module.
