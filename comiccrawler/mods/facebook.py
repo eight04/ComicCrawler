@@ -68,13 +68,15 @@ def get_next_page(html, url):
 		return urllib.parse.urljoin(url, match.group(1))
 		
 	fbset, fbid = get_url_info(url)
-	query = urllib.parse.urlencode({
+	fb_dtsg_ag = re.search('async_get_token":"([^"]+)', html).group(1)
+	params = {
+		"fb_dtsg_ag": fb_dtsg_ag,
 		"data": json.dumps({"fbid": fbid, "set": fbset}),
 		"__a": 1
-	})
+	}
 	pagelet = grabhtml(
-		"https://www.facebook.com/ajax/pagelet/generic.php/"
-		"PhotoViewerInitPagelet?" + query)
+		"https://www.facebook.com/ajax/pagelet/generic.php/PhotoViewerInitPagelet",
+		params=params)
 	
 	match = re.search(r'"addPhotoFbids".*?(\d+)', pagelet)
 	if match:
