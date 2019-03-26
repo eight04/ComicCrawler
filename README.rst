@@ -339,6 +339,11 @@ Todos
 Changelog
 ---------
 
+-  2019.3.26
+
+   -  Add: manhuaren module.
+   -  Fix: failed to switch page in fb.
+
 -  2019.3.18
 
    -  Fix: handle 403 error in artstation.
