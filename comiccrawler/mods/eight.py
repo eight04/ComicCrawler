@@ -26,6 +26,7 @@ def get_episodes(html, url):
 	js = """
 		var output;
 		function getCookie() {}
+		function getcookie() {}
 		var window = {
 			open: function(result){
 				output = result;
