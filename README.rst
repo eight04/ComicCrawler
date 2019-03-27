@@ -339,6 +339,10 @@ Todos
 Changelog
 ---------
 
+-  2019.3.27
+
+   -  Fix: getcookie is not defined in eight.
+
 -  2019.3.26
 
    -  Add: manhuaren module.
