@@ -11,7 +11,7 @@ import re
 import json
 from html import unescape
 from io import BytesIO
-from urllib.parse import urljoin, urlencode, urlparse, parse_qs, quote
+from urllib.parse import urljoin, urlencode, urlparse, parse_qs
 from zipfile import ZipFile
 
 from node_vm2 import eval
@@ -87,9 +87,10 @@ def get_episodes(html, url):
 			def build_url(offset):
 				query = {
 					"offset": str(offset),
-					"limit": "48"
+					"limit": "48",
+					"tag": tag
 				}
-				return "https://www.pixiv.net/ajax/user/{}/illustmanga/tag/{}?{}".format(id, quote(tag), urlencode(query))
+				return "https://www.pixiv.net/ajax/user/{}/illustmanga/tag?{}".format(id, urlencode(query))
 				
 			response = grabhtml(build_url(0))
 			response = json.loads(response)
