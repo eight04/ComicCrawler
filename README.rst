@@ -339,6 +339,11 @@ Todos
 Changelog
 ---------
 
+-  2019.5.3
+
+   -  Fix: can't analyze profile URL with tags in pixiv.
+   -  Add: pixabay module.
+
 -  2019.3.27
 
    -  Fix: getcookie is not defined in eight.
