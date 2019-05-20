@@ -339,6 +339,10 @@ Todos
 Changelog
 ---------
 
+-  2019.5.20
+
+   -  Fix: ignore empty episodes in youhui.
+
 -  2019.5.3
 
    -  Fix: can't analyze profile URL with tags in pixiv.
