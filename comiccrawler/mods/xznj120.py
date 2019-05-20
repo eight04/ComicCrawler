@@ -41,9 +41,11 @@ def get_images(html, url):
 	function base64_decode(data) {{
 		return Buffer.from(data, "base64").toString();
 	}}
+	// m.wuyouhui.net/template/wap1/css/d7s/js/show.20170501.js?20190506201115
 	Buffer.from(qTcms_S_m_murl_e, "base64")
 		.toString()
 		.split("$qingtiandy$")
+		.filter(u => !/^(--|\+)/.test(u))
 		.map(f_qTcms_Pic_curUrl_realpic);
 	""".format(script=script, real_pic_fn=real_pic_fn)
 	return [urljoin(url, i) for i in eval(code)]

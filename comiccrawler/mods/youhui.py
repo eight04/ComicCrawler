@@ -10,8 +10,8 @@ from html import unescape
 from urllib.parse import urlparse, urljoin
 
 from ..core import Episode
-
-from .xznj120 import get_images # pylint: disable=unused-import
+from ..error import SkipEpisodeError
+from . import xznj120
 
 domain = ["m.wuyouhui.net"]
 name = "友繪"
@@ -28,3 +28,10 @@ def get_episodes(html, url):
 		ep_url, ep_title = match.groups()
 		s.append(Episode(ep_title, urljoin(url, ep_url)))
 	return s[::-1]
+
+def get_images(html, url):
+	imgs = xznj120.get_images(html, url)
+	if imgs:
+		return imgs
+	raise SkipEpisodeError
+	
