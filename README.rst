@@ -60,13 +60,13 @@ Install Comic Crawler
 
 ::
 
-    pip install comiccrawler
+    pip3 install comiccrawler
 
 更新時︰
 
 ::
 
-    pip install --upgrade comiccrawler
+    pip3 install --upgrade comiccrawler
     
 最後在 cmd 底下輸入以下指令執行 Comic Crawler︰
 
