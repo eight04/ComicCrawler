@@ -3,13 +3,14 @@
 """吹雪動漫"""
 
 import re
-import base64
-
 from urllib.parse import urljoin
 
-from ..core import Episode
+from node_vm2 import eval
 
-domain = ["www.chuixue.com"]
+from ..core import Episode
+from ..grabber import grabhtml
+
+domain = ["www.chuixue.com", "www.chuixue.net"]
 name = "吹雪"
 
 def get_title(html, url):
@@ -23,22 +24,21 @@ def get_episodes(html, url):
 		s.append(Episode(title, urljoin(url, ep_url)))
 	return s[::-1]
 
-def decode(s):
-	return base64.b64decode(s).decode("utf8")
-
-def encode(s):
-	return base64.b64encode(s).decode("utf8")
+global_js = None
 
 def get_images(html, url):
-	qtcms = re.search('qTcms_S_m_murl_e="([^"]+)"', html).group(1)
-
-	imgs = decode(qtcms).split("$qingtiandy$")
-
-	web_dir = re.search('web_dir="([^"]*)"', html).group(1)
-
-	def realpic(url):
-		if "manhuaju.com" in url or "bengou.com" in url:
-			return web_dir + "qTcms_Inc/qTcms.Pic.FangDao.asp?p=" + encode(url)
-		return url
-
-	return [realpic(img) for img in imgs]
+	global global_js
+	js = re.search("(var ret_classurl.+?)</script>", html, re.DOTALL).group(1)
+	if not global_js:
+		global_js_url = re.search('src="([^"]+global\.js)"', html).group(1)
+		global_js = grabhtml(urljoin(url, global_js_url))
+		global_js = re.search("(var WebimgServer.+?)window\.onerror", global_js, re.DOTALL).group(1)
+		
+	imgs, server = eval("""
+	function request() {
+		return "";
+	}
+	""" + js + global_js + """;
+	[photosr.slice(1), WebimgServerURL[0]]
+	""")
+	return [urljoin(server, img) for img in imgs]
