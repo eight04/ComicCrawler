@@ -17,7 +17,8 @@ from zipfile import ZipFile
 from node_vm2 import eval
 
 from ..core import Episode, grabhtml
-from ..error import PauseDownloadError
+from ..error import PauseDownloadError, is_http, SkipEpisodeError
+from ..safeprint import print
 
 domain = ["www.pixiv.net"]
 name = "Pixiv"
@@ -160,11 +161,14 @@ def get_images(html, url):
 	cache["frames"] = ugoira_meta["body"]["frames"]
 	return ugoira_meta["body"]["originalSrc"]
 
-# def errorhandler(er, crawler):
-	# http://i1.pixiv.net/img21/img/raven1109/10841650_big_p0.jpg
-	# Private page?
-	# if is_403(er):
-		# raise SkipEpisodeError
+def errorhandler(err, crawler):
+	if is_http(err, 404) and hasattr(err, "response") and err.response.url:
+		# note that err.response is False
+		if re.match(".*member_illust\.php.*illust_id=\d+.*", err.response.url):
+			# deleted by author?
+			# https://www.pixiv.net/member_illust.php?mode=medium&illust_id=68059323
+			print("Skip {}: {}".format(err.response.url, 404))
+			raise SkipEpisodeError
 			
 def imagehandler(ext, bin):
 	"""Append index info to ugoku zip"""
