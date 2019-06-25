@@ -152,6 +152,9 @@ or you can use it in your python script:
 
     ; 啟動時自動檢查圖書館更新
     libraryautocheck = true
+    
+    ; 檢查更新間隔（單位︰小時）
+    autocheck_interval = 24
 
     ; 下載目的資料夾。相對路徑會根據設定檔資料夾的位置。
     savepath = download

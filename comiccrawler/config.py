@@ -17,6 +17,7 @@ class Config:
 		"savepath": "download",
 		"runafterdownload": "",
 		"libraryautocheck": "true",
+		"autocheck_interval": "24",
 		"autosave": "5",
 		"errorlog": "false",
 		"lastcheckupdate": "0",

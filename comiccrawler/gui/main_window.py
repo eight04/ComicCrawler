@@ -499,7 +499,7 @@ class MainWindow(ViewMixin, EventMixin):
 		printer.add_listener(self.sp_callback)
 
 		if (setting.getboolean("libraryautocheck") and
-			time() - setting.getfloat("lastcheckupdate", 0) > 24 * 60 * 60):
+			time() - setting.getfloat("lastcheckupdate", 0) > setting.getfloat("autocheck_interval") * 60 * 60):
 			download_manager.start_check_update()
 			
 		self.update_table(mission_manager.view)
