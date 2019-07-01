@@ -342,6 +342,13 @@ Todos
 Changelog
 ---------
 
+-  2019.7.1
+
+   -  Add: autocheck_interval option.
+   -  Add: manhuadui module.
+   -  Fix: chuixue module.
+   -  Fix: handle 404 errors in pixiv.
+
 -  2019.5.20
 
    -  Fix: ignore empty episodes in youhui.
