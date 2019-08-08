@@ -37,11 +37,24 @@ def get_images(html, url):
 	nonce2 = re.search("window\[.+?=(.+)", html)
 	nonce2 = nonce2.group(1) if nonce2 else None
 	
-	view_js = re.search('src="([^"]+?page\.chapter\.view[^"]+?\.js[^"]+)', html).group(1)
+	view_js = re.search('src="([^"]+?page\.chapter\.view[^"]+?\.js[^"]*)', html).group(1)
 	view_js = grabhtml(urljoin(url, view_js))
 	view_js = re.search("(eval\(.+?)\}\(\)", view_js, re.DOTALL).group(1)
 	
-	code = data + ";var nonce = " + (nonce2 or nonce) + ";var W = {DATA, nonce};" + view_js + ";_v"
+	code = "\n".join([
+		data,
+		"""
+		function createDummy() {
+			return new Proxy(() => true, {
+				get: () => createDummy()
+			});
+		}
+		const window = document = createDummy();
+		""",
+		"const nonce = {};".format(nonce2 or nonce),
+		"const W = {DATA, nonce};",
+		view_js
+	])
 	
 	data = node_vm2.eval(code)
 	return [p["url"] for p in data["picture"]]
