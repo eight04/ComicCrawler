@@ -116,7 +116,7 @@ def get_episodes(html, url):
 		for i in range(0, len(ep_ids), 48):
 			ids = ep_ids[i:i + 48]
 			query = [("ids[]", str(id)) for id in ids] + [("is_manga_top", "0")]
-			new_url = "https://www.pixiv.net/ajax/user/{}/profile/illusts?{}".format(
+			new_url = "https://www.pixiv.net/ajax/user/{}/profile/illusts?{}&work_category=illustManga".format(
 				id, urlencode(query))
 			cache_next_page[pre_url] = new_url
 			pre_url = new_url
