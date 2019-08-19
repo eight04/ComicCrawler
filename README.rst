@@ -342,6 +342,13 @@ Todos
 Changelog
 ---------
 
+-  2019.8.19
+
+   -  Fix: can't change page in danbooru.
+   -  Fix: failed to analyze episodes in pixiv.
+   -  Fix: download error in qq.
+   -  Bump dependencies.
+
 -  2019.7.1
 
    -  Add: autocheck_interval option.
