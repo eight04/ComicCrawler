@@ -113,10 +113,14 @@ def get_episodes(html, url):
 		ep_ids.reverse()
 		
 		pre_url = url
-		for i in range(0, len(ep_ids), 48):
+		for page, i in enumerate(range(0, len(ep_ids), 48)):
 			ids = ep_ids[i:i + 48]
-			query = [("ids[]", str(id)) for id in ids] + [("is_manga_top", "0")]
-			new_url = "https://www.pixiv.net/ajax/user/{}/profile/illusts?{}&work_category=illustManga&is_first_page=1".format(
+			query = [("ids[]", str(id)) for id in ids] + [
+				("is_manga_top", "0"),
+				("work_category", "illustManga"),
+				("is_first_page", "1" if page == 0 else "0")
+			]
+			new_url = "https://www.pixiv.net/ajax/user/{}/profile/illusts?{}".format(
 				id, urlencode(query))
 			cache_next_page[pre_url] = new_url
 			pre_url = new_url
