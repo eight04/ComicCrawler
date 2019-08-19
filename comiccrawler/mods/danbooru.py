@@ -38,6 +38,6 @@ def get_images(html, url):
 
 def get_next_page(html, url):
 	m = (re.search(r'"([^"]+)" rel="next"', html) or
-		re.search(r'<a rel="next" href="([^"]+)', html))
+		re.search(r'<a rel="next"[^>]*?href="([^"]+)', html))
 	if m:		
 		return urljoin(url, unescape(m.group(1)))
