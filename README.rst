@@ -342,6 +342,11 @@ Todos
 Changelog
 ---------
 
+-  2019.9.2
+
+   -  Add: bilibili module.
+   -  Add: 177pic module.
+
 -  2019.8.19
 
    -  Fix: can't change page in danbooru.
