@@ -76,8 +76,7 @@ def grabber_log(*args):
 
 sessions = {}
 def grabber(url, header=None, *, referer=None, cookie=None,
-		retry=False, params=None, done=None, proxy=None,
-		method="GET", data=None):
+		retry=False, done=None, proxy=None, **kwargs):
 	"""Request url, return text or bytes of the content."""
 	_scheme, netloc, _path, _query, _frag = urlsplit(url)
 	
@@ -103,7 +102,7 @@ def grabber(url, header=None, *, referer=None, cookie=None,
 	else:
 		proxies = proxy
 		
-	r = await_(do_request, s, url, params, proxies, method, data, retry)
+	r = await_(do_request, s, url, proxies, retry, **kwargs)
 	
 	if done:
 		done(s, r)
@@ -112,12 +111,12 @@ def grabber(url, header=None, *, referer=None, cookie=None,
 	
 RETRYABLE_HTTP_CODES = (423, 429, 503)
 	
-def do_request(s, url, params, proxies, method, data, retry):
+def do_request(s, url, proxies, retry, **kwargs):
 	sleep_time = 5
 	while True:
 		with get_request_lock(url):
-			r = s.request(method, url, timeout=20, params=params,
-				data=data, proxies=proxies)
+			r = s.request(kwargs.pop("method", "GET"), url, timeout=20,
+				proxies=proxies, **kwargs)
 		grabber_log(url, r.url, r.request.headers, r.headers)
 
 		if r.status_code == 200:
