@@ -49,7 +49,7 @@ cute(
 	bump = Bump("{version_file}", date_bumper),
 	bump_post = ['domains', 'dist', 'release', 'publish', 'install'],
 	domains = domains,
-	dist = 'x-clean build dist && python setup.py sdist bdist_wheel',
+	dist = 'x-clean build dist *.egg-info && python setup.py sdist bdist_wheel',
 	release = [
 		'git add .',
 		'git commit -m "Release v{version}"',
