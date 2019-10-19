@@ -14,6 +14,8 @@ disable=
 	
 	# https://github.com/PyCQA/pylint/issues/782
 	not-context-manager,
+  
+  design,
 	
 	anomalous-backslash-in-string,
 	duplicate-code,
@@ -51,12 +53,10 @@ callbacks=_
 init-import=yes
 redefining-builtins-modules=six.moves,future.builtins,safeprint
 
-[DESIGN]
-max-args=10
-max-attributes=21
-max-locals=30
-min-public-methods=0
-max-parents=14
-
 [TYPECHECK]
-ignored-modules=worker, comiccrawler.mods.*
+ignored-modules=
+  worker,
+  comiccrawler.mods.*,
+  
+  # FIXME: https://github.com/PyCQA/pylint/issues/3157
+  node_vm2

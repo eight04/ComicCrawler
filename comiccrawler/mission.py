@@ -2,14 +2,13 @@ from threading import Lock
 
 from .error import ModuleError
 from .channel import mission_ch
+from .mods import get_module
 
 class Mission:
 	"""Create Mission object. Contains information of the mission."""
 
 	def __init__(self, title=None, url=None, episodes=None, state="INIT", last_update=None):
 		"""Construct."""
-		from .mods import get_module
-
 		super().__init__()
 
 		self.title = title

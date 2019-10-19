@@ -1,5 +1,5 @@
 #! python3
 
-from . import console_init
+from .cli import console_init
 
 console_init()
