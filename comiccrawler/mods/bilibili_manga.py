@@ -63,7 +63,11 @@ class Decoder:
 		factory({}, {}, _require);
 
 		exports.decode = (seasonId, episodeId, data) => {
-		  return decode(seasonId, episodeId, Buffer.from(data)).catch(err => Array.from(err.data));
+		  return decode(seasonId, episodeId, Buffer.from(data))
+			.catch(err => {
+				if (err.message !== "extract data") throw err;
+				return Array.from(err.data);
+			});
 		};
 		"""
 		self.module = NodeVM.code(js)
