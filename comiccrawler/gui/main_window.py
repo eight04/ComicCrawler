@@ -12,7 +12,7 @@ from tkinter import ttk, font, messagebox
 import desktop
 import worker
 
-from ..mods import list_domain, get_module, load_config, domain_index
+from ..mods import list_domain, get_module, load_config
 from ..config import setting, config
 from ..safeprint import print, printer
 from ..mission import create_mission
@@ -210,10 +210,10 @@ class ViewMixin:
 			"anchor": "center"
 		}], tv_opt={"show": "headings"})
 		
-		for domain in list_domain():
+		for domain, module in list_domain(True):
 			table.add({
 				"host": domain,
-				"mod": domain_index[domain].name
+				"mod": module.name
 			})
 			
 		# batch analyzer
