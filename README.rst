@@ -342,6 +342,10 @@ Todos
 Changelog
 ---------
 
+-  2019.10.19
+
+   -  Add: manga.bilibili module.
+
 -  2019.9.2
 
    -  Add: bilibili module.
