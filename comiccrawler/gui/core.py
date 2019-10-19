@@ -37,6 +37,7 @@ def get_scale(root):
 	# Windows
 	# https://github.com/eight04/ComicCrawler/issues/13#issuecomment-229367171
 	try:
+		# pylint: disable=import-outside-toplevel
 		from ctypes import windll
 		user32 = windll.user32
 		user32.SetProcessDPIAware()

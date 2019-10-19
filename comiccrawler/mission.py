@@ -8,8 +8,9 @@ class Mission:
 
 	def __init__(self, title=None, url=None, episodes=None, state="INIT", last_update=None):
 		"""Construct."""
+		# pylint: disable=import-outside-toplevel
+		# circular dependencies
 		from .mods import get_module
-
 		super().__init__()
 
 		self.title = title

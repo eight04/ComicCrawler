@@ -59,4 +59,9 @@ min-public-methods=0
 max-parents=14
 
 [TYPECHECK]
-ignored-modules=worker, comiccrawler.mods.*
+ignored-modules=
+  worker,
+  comiccrawler.mods.*,
+  
+  # FIXME: https://github.com/PyCQA/pylint/issues/3157
+  node_vm2

@@ -16,6 +16,7 @@ from ..profile import get as profile
 from ..grabber import cooldown
 
 def import_module_file(ns, file):
+	# pylint: disable=import-outside-toplevel
 	if version_info < (3, 5):
 		from importlib.machinery import SourceFileLoader
 		# pylint: disable=deprecated-method, no-value-for-parameter

@@ -15,7 +15,18 @@ from ..grabber import grabhtml, grabber
 
 domain = ["manga.bilibili.com"]
 name = "manga.bilibili"
-comic_detail_cache = {}
+
+class ComicDetail(dict):
+	def load(self, id):
+		result = grabhtml(
+			"https://manga.bilibili.com/twirp/comic.v2.Comic/ComicDetail?device=pc&platform=web",
+			method="POST",
+			json={"comic_id": id}
+		)
+		result = json.loads(result)
+		self[id] = result
+		
+comic_detail = ComicDetail()
 
 class Decoder:
 	def __init__(self):
@@ -64,18 +75,15 @@ decoder = Decoder()
 
 def get_title(html, url):
 	id = int(re.search(r'mc(\d+)', url).group(1))
-	result = grabhtml(
-		"https://manga.bilibili.com/twirp/comic.v2.Comic/ComicDetail?device=pc&platform=web",
-		method="POST",
-		json={"comic_id": id}
-	)
-	result = json.loads(result)
-	comic_detail_cache[id] = result
-	return result["data"]["title"]
+	if id not in comic_detail:
+		comic_detail.load(id)
+	return comic_detail[id]["data"]["title"]
 
 def get_episodes(html, url):
 	id = int(re.search(r'mc(\d+)', url).group(1))
-	detail = comic_detail_cache[id]
+	if id not in comic_detail:
+		comic_detail.load(id)
+	detail = comic_detail.pop(id)
 	return [Episode(
 		"{} - {}".format(ep["short_title"], ep["title"]),
 		urljoin(url, "/mc{}/{}?from=manga_detail".format(id, ep["id"]))
