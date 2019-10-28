@@ -342,6 +342,10 @@ Todos
 Changelog
 ---------
 
+-  2019.10.28
+
+   -  Fix: download too many images in danbooru.
+
 -  2019.10.19
 
    -  Add: manga.bilibili module.
