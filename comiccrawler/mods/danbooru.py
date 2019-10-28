@@ -37,6 +37,9 @@ def get_images(html, url):
 	return [urljoin(url, img)]
 
 def get_next_page(html, url):
+	if 'id="image-container"' in html:
+		return
+		
 	m = (re.search(r'"([^"]+)" rel="next"', html) or
 		re.search(r'<a rel="next"[^>]*?href="([^"]+)', html))
 	if m:		
