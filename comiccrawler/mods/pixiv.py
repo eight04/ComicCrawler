@@ -32,12 +32,12 @@ def get_init_data(html):
 	match = re.search("""meta-global-data" content='([^']+)""", html)
 	if not match:
 		raise DataNotFound
-	data = json.loads(html.unescape(match.group(1)))
+	data = json.loads(unescape(match.group(1)))
 		
 	match = re.search("""meta-preload-data" content='([^']+)""", html)
 	# if not match:
 		# raise DataNotFound
-	data["preload"] = json.loads(html.unescape(match.group(1)))
+	data["preload"] = json.loads(unescape(match.group(1)))
 	
 	return data
 
