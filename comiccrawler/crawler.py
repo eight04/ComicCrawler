@@ -6,7 +6,7 @@ from worker import WorkerExit, sleep
 from .save_path import SavePath
 from .module_grabber import ModuleGrabber
 from .image import Image
-from .error import LastPageError, PauseDownloadError, SkipEpisodeError, is_http
+from .error import LastPageError, PauseDownloadError, SkipEpisodeError, is_http, SkipPageError
 
 from .io import path_each, content_read, content_write
 from .util import url_extract_filename, debug_log
@@ -168,17 +168,22 @@ class Crawler:
 		
 	def get_images(self):
 		"""Get images"""
+		skip_page = False
 		if self.ep.image:
 			images = self.ep.image
 		else:
-			images = self.mod.get_images(
-				self.html,
-				self.ep.current_url
-			)
+			try:
+				images = self.mod.get_images(
+					self.html,
+					self.ep.current_url
+				)
+			except SkipPageError:
+				images = []
+				skip_page = True
 		if isinstance(images, str):
 			images = [images]
-		if not images:
-			raise Exception("get_images returns empty")
+		if not images and not skip_page:
+			raise Exception("get_images returns an empty array")
 		try:
 			self.images = iter(images)
 		except TypeError:

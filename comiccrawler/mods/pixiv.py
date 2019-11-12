@@ -15,7 +15,7 @@ from urllib.parse import urljoin, urlencode, urlparse, parse_qs
 from zipfile import ZipFile
 
 from ..core import Episode, grabhtml
-from ..error import PauseDownloadError, is_http, SkipEpisodeError
+from ..error import PauseDownloadError, is_http, SkipEpisodeError, SkipPageError
 from ..safeprint import print
 
 domain = ["www.pixiv.net"]
@@ -124,7 +124,7 @@ def get_episodes_from_init_data(html, url):
 			id, urlencode(query))
 		cache_next_page[pre_url] = new_url
 		pre_url = new_url
-	return []
+	raise SkipPageError
 	
 def get_episodes_from_ajax_result(html, url):
 	if "ajax/user" not in url:
@@ -169,6 +169,12 @@ def get_nth_img(url, i):
 	return re.sub(r"_p0(\.\w+)$", r"_p{}\1".format(i), url)
 
 def get_images(html, url):
+	if "&amp;" in url:
+		# fix bad URL for old saves e.g. 
+		# https://www.pixiv.net/member_illust.php?mode=medium&amp;illust_id=12345
+		cache_next_page[url] = unescape(url)
+		raise SkipPageError
+
 	init_data = get_init_data(html)
 	check_login(init_data)
 	illust_id = re.search("illust_id=(\d+)", url).group(1)
