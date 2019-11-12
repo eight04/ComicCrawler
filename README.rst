@@ -342,6 +342,11 @@ Todos
 Changelog
 ---------
 
+-  2019.11.12
+
+   -  Fix: pixiv.
+   -  Add: allow ``get_images`` to raise ``SkipPageError``.
+
 -  2019.10.28
 
    -  Fix: download too many images in danbooru.
