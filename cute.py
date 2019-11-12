@@ -40,7 +40,7 @@ cute(
 	test = ['pylint comiccrawler', 'readme_build'],
 	bump_pre = 'test',
 	bump = Bump("{version_file}", date_bumper),
-	bump_post = ['domains', 'dist', 'release', 'publish', 'install'],
+	bump_post = ['domains', 'dist', 'release', 'publish'],
 	domains = domains,
 	dist = 'x-clean build dist *.egg-info && python setup.py sdist bdist_wheel',
 	release = [
@@ -52,8 +52,6 @@ cute(
 		'twine upload dist/*',
 		'git push --follow-tags'
 	],
-	install = 'pip install -e .',
-	install_err = 'elevate -c -w pip install -e .',
 	readme_build = [
 		'python setup.py --long-description | x-pipe build/readme/index.rst',
 		'rst2html5.py --no-raw --exit-status=1 --verbose '
