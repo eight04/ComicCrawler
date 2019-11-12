@@ -33,5 +33,6 @@ tqdm==4.36.1
 twine==2.0.0
 urllib3==1.25.6
 webencodings==0.5.1
+wheel==0.33.6
 win-unicode-console==0.5
 wrapt==1.11.2
