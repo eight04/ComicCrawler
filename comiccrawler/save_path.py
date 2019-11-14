@@ -63,4 +63,5 @@ class SavePath:
 				build_file_table
 			)
 			
-		return self.files.get(self.filename(page))
+		ext = self.files.get(self.filename(page))
+		return ext and "@" not in ext
