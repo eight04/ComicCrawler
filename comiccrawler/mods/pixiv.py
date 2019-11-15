@@ -191,13 +191,24 @@ def get_images(html, url):
 	return ugoira_meta["body"]["originalSrc"]
 
 def errorhandler(err, crawler):
-	if is_http(err, 404) and hasattr(err, "response") and err.response.url:
-		# note that err.response is False
-		if re.match(".*member_illust\.php.*illust_id=\d+.*", err.response.url):
+	if is_http(err, 404):
+		url = None
+		try:
+			url = err.response.url
+		except AttributeError:
+			pass
+		if url and is_ep_url(url):
 			# deleted by author?
 			# https://www.pixiv.net/member_illust.php?mode=medium&illust_id=68059323
 			print("Skip {}: {}".format(err.response.url, 404))
 			raise SkipEpisodeError
+			
+def is_ep_url(url):
+	patterns = [
+		"member_illust\.php.*illust_id=\d+",
+		"/artworks/\d+"
+	]
+	return any(re.search(p, url) for p in patterns)
 			
 def imagehandler(ext, bin):
 	"""Append index info to ugoku zip"""
