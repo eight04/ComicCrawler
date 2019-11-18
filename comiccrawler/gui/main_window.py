@@ -339,6 +339,14 @@ class EventMixin:
 			def _():
 				if self.messagebox("yesno", "Comic Crawler", "確定刪除？"):
 					self.remove(name, *table.selected())
+					
+			if name == "view":
+				@bind_menu("刪除（包括圖書館）")
+				def _():
+					if self.messagebox("yesno", "Comic Crawler", "確定刪除？"):
+						selected = table.selected()
+						self.remove("view", *selected)
+						self.remove("library", *selected)
 
 			@bind_menu("移至頂部")
 			def _():
