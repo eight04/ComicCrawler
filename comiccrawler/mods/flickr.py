@@ -16,6 +16,7 @@ from html import unescape
 from node_vm2 import eval
 
 from ..core import Episode, grabhtml
+from ..error import is_http, SkipEpisodeError
 
 domain = ["www.flickr.com"]
 name = "flickr"
@@ -129,3 +130,16 @@ def get_next_page(html, url):
 	match = re.search('rel="next"\s+href="([^"]+)', html)
 	if match:
 		return urljoin(url, match.group(1))
+		
+def errorhandler(err, crawler):
+	if is_http(err, 410) or is_http(err, 404):
+		try:
+			url = err.response.url
+		except AttributeError:
+			pass
+		else:
+			if url and is_image_url(url):
+				raise SkipEpisodeError
+		
+def is_image_url(url):
+	return re.match(r"https://farm\d+\.staticflickr\.com/\d+/\d+_[a-z0-9]+_[a-z]\.\w+", url)
