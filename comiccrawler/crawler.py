@@ -320,7 +320,7 @@ def crawlpage(crawler):
 
 	error_loop(download, download_error)
 
-def error_loop(process, handle_error=None, limit=10):
+def error_loop(process, handle_error=None, limit=3):
 	"""Loop process until error. Has handle error limit."""
 	errorcount = 0
 	while True:
