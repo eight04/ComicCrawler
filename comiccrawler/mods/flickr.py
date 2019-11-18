@@ -138,8 +138,12 @@ def errorhandler(err, crawler):
 		except AttributeError:
 			pass
 		else:
-			if url and is_image_url(url):
+			if url and url_may_not_found(url):
 				raise SkipEpisodeError
 		
-def is_image_url(url):
-	return re.match(r"https://farm\d+\.staticflickr\.com/\d+/\d+_[a-z0-9]+_[a-z]\.\w+", url)
+def url_may_not_found(url):
+	patterns = [
+		r"https://farm\d+\.staticflickr\.com/\d+/\d+_[a-z0-9]+_[a-z]\.\w+",
+		r"https://www\.flickr\.com/photos/[^/]+/\d+/"
+	]
+	return any(re.match(p, url) for p in patterns)
