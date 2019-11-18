@@ -142,7 +142,8 @@ class MissionManager:
 
 		with self.lock:
 			for mission in missions:
-				del pool[mission.url]
+				if mission.url in pool:
+					del pool[mission.url]
 			self.cleanup()
 			
 		mission_ch.pub("MISSION_LIST_REARRANGED", pool)
