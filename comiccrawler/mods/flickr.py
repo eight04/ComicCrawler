@@ -58,7 +58,7 @@ def get_sizes(photo):
 	# photo is a dict
 	sizes = {}
 	for key, value in photo.items():
-		match = re.match("([a-z]+)_([a-z]{1,2})$", key)
+		match = re.match("([a-z]+)_([a-z0-9]{1,2})$", key)
 		if not match:
 			continue
 		prop, name = match.groups()
@@ -71,7 +71,7 @@ def query_photos(url, key, nsid, page):
 	params = {
 		"per_page": 100,
 		"page": page,
-		"extras": "media,url_c,url_f,url_h,url_k,url_l,url_m,url_n,url_o,url_q,url_s,url_sq,url_t,url_z",
+		"extras": "media,url_sq,url_q,url_t,url_s,url_n,url_w,url_m,url_z,url_c,url_l,url_h,url_k,url_3k,url_4k,url_f,url_5k,url_6k,url_o",
 		"api_key": key,
 		"format": "json",
 		"nojsoncallback": 1
@@ -137,7 +137,7 @@ def get_next_page(html, url):
 		
 def errorhandler(err, crawler):
 	if is_http(err, 410) or is_http(err, 404):
-		if (re.match(r"https://(live|farm\d+)\.staticflickr\.com/\d+/\d+_[a-z0-9]+_[a-z]{1,2}\.\w+", err.response.url) and
+		if (re.match(r"https://(live|farm\d+)\.staticflickr\.com/\d+/\d+_[a-z0-9]+_[a-z0-9]{1,2}\.\w+", err.response.url) and
 				crawler.ep.image):
 			# a specific size is deleted?
 			crawler.ep.image = None
