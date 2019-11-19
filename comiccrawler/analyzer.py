@@ -6,7 +6,7 @@ from worker import WorkerExit, sleep
 
 from .channel import download_ch
 from .module_grabber import ModuleGrabber
-from .error import SkipPageError, PauseDownloadError
+from .error import SkipPageError, PauseDownloadError, LastPageError
 from .safeprint import print
 
 class EpisodeList:
@@ -107,6 +107,8 @@ class Analyzer:
 				eps = self.mission.module.get_episodes(self.html, url)
 			except SkipPageError:
 				pass
+			except LastPageError:
+				break
 			else:
 				if not eps:
 					print("Warning: get_episodes returns an empty list")
