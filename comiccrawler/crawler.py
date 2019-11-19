@@ -80,6 +80,9 @@ class Crawler:
 			result = self.downloader.img(
 				self.image.url, referer=self.ep.current_url)
 				
+			if result.response.history:
+				self.handle_redirect(result.response)
+				
 			# redirected and url changed
 			if result.response.history and not self.image.static_filename:
 				self.image.filename = url_extract_filename(result.response.url)
@@ -97,6 +100,11 @@ class Crawler:
 			
 		self.image_bin = bin
 		self.image_ext = ext
+		
+	def handle_redirect(self, response):
+		"""FIXME: should we merge this into handle_image?"""
+		if hasattr(self.mod, "redirecthandler"):
+			self.mod.redirecthandler(response, self)
 			
 	def handle_image(self):
 		"""Post processing"""
