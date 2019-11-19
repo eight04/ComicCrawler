@@ -127,7 +127,7 @@ def get_images(html, url):
 	data = eval(js)
 	if data.get("mediaType") == "video":
 		return query_video(data["id"], data["secret"], key)
-	max_size = max(data["sizes"].values(), lambda s: s.get("width", 0))
+	max_size = max(data["sizes"].values(), key=lambda s: s.get("width", 0))
 	return urljoin(url, max_size["url"])
 
 def get_next_page(html, url):
@@ -137,11 +137,11 @@ def get_next_page(html, url):
 		
 def errorhandler(err, crawler):
 	if is_http(err, 410) or is_http(err, 404):
-		if (re.match(r"https://farm\d+\.staticflickr\.com/\d+/\d+_[a-z0-9]+_[a-z]\.\w+", err.response.url) and
+		if (re.match(r"https://(live|farm\d+)\.staticflickr\.com/\d+/\d+_[a-z0-9]+_[a-z]{1,2}\.\w+", err.response.url) and
 				crawler.ep.image):
 			# a specific size is deleted?
 			crawler.ep.image = None
-			crawler.image = None
+			# clear html to refetch the page
 			crawler.html = None
 			return
 			
