@@ -45,7 +45,7 @@ def clean_rs(url):
 	return re.sub("/__rs_[^/]+", "", url)
 	
 def get_images(html, url):
-	html = html[:html.index('id="nuitahitoha"')]
+	html = html[:html.index('id="nuitahito"')]
 	matches = re.finditer(r'<img[^>]+?illust_id=[^>]+?src="([^"]+)', html)
 	return list(urljoin(url, clean_rs(m.group(1))) for m in matches)
 
