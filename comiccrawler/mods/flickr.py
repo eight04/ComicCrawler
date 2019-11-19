@@ -46,17 +46,32 @@ def get_episodes(html, url):
 		if photo.get("media") == "video":
 			image = None
 		else:
-			image = urljoin(url, find_largest(photo))
+			sizes = get_sizes(photo)
+			max_size = max(sizes, key=lambda s: s.get("width", 0))
+			image = urljoin(url, max_size["url"])
 			
 		eps.append(Episode(title, ep_url, image=image))
 
 	return eps[::-1]
 	
+def get_sizes(photo):
+	# photo is a dict
+	sizes = {}
+	for key, value in photo.items():
+		match = re.match("([a-z]+)_([a-z0-9]{1,2})$", key)
+		if not match:
+			continue
+		prop, name = match.groups()
+		if name not in sizes:
+			sizes[name] = {"name": name}
+		sizes[name][prop] = value
+	return sizes.values()
+	
 def query_photos(url, key, nsid, page):
 	params = {
 		"per_page": 100,
 		"page": page,
-		"extras": "media,url_c,url_f,url_h,url_k,url_l,url_m,url_n,url_o,url_q,url_s,url_sq,url_t,url_z",
+		"extras": "media,url_sq,url_q,url_t,url_s,url_n,url_w,url_m,url_z,url_c,url_l,url_h,url_k,url_3k,url_4k,url_f,url_5k,url_6k,url_o",
 		"api_key": key,
 		"format": "json",
 		"nojsoncallback": 1
@@ -75,22 +90,6 @@ def query_photos(url, key, nsid, page):
 	# https://github.com/PyCQA/pylint/issues/922
 	rs = json.loads(rs)
 	return (rs.get("photos") or rs.get("photoset"))["photo"]
-	
-def find_largest(photo):
-	max_width = 0
-	url = None
-	
-	for key, value in photo.items():
-		match = re.match("url_(.+?)$", key)
-		if not match:
-			continue
-		type = match.group(1)
-		width = int(photo.get("width_" + type, 0))
-		if width > max_width:
-			max_width = width
-			url = value
-			
-	return url
 	
 def query_video(id, secret, key):
 	rs = grabhtml("https://api.flickr.com/services/rest", params={
@@ -120,11 +119,16 @@ def key_func(stream):
 def get_images(html, url):
 	key = re.search('root\.YUI_config\.flickr\.api\.site_key = "([^"]+)', html).group(1)
 	model = re.search(r"Y\.ClientApp\.init\(([\s\S]+?)\)\s*\.then", html).group(1)
-	data = eval((
-		"auth = null, reqId = null, model = {model}, "
-		"model.modelExport['photo-models'][0]"
-	).format(model=model))
-	return query_video(data["id"], data["secret"], key)
+	js = """
+	const auth = null, reqId = null;
+	const model = """ + model + """;
+	model.modelExport.main["photo-models"][0]
+	"""
+	data = eval(js)
+	if data.get("mediaType") == "video":
+		return query_video(data["id"], data["secret"], key)
+	max_size = max(data["sizes"].values(), key=lambda s: s.get("width", 0))
+	return urljoin(url, max_size["url"])
 
 def get_next_page(html, url):
 	match = re.search('rel="next"\s+href="([^"]+)', html)
@@ -133,17 +137,13 @@ def get_next_page(html, url):
 		
 def errorhandler(err, crawler):
 	if is_http(err, 410) or is_http(err, 404):
-		try:
-			url = err.response.url
-		except AttributeError:
-			pass
-		else:
-			if url and url_may_not_found(url):
-				raise SkipEpisodeError
-		
-def url_may_not_found(url):
-	patterns = [
-		r"https://farm\d+\.staticflickr\.com/\d+/\d+_[a-z0-9]+_[a-z]\.\w+",
-		r"https://www\.flickr\.com/photos/[^/]+/\d+/"
-	]
-	return any(re.match(p, url) for p in patterns)
+		if (re.match(r"https://(live|farm\d+)\.staticflickr\.com/\d+/\d+_[a-z0-9]+_[a-z0-9]{1,2}\.\w+", err.response.url) and
+				crawler.ep.image):
+			# a specific size is deleted?
+			crawler.ep.image = None
+			# clear html to refetch the page
+			crawler.html = None
+			return
+			
+		if re.match(r"https://www\.flickr\.com/photos/[^/]+/\d+/", err.response.url):
+			raise SkipEpisodeError
