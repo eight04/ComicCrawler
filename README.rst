@@ -350,6 +350,19 @@ Todos
 Changelog
 ---------
 
+-  2019.11.19
+
+   -  Fix: handle ``LastPageError`` in ``get_episodes``.
+   -  Fix: download error in nijie.
+   -  Fix: refetch size info if the size is unavailable in flickr.
+   -  Fix: skip unavailable episodes in pixiv.
+   -  Fix: handle filename with broken extension (``jpg@YYYY-mm-dd``).
+   -  Add: instagram.
+   -  Add: sankaku_beta.
+   -  Add: ``redirecthandler`` hook.
+   -  Add: contextmenu to delete missions from both managers.
+   -  Change: decrease retry from 10 to 3, so a broken mission will fail faster.
+
 -  2019.11.12
 
    -  Fix: pixiv.
