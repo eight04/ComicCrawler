@@ -361,7 +361,7 @@ Changelog
    -  Add: sankaku_beta.
    -  Add: ``redirecthandler`` hook.
    -  Add: contextmenu to delete missions from both managers.
-   -  Change: decrease retry from 10 to 3, so a broken mission will fail faster.
+   -  Change: decrease max retry from 10 to 3 so a broken mission will fail faster.
 
 -  2019.11.12
 
