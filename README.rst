@@ -311,6 +311,14 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         match = re.search("<a id='nextpage' href='(.+?)'>next</a>", html)
         if match:
             return match.group(1)
+            
+    def redirecthandler(response, crawler):
+        """Downloader will call this hook if redirect happens during downloading
+        an image. Sometimes services redirects users to an unexpected URL. You
+        can check it here.
+        """
+        if response.url.endswith("404.jpg"):
+            raise Exception("Something went wrong")
 
     def errorhandler(error, crawler):
         """Downloader will call errorhandler if there is an error happened when
