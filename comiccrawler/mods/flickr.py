@@ -133,17 +133,12 @@ def get_next_page(html, url):
 		
 def errorhandler(err, crawler):
 	if is_http(err, 410) or is_http(err, 404):
-		try:
-			url = err.response.url
-		except AttributeError:
-			pass
-		else:
-			if url and url_may_not_found(url):
-				raise SkipEpisodeError
-		
-def url_may_not_found(url):
-	patterns = [
-		r"https://farm\d+\.staticflickr\.com/\d+/\d+_[a-z0-9]+_[a-z]\.\w+",
-		r"https://www\.flickr\.com/photos/[^/]+/\d+/"
-	]
-	return any(re.match(p, url) for p in patterns)
+		if re.match(r"https://farm\d+\.staticflickr\.com/\d+/\d+_[a-z0-9]+_[a-z]\.\w+", err.response.url):
+			# a specific size is deleted?
+			crawler.ep.image = None
+			crawler.image = None
+			crawler.html = None
+			return
+			
+		if re.match(r"https://www\.flickr\.com/photos/[^/]+/\d+/", err.response.url):
+			raise SkipEpisodeError
