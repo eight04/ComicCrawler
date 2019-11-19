@@ -46,11 +46,26 @@ def get_episodes(html, url):
 		if photo.get("media") == "video":
 			image = None
 		else:
-			image = urljoin(url, find_largest(photo))
+			sizes = get_sizes(photo)
+			max_size = max(sizes, key=lambda s: s.get("width", 0))
+			image = urljoin(url, max_size["url"])
 			
 		eps.append(Episode(title, ep_url, image=image))
 
 	return eps[::-1]
+	
+def get_sizes(photo):
+	# photo is a dict
+	sizes = {}
+	for key, value in photo.items():
+		match = re.match("([a-z]+)_([a-z]{1,2})$", key)
+		if not match:
+			continue
+		prop, name = match.groups()
+		if name not in sizes:
+			sizes[name] = {"name": name}
+		sizes[name][prop] = value
+	return sizes.values()
 	
 def query_photos(url, key, nsid, page):
 	params = {
@@ -75,22 +90,6 @@ def query_photos(url, key, nsid, page):
 	# https://github.com/PyCQA/pylint/issues/922
 	rs = json.loads(rs)
 	return (rs.get("photos") or rs.get("photoset"))["photo"]
-	
-def find_largest(photo):
-	max_width = 0
-	url = None
-	
-	for key, value in photo.items():
-		match = re.match("url_(.+?)$", key)
-		if not match:
-			continue
-		type = match.group(1)
-		width = int(photo.get("width_" + type, 0))
-		if width > max_width:
-			max_width = width
-			url = value
-			
-	return url
 	
 def query_video(id, secret, key):
 	rs = grabhtml("https://api.flickr.com/services/rest", params={
@@ -120,11 +119,16 @@ def key_func(stream):
 def get_images(html, url):
 	key = re.search('root\.YUI_config\.flickr\.api\.site_key = "([^"]+)', html).group(1)
 	model = re.search(r"Y\.ClientApp\.init\(([\s\S]+?)\)\s*\.then", html).group(1)
-	data = eval((
-		"auth = null, reqId = null, model = {model}, "
-		"model.modelExport['photo-models'][0]"
-	).format(model=model))
-	return query_video(data["id"], data["secret"], key)
+	js = """
+	const auth = null, reqId = null;
+	const model = """ + model + """;
+	model.modelExport.main["photo-models"][0]
+	"""
+	data = eval(js)
+	if data.get("mediaType") == "video":
+		return query_video(data["id"], data["secret"], key)
+	max_size = max(data["sizes"].values(), lambda s: s.get("width", 0))
+	return urljoin(url, max_size["url"])
 
 def get_next_page(html, url):
 	match = re.search('rel="next"\s+href="([^"]+)', html)
@@ -133,7 +137,8 @@ def get_next_page(html, url):
 		
 def errorhandler(err, crawler):
 	if is_http(err, 410) or is_http(err, 404):
-		if re.match(r"https://farm\d+\.staticflickr\.com/\d+/\d+_[a-z0-9]+_[a-z]\.\w+", err.response.url):
+		if (re.match(r"https://farm\d+\.staticflickr\.com/\d+/\d+_[a-z0-9]+_[a-z]\.\w+", err.response.url) and
+				crawler.ep.image):
 			# a specific size is deleted?
 			crawler.ep.image = None
 			crawler.image = None
