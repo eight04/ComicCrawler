@@ -47,12 +47,20 @@ def get_title_from_init_data(html, url):
 	tag = get_tag_from_url(url)
 	tag = " ({})".format(tag) if tag else ""
 	return "{} - {}{}".format(user["userId"], user["name"], tag)
+	
+def is_search_page(url):
+	return re.match("https://www\.pixiv\.net/tags/", url)
 
 def get_title(html, url):
-	try:
-		return get_title_from_init_data(html, url)
-	except DataNotFound:
-		return "[pixiv] " + unescape(re.search("<title>([^<]+)", html).group(1))
+	if is_search_page(url):
+		# general title?
+		pass
+	else:
+		try:
+			return get_title_from_init_data(html, url)
+		except DataNotFound:
+			pass
+	return "[pixiv] " + unescape(re.search("<title>([^<]+)", html).group(1))
 	
 def check_login(data):
 	if not data.get("userData"):
@@ -133,8 +141,43 @@ def get_episodes_from_ajax_result(html, url):
 	if isinstance(works, dict):
 		works = works.values()
 	return get_episodes_from_works(works)
+	
+def get_episodes_from_search(html, url):
+	word = re.search("/tags/([^/]+)", url).group(1)
+	query = urlparse(url).query
+	# FIXME: is it safe to reuse the query?
+	ajax_url = "https://www.pixiv.net/ajax/search/artworks/{}?{}".format(word, query)
+	cache_next_page[url] = ajax_url
+	raise SkipPageError
+	
+def is_search_ajax(url):
+	return url.startswith("https://www.pixiv.net/ajax/search/artworks/")
+	
+def get_episodes_from_search_ajax(html, url):
+	data = json.loads(html)
+	episodes = [
+		Episode(
+			"{} - {}".format(i["illustId"], i["illustTitle"]),
+			"https://www.pixiv.net/artworks/{}".format(i["illustId"])
+		) for i in data["body"]["illustManga"]["data"]
+	]
+	
+	if episodes:
+		url_o = urlparse(url)
+		query = parse_qs(url_o.query)
+		p = query.get("p", ["1"])[0]
+		query["p"] = [str(int(p) + 1)]
+		cache_next_page[url] = url_o._replace(query=urlencode(query, doseq=True)).geturl()
+	
+	return episodes[::-1]
 		
 def get_episodes(html, url):
+	if is_search_page(url):
+		return get_episodes_from_search(html, url)
+		
+	if is_search_ajax(url):
+		return get_episodes_from_search_ajax(html, url)
+
 	try:
 		return get_episodes_from_ajax_result(html, url)
 	except DataNotFound:
@@ -177,8 +220,11 @@ def get_images(html, url):
 
 	init_data = get_init_data(html)
 	check_login(init_data)
-	illust_id = re.search("illust_id=(\d+)", url).group(1)
-	illust = init_data["preload"]["illust"][illust_id]
+	if len(init_data["preload"]["illust"]) == 1:
+		illust_id, illust = init_data["preload"]["illust"].popitem()
+	else:
+		illust_id = re.search("illust_id=(\d+)", url).group(1)
+		illust = init_data["preload"]["illust"][illust_id]
 	
 	if illust["illustType"] != 2: # normal images
 		first_img = illust["urls"]["original"]
