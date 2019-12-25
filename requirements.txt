@@ -1,6 +1,6 @@
 docutils==0.15.2
-pygments==2.4.2
-pylint==2.4.3
+pygments==2.5.2
+pylint==2.4.4
 pyxcute==0.6.0
-twine==2.0.0
+twine==3.1.1
 wheel==0.33.6

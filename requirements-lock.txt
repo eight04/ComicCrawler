@@ -9,6 +9,7 @@ docopt==0.6.2
 docutils==0.15.2
 idna==2.8
 isort==4.3.21
+keyring==21.0.0
 lazy-object-proxy==1.4.3
 livereload==2.6.1
 mccabe==0.6.1
@@ -16,9 +17,10 @@ natsort==6.0.0
 node-vm2==0.3.6
 ordered-set==3.1.1
 pkginfo==1.5.0.1
-Pygments==2.4.2
-pylint==2.4.3
+Pygments==2.5.2
+pylint==2.4.4
 pythreadworker==0.9.0
+pywin32-ctypes==0.2.0
 pyxcute==0.6.0
 readme-renderer==24.0
 requests==2.22.0
@@ -30,7 +32,7 @@ setuptools==41.2.0
 six==1.12.0
 tornado==6.0.3
 tqdm==4.36.1
-twine==2.0.0
+twine==3.1.1
 urllib3==1.25.6
 webencodings==0.5.1
 wheel==0.33.6
