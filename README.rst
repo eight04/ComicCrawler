@@ -350,6 +350,10 @@ Todos
 Changelog
 ---------
 
+-  2019.12.25
+
+   -  Add: support search page in pixiv.
+
 -  2019.11.19
 
    -  Fix: handle ``LastPageError`` in ``get_episodes``.
