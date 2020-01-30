@@ -10,27 +10,6 @@ Comic Crawler
 
 Comic Crawler 是用來扒圖的一支 Python Script。擁有簡易的下載管理員、圖書館功能、 與方便的擴充能力。
 
-2018.6.14 更新
---------------
-
--  在 2018.6.8 版本中對檔名做了不正確的處理，在這版修正。
--  在 2018.6.8 中，檔名中的連續空格、全形空格，會被轉換成單一半形空格。
--  若你有任務於 2018.6.8 被以不正確的檔名儲存，更新至 2018.6.14 後會讀不到。請重新分析、或手動把空格改成正確的格式。
-
-2018.6.8 更新
--------------
-
--  此版本對程式結構進行了較大幅度的調整，建議在更新前備份存檔。
-
-2017.3.25 更新
-----------------
-
--  此版本用 `node_vm2 <https://github.com/eight04/node_vm2>`__ 取代 `pyExecJs <https://pypi.python.org/pypi/PyExecJS>`__
-
-   -  execjs 可以用來執行 JavaScript，但是沒有任何的安全機制。若是從網站下載的 JavaScript 包含惡意程式（如︰刪光你的資料、破壞作業系統、病毒……等），以 execjs 執行是完全無法防止的。
-   -  node_vm2 用 `vm2 <https://github.com/patriksimek/vm2>`__ 執行 JavaScript，比 execjs 多了一層沙箱防護。
-   -  vm2 需要 Node.js >= 6。
-
 下載和安裝（Windows）
 ---------------------
 
@@ -187,6 +166,9 @@ or you can use it in your python script:
     ; update: 檢查更新
     ; reselect_episodes: 重新選取集數
     mission_conflict_action = update
+    
+    ; 是否驗證加密連線（SSL），預設是 true
+    verify = false
 
 -  設定檔位於 ``~\comiccrawler\setting.ini``。可以在執行時指定 ``--profile`` 選項以變更預設的位置。（在 Windows 中 ``~`` 會被展開為 ``%HOME%`` 或 ``%USERPROFILE%``）
 -  執行一次 ``comiccrawler gui`` 後關閉，設定檔會自動產生。若 Comic Crawler 更新後有新增的設定，在關閉後會自動將新設定加入設定檔。
