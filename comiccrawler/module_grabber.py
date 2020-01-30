@@ -8,22 +8,19 @@ class ModuleGrabber:
 		self.mod = mod
 		
 	def html(self, url, **kwargs):
-		return grabhtml(
-			url,
-			header=self.get_header(),
-			cookie=self.get_cookie(),
-			done=self.handle_grab,
-			proxy=self.mod.config.get("proxy"),
-			**kwargs
-		)
-	
+		return self.grab(grabhtml, url, **kwargs)
+		
 	def img(self, url, **kwargs):
-		return grabimg(
+		return self.grab(grabimg, url, **kwargs)
+		
+	def grab(self, grabber, url, **kwargs):
+		return grabber(
 			url,
 			header=self.get_header(),
 			cookie=self.get_cookie(),
 			done=self.handle_grab,
 			proxy=self.mod.config.get("proxy"),
+			verify=self.mod.config.getboolean("verify", True),
 			**kwargs
 		)
 		
