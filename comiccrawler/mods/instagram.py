@@ -14,6 +14,9 @@ name = "Instagram"
 noepfolder = True
 
 cache_next_page = {}
+config = {
+	"cookie_sessionid": ""
+}
 
 def get_title(html, url):
 	title = re.search("<title>([^<]+)", html).group(1)
@@ -68,8 +71,14 @@ def get_init_data(html, page):
 	shared_data = json.loads(shared_data)
 	return shared_data["entry_data"][page][0]["graphql"]
 	
+def get_extra_data(html):
+	text = re.search("window\.__additionalDataLoaded\('[^']+',(.*?)\);</script>", html).group(1)
+	data = json.loads(text)
+	return data["graphql"]
+	
 def get_images(html, url):
-	media = get_init_data(html, "PostPage")["shortcode_media"]
+	media = get_extra_data(html)["shortcode_media"]
+	# breakpoint()
 	try:
 		video = media["video_url"]
 	except KeyError:
