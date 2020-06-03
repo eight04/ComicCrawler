@@ -332,6 +332,13 @@ Todos
 Changelog
 ---------
 
+-  2020.6.3
+
+   -  Fix: don't navigate to next page in danbooru.
+   -  Fix: analyzation error in eight.
+   -  Fix: instagram now requires login.
+   -  Add: a ``verify`` option to disable security check.
+
 -  2019.12.25
 
    -  Add: support search page in pixiv.
