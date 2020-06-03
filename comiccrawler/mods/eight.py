@@ -18,7 +18,7 @@ domain = ["www.8comic.com", "www.comicvip.com", "comicbus.com"]
 name = "無限"
 
 def get_title(html, url):
-	return re.search("<title>([^<]+?)免費漫畫,",html).group(1)
+	return re.search('addhistory\("\d+","([^"]+)',html).group(1)
 
 def get_episodes(html, url):
 	html = html.replace("\n", "")
