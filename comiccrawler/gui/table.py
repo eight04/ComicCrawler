@@ -3,6 +3,9 @@
 from tkinter import ttk
 from functools import partial
 
+# https://github.com/PyCQA/pylint/issues/3664
+# pylint: disable=dangerous-default-value
+
 class Table:
 	def __init__(self, parent, *, tv_opt={}, columns=[]):
 		self.sort_mode = None
