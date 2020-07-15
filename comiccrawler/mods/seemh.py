@@ -106,7 +106,7 @@ def get_images(html, url):
 	).group(1)
 	
 	with VM(js) as vm:
-		files, path, md5, cid = vm.run("[cInfo.files, cInfo.path, cInfo.sl.md5, cInfo.cid]")
+		files, path, params = vm.run("[cInfo.files, cInfo.path, cInfo.sl]")
 	
 	# find server
 	# "http://c.3qfm.com/scripts/core_5C348B32A78647FF4208EACA42FC5F84.js"
@@ -147,10 +147,7 @@ def get_images(html, url):
 	if config.getboolean("nowebp"):
 		images = map(lambda i: i[:-5] if i.endswith(".webp") else i, images)
 		
-	params = urlencode({
-		"cid": cid,
-		"md5": md5
-	})
+	params = urlencode(params)
 	images = ["{file}?{params}".format(file=i, params=params) for i in images]
 	
 	return images
