@@ -22,6 +22,10 @@ def get_title(html, url):
 	uid, name = match.groups()
 	
 	name = clean_tags(name)
+	
+	if "dojin.php" in url:
+		name += " (dojin)"
+		
 	return "[nijie] {id} - {name}".format(id=uid, name=name)
 
 def get_episodes(html, url):
@@ -45,8 +49,16 @@ def clean_rs(url):
 	return re.sub("/__rs_[^/]+", "", url)
 	
 def get_images(html, url):
-	html = html[:html.index('id="nuitahito"')]
-	matches = re.finditer(r'<img[^>]+?illust_id=[^>]+?src="([^"]+)', html)
+	try:
+		html = html[html.index('id="view-center"'):]	
+	except ValueError:
+		pass
+	html = html[:html.index('id="nuitahito')]
+	
+	matches = re.finditer(r'<img[^>]+src="([^"]+)[^>]+data-original', html)
+	matches = list(matches)
+	if not matches:
+		matches = re.finditer(r'<img[^>]+?illust_id=[^>]+?src="([^"]+)', html)
 	return list(urljoin(url, clean_rs(m.group(1))) for m in matches)
 
 def get_next_page(html, url):
