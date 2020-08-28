@@ -23,8 +23,9 @@ def get_title(html, url):
 def get_episodes(html, url):
 	id = re.search("manhua/([^/]+)", url).group(1)
 	s = []
-	for match in re.finditer(f'<a href="(/manhua/{id}/\d+\.html)"[^>]*>[\s\S]+?</a', html):
-		ep_url, title = match.groups()
+	for match in re.finditer(f'<a href="(/manhua/{id}/\d+\.html)"[^>]*>([\s\S]+?)</a', html):
+		ep_url, content = match.groups()
+		title = clean_tags(content).strip()
 		s.append(Episode(unescape(title), urljoin(url, ep_url)))
 	return s
 	
