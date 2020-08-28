@@ -78,7 +78,9 @@ class Crawler:
 		"""Download image"""
 		if self.image.url:
 			result = self.downloader.img(
-				self.image.url, referer=self.ep.current_url)
+				self.image.url,
+				referer=None if getattr(self.mod, "no_referer", False) else self.ep.current_url
+			)
 				
 			if result.response.history:
 				self.handle_redirect(result.response)
