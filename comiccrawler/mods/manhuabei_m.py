@@ -13,9 +13,11 @@ from node_vm2 import eval
 
 from ..core import Episode
 from ..grabber import grabhtml
+from ..util import clean_tags
 
 domain = ["m.manhuabei.com"]
 name = "漫畫唄"
+no_referer = True
 
 def get_title(html, url):
 	return unescape(re.search('<h1[^>]*id="comicName[^>]*>([^<]+)', html).group(1))
@@ -57,6 +59,12 @@ def get_images(html, url):
 	main_js = re.search("decrypt\d+\(.+", html).group()
 	
 	images = eval("""
+	(function () {
+	
+	function atob(data) {
+		return Buffer.from(data, "base64").toString("binary");
+	}
+	
 	function createLocalStorage() {
 		const storage = {};
 		return {setItem, getItem, removeItem};
@@ -92,6 +100,8 @@ def get_images(html, url):
 	for (let i = 0; i < chapterImages.length; i++) {
 		s.push(SinMH.getChapterImage(i + 1));
 	}
-	s;
+	return s;
+	
+	}).call(global)
 	""")
 	return images
