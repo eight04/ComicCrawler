@@ -209,6 +209,11 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
     # With noepfolder = True, Comic Crawler won't generate subfolder for each
     # episode. Optional, default to False.
     noepfolder = False
+    
+    # If False then setup the referer header automatically to mimic browser behavior.
+    # If True then disable this behavior.
+    # Default: False
+    no_referer = True
 
     # Wait 5 seconds before downloading another image. Optional, default to 0.
     rest = 5
