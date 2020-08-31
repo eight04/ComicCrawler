@@ -53,9 +53,9 @@ def get_images(html, url):
 		# FIXME: The image is downloaded twice within redirect!
 		source_url = urljoin(url, source_url.group(1))
 		source_html = grabhtml(source_url)
-		image = re.search(r'src="(/priv/[^"]+)', source_html)
+		image = re.search(r'data-src="([^"]+)', source_html)
 		if image:
-			image = "http://lohas.nicoseiga.jp" + image.group(1)
+			image = image.group(1)
 		else:
 			image = source_url
 		return [image]
