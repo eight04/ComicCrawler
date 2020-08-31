@@ -26,7 +26,7 @@ def get_title(html, url):
 		return "[weibo] {user_id} - {user_name}".format(user_id=user_id, user_name=user_name)
 	title = re.search('<title>([^<]+)', html).group(1)
 	title = title.replace("- 微博精選 - 微博台灣站", "").replace("\n", "").strip()
-	id = re.search('tw\.weibo\.com/([^/]+/\d+)', url).group(1)
+	id = re.search('tw\.weibo\.com/([^?]+)', url).group(1)
 	return "[weibo] {title} ({id})".format(title=title, id=id)
 
 def get_episodes(html, url):
