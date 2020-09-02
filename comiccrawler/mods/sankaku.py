@@ -2,7 +2,7 @@
 
 import re
 from html import unescape
-from urllib.parse import urljoin
+from urllib.parse import urlparse, parse_qs, quote, urljoin
 
 from ..core import Episode
 from ..error import PauseDownloadError
@@ -11,10 +11,10 @@ domain = ["chan.sankakucomplex.com"]
 name = "Sankaku"
 noepfolder = True
 config = {
-	"cookie_cf_clearance": "Set cf_clearance",
-	"cookie__sankakucomplex_session": "Set _sankakucomplex_session",
-	"cookie_pass_hash": "Set pass_hash",
-	"cookie_login": "Set login"
+	"cookie_cf_clearance": "",
+	"cookie__sankakucomplex_session": "",
+	"cookie_pass_hash": "",
+	"cookie_login": ""
 }
 
 def login_check(html):
@@ -24,15 +24,24 @@ def login_check(html):
 def get_title(html, url):
 	title = re.search(r"<title>/?(.+?) \|", html).group(1)
 	return "[sankaku] " + title
+	
+next_page_cache = {}
 
 def get_episodes(html, url):
 	login_check(html)
 	s = []
-	base = re.search("(https?://[^/]+)", url).group(1)
+	pid = None
 	for m in re.finditer(r'href="(/(?:[^/]*/)?post/show/(\d+))"', html):
-		url, pid = m.groups()
-		e = Episode(pid, base + url)
+		ep_url, pid = m.groups()
+		e = Episode(pid, urljoin(url, ep_url))
 		s.append(e)
+	
+	if len(s) > 1:
+		# breakpoint()
+		tags = parse_qs(urlparse(url).query)["tags"][0]
+		tags = quote(tags)
+		next_page_cache[url] = f"https://chan.sankakucomplex.com/?tags={tags}&next={pid}"
+		
 	return s[::-1]
 
 def get_images(html, url):
@@ -43,7 +52,6 @@ def get_images(html, url):
 	return ["https:" + unescape(u.group(1))]
 
 def get_next_page(html, url):
-	match = re.search('next-page-url="([^"]+)"', html)
-	if match:
-		return urljoin(url, unescape(match.group(1)))
+	if url in next_page_cache:
+		return next_page_cache.pop(url)
 		
