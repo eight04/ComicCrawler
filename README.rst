@@ -337,6 +337,19 @@ Todos
 Changelog
 ---------
 
+-  2020.9.2
+
+   -  Fix: api is changed in sankaku beta.
+   -  Fix: avoid page limit in sankaku.
+   -  Fix: cannot get title in weibo.
+   -  Fix: cannot fetch nico image.
+   -  Fix: duplicated pic in nijie.
+   -  Fix: cannot fetch image in seemh.
+   -  Add: oh module.
+   -  Add: setnmh module.
+   -  Add: manhuabei module.
+   -  Add: module constant ``no_referer``.
+
 -  2020.6.3
 
    -  Fix: don't navigate to next page in danbooru.
