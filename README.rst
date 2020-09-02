@@ -349,6 +349,7 @@ Changelog
    -  Add: setnmh module.
    -  Add: manhuabei module.
    -  Add: module constant ``no_referer``.
+   -  **Breaking: require Python@3.6+**
 
 -  2020.6.3
 
