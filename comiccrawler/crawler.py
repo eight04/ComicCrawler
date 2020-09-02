@@ -131,9 +131,9 @@ class Crawler:
 				
 		try:
 			content_write(self.savepath.full_fn(self.get_filename(), self.image_ext), self.image_bin)
-		except OSError:
+		except OSError as err:
 			traceback.print_exc()
-			raise PauseDownloadError("Failed to write file!")
+			raise PauseDownloadError("Failed to write file!") from err
 
 	def next_page(self):
 		"""Iter to next page."""
@@ -340,7 +340,7 @@ def error_loop(process, handle_error=None, limit=3):
 			traceback.print_exc()
 			errorcount += 1
 			if errorcount >= limit:
-				raise SkipEpisodeError(always=False)
+				raise SkipEpisodeError(always=False) from None
 			if handle_error:
 				handle_error(er)
 		# except ExitErrorLoop:

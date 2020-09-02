@@ -37,7 +37,7 @@ def get_images(html, url):
 		img = re.search('href="([^"]+)" id="highres"', html).group(1)
 	except AttributeError:
 		if "This post was deleted" in html:
-			raise SkipEpisodeError
+			raise SkipEpisodeError from None
 		raise
 	return urljoin(url, img)
 
