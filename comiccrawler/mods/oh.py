@@ -94,9 +94,19 @@ def get_images(html, url):
 	window.chapter_id = mh_info.chapter_id;
 	
 	const imgs = [];
-	for (let i = mh_info.startimg; i <= mh_info.totalimg; i++) {
-	  imgs.push(__cr_getpice(i));
+	let dirty = false;
+	class Image {
+		set src(val) {
+			imgs.push(val);
+			dirty = true;
+		}
 	}
+	
+	let i = mh_info.startimg;
+	do {
+		dirty = false;
+		__cr.preLoadImg(i++)
+	} while (dirty);
 	return imgs;
 	}).call(global);
 	"""
