@@ -8,8 +8,11 @@ JDownloader2 now support　deviantart.com!
 """
 
 import re
-
+import json
 from html import unescape
+from urllib.parse import urlparse
+
+from node_vm2 import eval
 
 from ..error import PauseDownloadError
 from ..core import Episode
@@ -25,46 +28,95 @@ config = {
 }
 
 def get_title(html, url):
-	return unescape(re.search("<title>(.+?)</title>", html).group(1))
+	id = urlparse(url).path[1:]
+	return f"[dA] {id}"
 	
-def check_login(html, url):
-	if not re.search('"loggedin":true', html, re.I):
-		raise PauseDownloadError("you didn't log in!")
+def check_login(state):
+	if not state["@@publicSession"]["isLoggedIn"]:
+		raise PauseDownloadError("You didn't login")		
+		
+next_page_cache = {}
+		
+def get_episodes_from_api(source, url):
+	data = json.loads(source)
+	s = []
+	for item in data["results"]:
+		d = item["deviation"]
+		s.append(Episode(
+			f"{d['deviationId']} - {d['title']}",
+			d["url"]
+		))
+		
+	if data["hasMore"]:
+		next_page_cache[url] = update_qs(url, {
+			"offset": data["nextOffset"]
+		})
+		
+	return s[::-1]
+	
+def get_state(html):
+	js = re.search(r"(window\.__INITIAL_STATE__[\s\S]+?)</script>", html).group(1)
+	return eval("""
+		const window = {};
+	""" + js + """
+		; window.__INITIAL_STATE__
+	""")	
 
 def get_episodes(html, url):
-	check_login(html, url)
-	
+	if "_napi" in url:
+		return get_episodes_from_api(html, url)
+		
+	state = get_state(html)
+	check_login(state)
+
+	deviation = state["@@entities"]["deviation"]
+	gallery = None
+	for key, value in state["@@streams"].items():
+		if key.startswith("folder-deviations-gallery"):
+			gallery = value
+			break
 	s = []
-	pattern = r'<a class="torpedo-thumb-link" href="([^"]+/art/[^"]+?(\d+))".+?class="title">([^<]*)'
-
-	for match in re.finditer(pattern, html, re.DOTALL):
-		ep_url, id, title = match.groups()
-		# WTF r u doing deviantArt?
-		title = unescape(unescape(title))
-
-		s.append(
-			Episode(
-				"{} - {}".format(id, title),
-				ep_url
-			)
-		)
-
+	for id in gallery["items"]:
+		d = deviation[str(id)]
+		s.append(Episode(
+			f"{id} - {d['title']}",
+			d["url"]
+		))
+		
+	if gallery["hasMore"]:
+		username = next(iter(state["@@entities"]["user"].values()))["username"]
+		params = {
+			"username": username,
+			"offset": gallery["nextOffset"],
+			"limit": gallery["itemsPerFetch"],
+			# FIXME: it seems that this param is not used with featured galleries?
+			"mode": "newest"
+		}
+		folder_id = gallery["streamParams"]["folderId"]
+		if folder_id < 0:
+			params["all_folder"] = "true"
+		else:
+			params["folderid"] = folder_id
+		next_page_cache[url] = update_qs(
+			"https://www.deviantart.com/_napi/da-user-profile/api/gallery/contents",
+			params)
+		
 	return s[::-1]
 
 def get_images(html, url):
-	check_login(html, url)
+	state = get_state(html)
+	check_login(state)
 
-	html = html.replace("\n", "")
 	try:
-		i = re.search('dev-page-download"\s+href="([^"]+)"', html).group(1)
+		i = re.search('href="(https://www.deviantart.com/download[^"]+)', html).group(1)
 		return [unescape(i)]
 	except AttributeError:
 		pass
-	i = re.search('<img[^>]+?src="([^"]+)"[^>]+?class="dev-content-full[^"]*">', html).group(1)
-	return [i]
+		
+	id = re.search(r"\d+$", url).group()
+	media = state["@@entities"]["deviation"][id]["media"]
+	return [f"{media['baseUri']}?token={media['token'][-1]}"]
 	
 def get_next_page(html, url):
-	if '"hasMore":true' not in html:
-		return None
-	next_offset = re.search('"nextOffset":(\d+)', html).group(1)
-	return update_qs(url, {"offset": next_offset})
+	if url in next_page_cache:
+		return next_page_cache.pop(url)
