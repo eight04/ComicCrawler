@@ -22,7 +22,7 @@ def get_episodes(html, url):
 	return s
 
 def get_images(html, url):
-	pic_url = re.search('img src="(comicpic[^"]+)', html).group(1)
+	pic_url = re.search('img src="([^"]*comicpic[^"]+)', html).group(1)
 	return urljoin(url, pic_url)
 	
 def get_next_page(html, url):
