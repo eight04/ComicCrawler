@@ -337,6 +337,18 @@ Todos
 Changelog
 ---------
 
+-  2020.10.29
+
+   -  Fix: cartoonmad error.
+   -  Fix: seemh error.
+   -  Fix: show all content in gelbooru.
+   -  Fix: qq error.
+   -  Fix: paging issue in oh.
+   -  Fix: deviantart error.
+   -  Add: new domain for hhxiee.
+   -  Add: new domain for oh.
+   -  Change: send referer when fetching html.
+
 -  2020.9.2
 
    -  Fix: api is changed in sankaku beta.
