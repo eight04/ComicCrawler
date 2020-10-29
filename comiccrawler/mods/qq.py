@@ -31,11 +31,15 @@ def get_episodes(html, url):
 		episodes.append(Episode(title, ep_url))
 	return episodes
 	
+def get_nonce(html):
+	matches = list(re.finditer("window\[.+?=(.+)", html))
+	if matches:
+		return matches[-1].group(1)
+	return re.search("window\.nonce = (.+)", html).group(1)
+	
 def get_images(html, url):
 	data = re.search("var DATA\s*=\s*'[^']+'", html).group()
-	nonce = re.search("window\.nonce = (.+)", html).group(1)
-	nonce2 = re.search("window\[.+?=(.+)", html)
-	nonce2 = nonce2.group(1) if nonce2 else None
+	nonce = get_nonce(html)
 	
 	view_js = re.search('src="([^"]+?page\.chapter\.view[^"]+?\.js[^"]*)', html).group(1)
 	view_js = grabhtml(urljoin(url, view_js))
@@ -51,7 +55,7 @@ def get_images(html, url):
 		}
 		const window = document = createDummy();
 		""",
-		"const nonce = {};".format(nonce2 or nonce),
+		"const nonce = {};".format(nonce),
 		"const W = {DATA, nonce};",
 		view_js
 	])
