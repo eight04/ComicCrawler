@@ -13,7 +13,7 @@ from node_vm2 import eval
 
 from ..core import Episode, grabhtml
 
-domain = ["www.ohmanhua.com"]
+domain = ["www.ohmanhua.com", "www.cocomanhua.com"]
 name = "OH漫畫"
 
 def get_title(html, url):
