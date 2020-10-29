@@ -1,5 +1,5 @@
 docutils==0.16
-pygments==2.6.1
+pygments==2.7.2
 pylint==2.6.0
 pyxcute==0.6.0
 twine==3.2.0
