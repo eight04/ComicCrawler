@@ -18,6 +18,10 @@ domain = ["gelbooru.com"]
 name = "Gelbooru"
 noepfolder = True
 
+cookie = {
+	"fringeBenefits": "yup"
+}
+
 def is_pool(url):
 	return "page=pool" in url
 
