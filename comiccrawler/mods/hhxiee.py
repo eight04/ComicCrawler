@@ -15,7 +15,7 @@ from ..core import Episode, grabhtml
 
 domain = [
 	"www.hhxiee.com", "www.hhcomic.cc", "www.hhssee.com", "www.hhmmoo.com",
-	"www.hheess.com"]
+	"www.hheess.com", "www.1manhua.net"]
 name = "汗汗"
 
 def get_title(html, url):
