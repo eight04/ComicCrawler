@@ -127,7 +127,7 @@ def get_images(html, url):
 
 	host = next(servers)
 	
-	utils = re.search(r"SMH\.(utils=.+?),SMH\.imgData=", corejs).group(1)
+	utils = re.search(r"SMH\.(utils=[\s\S]+?);SMH\.imgData=", corejs).group(1)
 	
 	js = """
 	var location = {
