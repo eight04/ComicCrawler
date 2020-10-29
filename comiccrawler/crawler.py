@@ -174,7 +174,7 @@ class Crawler:
 		if self.ep.image:
 			self.html = True
 		else:
-			self.html = self.downloader.html(self.ep.current_url)
+			self.html = self.downloader.html(self.ep.current_url, referer=self.mission.url)
 		
 	def get_images(self):
 		"""Get images"""
