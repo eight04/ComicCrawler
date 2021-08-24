@@ -2,9 +2,21 @@ import re
 import string
 from functools import total_ordering
 
+import uncurl
+
 from .config import setting
 from .io import content_write
 from .profile import get as profile
+
+def extract_curl(cmd):
+	if not cmd:
+		return
+	try:
+		context = uncurl.parse_context(cmd)
+	except SystemExit:
+		raise Exception(f"Failed parsing curl: {cmd}") from None
+	else:
+		return context.headers, context.cookies
 
 def create_safefilepath_table():
 	table = {}

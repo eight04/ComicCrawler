@@ -21,6 +21,7 @@ ordered-set==3.1.1
 pkginfo==1.5.0.1
 Pygments==2.10.0
 pylint==2.9.6
+pyperclip==1.8.2
 pythreadworker==0.9.0
 pywin32-ctypes==0.2.0
 pyxcute==0.6.0
@@ -37,6 +38,7 @@ toml==0.10.1
 tornado==6.0.3
 tqdm==4.36.1
 twine==3.4.2
+uncurl==0.0.11
 urllib3==1.25.6
 webencodings==0.5.1
 wheel==0.37.0
