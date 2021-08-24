@@ -23,8 +23,8 @@ class ModuleGrabber:
 		)
 		new_kwargs.update(kwargs)
 		
-		if hasattr(self.mod, "on_grab"):
-			result = self.mod.on_grab(grab_method, url, **new_kwargs)
+		if hasattr(self.mod, "grabhandler"):
+			result = self.mod.grabhandler(grab_method, url, **new_kwargs)
 			if result:
 				return result
 		return grab_method(url, **new_kwargs)

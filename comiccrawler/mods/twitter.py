@@ -29,7 +29,7 @@ def get_title(html, url):
 		return f"[twitter] {name} (media)"
 	return f"[twitter] {name}"
 	
-def on_grab(grab_method, url, **kwargs):
+def grabhandler(grab_method, url, **kwargs):
 	if url.startswith("https://twitter.com/i/api/"):
 		return grab_json(url, **kwargs)
 		
