@@ -325,6 +325,20 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         """
         return (ext, b)
         
+    def grabhandler(grab_method, url, **kwargs):
+        """Called when the crawler is going to make a web request. Use this hook
+        to override the default grabber behavior.
+        
+        @grab_method  function, could be ``grabhtml`` or ``grabimg``.
+        @url          str, request URL.
+        @kwargs       other arguments that will be passed to grabber.
+        
+        By returning ``None``
+        """
+        if "/api/" in URL:
+           kwargs["headers"] = {"some-api-header": "some-value"}
+           return grab_method(url, **kwargs)
+        
 Todos
 -----
 

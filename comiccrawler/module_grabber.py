@@ -13,16 +13,21 @@ class ModuleGrabber:
 	def img(self, url, **kwargs):
 		return self.grab(grabimg, url, **kwargs)
 		
-	def grab(self, grabber, url, **kwargs):
-		return grabber(
-			url,
+	def grab(self, grab_method, url=None, **kwargs):
+		new_kwargs = dict(
 			header=self.get_header(),
 			cookie=self.get_cookie(),
 			done=self.handle_grab,
 			proxy=self.mod.config.get("proxy"),
-			verify=self.mod.config.getboolean("verify", True),
-			**kwargs
+			verify=self.mod.config.getboolean("verify", True)
 		)
+		new_kwargs.update(kwargs)
+		
+		if hasattr(self.mod, "grabhandler"):
+			result = self.mod.grabhandler(grab_method, url, **new_kwargs)
+			if result:
+				return result
+		return grab_method(url, **new_kwargs)
 		
 	def get_header(self):
 		"""Return downloader header."""

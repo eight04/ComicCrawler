@@ -128,9 +128,7 @@ class ViewMixin:
 				pass
 		
 		# adjust scale, dimension
-		scale = get_scale(self.root)
-		if scale < 1:
-			scale = 1.0
+		scale = max(get_scale(self.root), 1.0)
 
 		self.root.geometry("{w}x{h}".format(
 			w=int(500 * scale),
