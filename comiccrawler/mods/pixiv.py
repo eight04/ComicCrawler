@@ -157,8 +157,8 @@ def get_episodes_from_search_ajax(html, url):
 	data = json.loads(html)
 	episodes = [
 		Episode(
-			"{} - {}".format(i["illustId"], i["illustTitle"]),
-			"https://www.pixiv.net/artworks/{}".format(i["illustId"])
+			"{} - {}".format(i["id"], i["title"]),
+			"https://www.pixiv.net/artworks/{}".format(i["id"])
 		) for i in data["body"]["illustManga"]["data"]
 	]
 	
