@@ -5,6 +5,7 @@
 Example:
 	https://gelbooru.com/index.php?page=post&s=list&tags=hiroyama_hiroshi
 	https://gelbooru.com/index.php?page=pool&s=show&id=45250
+	https://gelbooru.com/index.php?page=post&s=list&tags=nakajima_ryou
 
 """
 
@@ -30,12 +31,12 @@ def get_title(html, url):
 		title = unescape(re.search("<h3>Now Viewing: ([^<]+)", html).group(1))
 		pool_id = re.search("id=(\d+)", url).group(1)
 		return "[Gelbooru] {title} ({pool_id})".format(title=title, pool_id=pool_id)
-	title = unescape(re.search("<title>([^<]+)\| Gelbooru", html).group(1).strip())
+	title = unescape(re.search("<title>([^<]+?)\|\s+(?:Gelbooru|Page)", html).group(1).strip())
 	return "[Gelbooru] {title}".format(title=title)
 
 def get_episodes(html, url):
 	s = []
-	for match in re.finditer(r'<a[^>]+?href="((?://gelbooru\.com/)?index\.php\?page=post&(?:amp;)?s=view[^"]+)', html):
+	for match in re.finditer(r'<a[^>]+?href="((?:(?:https:)?//gelbooru\.com/)?index\.php\?page=post&(?:amp;)?s=view[^"]+)', html):
 		ep_url = unescape(match.group(1))
 		id = re.search(r"\bid=(\d+)", ep_url).group(1)
 		s.append(Episode(id, urljoin(url, ep_url)))
