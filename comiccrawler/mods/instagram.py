@@ -79,14 +79,12 @@ def get_extra_data(html):
 	
 def get_images(html, url):
 	media = get_extra_data(html)["shortcode_media"]
-	# breakpoint()
-	try:
-		video = media["video_url"]
-	except KeyError:
-		pass
-	else:
-		if video:
-			return video
+	
+	def node_to_source(node):
+		result = node.get("video_url", None) or node.get("display_url", None)
+		if not result:
+			raise Exception("failed finding media source")
+		return result
 		
 	try:
 		sidecard_children = media["edge_sidecar_to_children"]["edges"]
@@ -94,9 +92,9 @@ def get_images(html, url):
 		pass
 	else:
 		if sidecard_children:
-			return [e["node"]["display_url"] for e in sidecard_children]
-			
-	return media["display_url"]
+			return [node_to_source(e["node"]) for e in sidecard_children]
+	
+	return 	node_to_source(media)
 
 def get_next_page(html, url):
 	return cache_next_page.get(url)
