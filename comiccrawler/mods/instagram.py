@@ -8,6 +8,7 @@ from urllib.parse import urlencode, parse_qs, urlparse
 from html import unescape
 
 from ..core import Episode
+from ..error import is_http, SkipEpisodeError
 
 domain = ["www.instagram.com"]
 name = "Instagram"
@@ -99,3 +100,8 @@ def get_images(html, url):
 
 def get_next_page(html, url):
 	return cache_next_page.get(url)
+
+def errorhandler(err, crawler):
+	if is_http(err, 404) and re.match(r"https://www\.instagram\.com/p/[^/]+/", err.response.url):
+		raise SkipEpisodeError(True)
+	
