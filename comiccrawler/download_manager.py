@@ -61,6 +61,7 @@ class DownloadManager:
 		self.library_thread = None
 		self.library_err_count = None
 		self.batch_analyzer = None
+		self.continued_failure = 0
 		
 		thread = current()
 		
@@ -70,10 +71,13 @@ class DownloadManager:
 		def _(event):
 			_err, mission = event.data
 			mission_manager.drop("view", mission)
+			self.continued_failure += 1
 
 		@thread.listen("DOWNLOAD_FINISHED")
 		def _(event):
 			"""After download, execute command."""
+			self.continued_failure = 0
+			
 			if event.target is not self.download_thread:
 				return
 				
@@ -102,9 +106,13 @@ class DownloadManager:
 		@thread.listen("DOWNLOAD_ERROR")
 		def _(event):
 			"""After download, continue next mission"""
-			if event.target is self.download_thread:
-				self.download_thread = None
-				self.start_download()
+			if event.target is not self.download_thread:
+				return
+			self.download_thread = None
+			if self.continued_failure >= len(mission_manager.get_all("view", lambda m: m.state != "FINISHED")):
+				print(f"連續失敗 {self.continued_failure} 次，停止下載")
+				return
+			self.start_download(continued=True)
 				
 		@thread.listen("DOWNLOAD_INVALID")
 		def _(event):
@@ -113,11 +121,14 @@ class DownloadManager:
 				self.download_thread = None
 				print("停止下載")
 
-	def start_download(self):
+	def start_download(self, continued=False):
 		"""Start downloading."""
 		if self.download_thread:
 			return
 
+		if not continued:
+			self.continued_failure = 0
+			
 		mission = mission_manager.get("view", lambda m: m.state in ("ANALYZED", "PAUSE", "ERROR", "UPDATE"))
 		if mission:
 			print("Start download " + mission.title)
