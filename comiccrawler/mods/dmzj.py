@@ -19,6 +19,14 @@ def get_title(html, url):
 	return re.search("<h1>(.+?)</h1>", html).group(1)
 
 def get_episodes(html, url):
+	result = None
+	for method in (get_episodes_html, get_episodes_ajax):
+		result = method(html, url)
+		if result:
+			break
+	return result
+	
+def get_episodes_html(html, url):
 	comicurl = re.search("comic_url = \"(.+?)\"", html).group(1)
 	pattern = (
 		r'href="(/{}[^"]+)" (?: class="color_red")?>(.+?)</a>\s*</li>'
@@ -28,25 +36,18 @@ def get_episodes(html, url):
 	for match in re.finditer(pattern, html):
 		ep_url, title = match.groups()
 		s.append(Episode(title, urljoin(url, ep_url)))
-		
-	if not s:
-		s = get_episodes_ajax(html, url)
-		
 	return s
 	
 def get_episodes_ajax(html, url):
 	# http://manhua.dmzj.com/lzsyuan/
 	comic_id = re.search('g_comic_id = "([^"]+)', html).group(1)
-	data = grabhtml('http://v2.api.dmzj.com/comic/{comic_id}.json?channel=Android&version=2.6.004'.format(comic_id=comic_id))
+	data = grabhtml(f'http://api.dmzj.com/dynamic/comicinfo/{comic_id}.json')
 	data = json.loads(data)
 	s = []
-	for i, chapter in enumerate(data["chapters"]):
-		for ep in chapter["data"]:
-			title = ep["chapter_title"]
-			ep_url = urljoin(url, "{ep[chapter_id]}.shtml?cid={comic_id}".format(ep=ep, comic_id=comic_id))
-			if i == 0 and re.match("\d", title):
-				title = "第" + title
-			s.append(Episode(title, ep_url))
+	for chapter in data["data"]["list"]:
+		title = chapter["chapter_name"]
+		ep_url = urljoin(url, f"{chapter['id']}.shtml?cid={comic_id}")
+		s.append(Episode(title, ep_url))
 	return reversed(s)
 	
 def get_images(html, url):
@@ -58,7 +59,7 @@ def get_images(html, url):
 	
 def get_images_ajax(html, url):
 	chapter_id, comic_id = re.search(r"(\d+)\.shtml\?cid=(\d+)", url).groups()
-	data = grabhtml("http://v2.api.dmzj.com/chapter/{comic_id}/{chapter_id}.json?channel=Android&version=2.6.004".format(comic_id=comic_id, chapter_id=chapter_id))
+	data = grabhtml(f"https://m.dmzj.com/chapinfo/{comic_id}/{chapter_id}.html")
 	data = json.loads(data)
 	return data["page_url"]
 
