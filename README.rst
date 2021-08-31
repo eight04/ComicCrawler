@@ -351,6 +351,18 @@ Todos
 Changelog
 ---------
 
+-  2021.8.31
+
+   -  Fix: hidden manga in dmzj.
+   -  Fix: skip 404 episode in instagram.
+   -  Fix: support multiple videos in instagram.
+   -  Fix: failed analyzing search page in pixiv.
+   -  Fix: empty episode error in gelbooru.
+   -  Add: copymang module.
+   -  Add: twitter module.
+   -  Add: ``grabhandler`` hook.
+   -  Change: stop downloading if all available missions fail.
+
 -  2020.10.29
 
    -  Fix: cartoonmad error.
