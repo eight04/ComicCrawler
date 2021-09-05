@@ -74,7 +74,7 @@ def get_episodes(html, url):
 				extract_pin_entry(instruction["entry"], url)
 			
 			if instruction["type"] == "TimelineAddEntries":
-				yield from extract_added_entries(instruction["entries"], url)
+				yield from reversed(list(extract_added_entries(instruction["entries"], url)))
 				
 def tweet_result_to_episode(tweet_result):
 	try:
