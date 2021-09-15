@@ -351,6 +351,11 @@ Todos
 Changelog
 ---------
 
+-  2021.9.15
+
+   -  Fix: ep order is wrong in twitter.
+   -  Fix: copymanga.
+
 -  2021.8.31
 
    -  Fix: hidden manga in dmzj.
@@ -358,7 +363,7 @@ Changelog
    -  Fix: support multiple videos in instagram.
    -  Fix: failed analyzing search page in pixiv.
    -  Fix: empty episode error in gelbooru.
-   -  Add: copymang module.
+   -  Add: copymanga module.
    -  Add: twitter module.
    -  Add: ``grabhandler`` hook.
    -  Change: stop downloading if all available missions fail.
