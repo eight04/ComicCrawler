@@ -68,7 +68,6 @@ def get_images(html, url):
 	return Image(image, filename=filename)
 
 def errorhandler(er, crawler):
-	global nl
 	url = urljoin(crawler.ep.current_url, "?nl=" + nl)
 	if crawler.ep.current_url == url:
 		crawler.ep.current_url = url.split("?")[0]

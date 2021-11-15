@@ -88,7 +88,7 @@ def prepare_file(file):
 	prepare_folder(path.dirname(file))
 
 	if not path.isfile(file):
-		with io.open(file, "w"):
+		with io.open(file, "w", encoding="utf8"):
 			pass
 
 	return file
