@@ -351,6 +351,10 @@ Todos
 Changelog
 ---------
 
+-  2021.11.15
+
+   -  Fix: copymanga.
+
 -  2021.9.15
 
    -  Fix: ep order is wrong in twitter.
