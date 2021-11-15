@@ -20,20 +20,34 @@ name = "拷貝"
 
 def get_title(html, url):
 	return unescape(re.search("<h6[^>]*>([^<]+)", html).group(1)).strip()
+
+def get_pass(html):
+	try:
+		return re.search('class="disposablePass"\s+disposable="([^"]+)', html).group(1)
+	except AttributeError:
+		pass
+	try:
+		return re.search('class="disPass"\s+contentKey="([^"]+)', html).group(1)
+	except AttributeError:
+		pass
+	return re.search("(?:dio|jojo)\s*=\s*'([^']+)", html).group(1)
+
+def get_data(html):
+	try:
+		return re.search('class="disposableData"\s+disposable="([^"]+)', html).group(1)
+	except AttributeError:
+		pass
+	try:
+		return re.search('class="disData"\s+contentKey="([^"]+)', html).group(1)	
+	except AttributeError:
+		pass
+	return re.search('class="imageData"\s+contentKey="([^"]+)', html).group(1)
 	
 def extract_data(html, data=None):
 	if not data:
-		try:
-			data = re.search('class="disposableData"\s+disposable="([^"]+)', html).group(1)
-		except AttributeError:
-			data = re.search('class="disData"\s+contentKey="([^"]+)', html).group(1)	
+		data = get_data(html)
 			
-	try:
-		pa = re.search('class="disposablePass"\s+disposable="([^"]+)', html).group(1)
-	except AttributeError:
-		pa = re.search('class="disPass"\s+contentKey="([^"]+)', html).group(1)
-		
-	pa = pa.encode("utf8")
+	pa = get_pass(html).encode("utf8")
 	iv = data[:16].encode("utf8")
 	
 	cipher = AES.new(pa, AES.MODE_CBC, iv=iv)
@@ -54,5 +68,5 @@ def get_episodes(html, url):
 	
 def get_images(html, url):
 	data = extract_data(html)
-	return [i["url"] for i in data]
+	return [urljoin(url, i["url"]) for i in data]
 	

@@ -1,6 +1,7 @@
-docutils==0.17.1
+certifi==2021.10.8
+docutils==0.18
 pygments==2.10.0
-pylint==2.9.6
+pylint==2.11.1
 pyxcute==0.6.0
-twine==3.4.2
+twine==3.6.0
 wheel==0.37.0
