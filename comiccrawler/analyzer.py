@@ -104,7 +104,7 @@ class Analyzer:
 		
 		while True:
 			try:
-				eps = self.mission.module.get_episodes(self.html, url)
+				eps = list(self.mission.module.get_episodes(self.html, url))
 			except SkipPageError:
 				pass
 			except LastPageError:
