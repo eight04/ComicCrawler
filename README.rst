@@ -351,6 +351,10 @@ Todos
 Changelog
 ---------
 
+-  2021.12.2
+
+   -  Fix: empty episodes error.
+
 -  2021.11.15
 
    -  Fix: copymanga.
