@@ -320,13 +320,15 @@ def crawlpage(crawler):
 		debug_log("D_NEXT_IMAGE")
 		crawler.next_image()
 
-	def download_error(er):
+	def download_error(er, count):
+		t = 5 * 2 ** count
+		print(f"wait {t} seconds...")
 		if is_http(er, code=429):
 			# retry doesn't work with 429 error
-			sleep(5)
+			sleep(t)
 			raise er
 		crawler.handle_error(er)
-		sleep(5)
+		sleep(t)
 
 	error_loop(download, download_error)
 
@@ -342,7 +344,7 @@ def error_loop(process, handle_error=None, limit=3):
 			if errorcount >= limit:
 				raise SkipEpisodeError(always=False) from None
 			if handle_error:
-				handle_error(er)
+				handle_error(er, errorcount)
 		# except ExitErrorLoop:
 			# break
 		else:
