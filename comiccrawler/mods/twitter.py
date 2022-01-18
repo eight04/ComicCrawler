@@ -34,7 +34,7 @@ def grabhandler(grab_method, url, **kwargs):
 		return grab_json(url, **kwargs)
 		
 def grab_json(url, **kwargs):
-	header, cookie = extract_curl(config["curl"])
+	_url, header, cookie = extract_curl(config["curl"])
 	# NOTE: method-level header/cookies won't be stored into session
 	kwargs["headers"] = header
 	kwargs["cookies"] = cookie

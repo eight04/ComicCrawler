@@ -74,18 +74,24 @@ def grabber_log(*args):
 		content = time.strftime("%Y-%m-%dT%H:%M:%S%z") + "\n" + pformat(args) + "\n\n"
 		content_write(profile("grabber.log"), content, append=True)
 
-sessions = {}
-def grabber(url, header=None, *, referer=None, cookie=None,
-		retry=False, done=None, proxy=None, **kwargs):
-	"""Request url, return text or bytes of the content."""
-	_scheme, netloc, _path, _query, _frag = urlsplit(url)
-	
+def get_session(netloc):
+	s = None
 	if netloc not in sessions:
 		s = requests.Session()
 		s.headers.update(default_header)
 		sessions[netloc] = s
 	else:
 		s = sessions[netloc]
+	return s
+	
+
+sessions = {}
+def grabber(url, header=None, *, referer=None, cookie=None,
+		retry=False, done=None, proxy=None, **kwargs):
+	"""Request url, return text or bytes of the content."""
+	_scheme, netloc, _path, _query, _frag = urlsplit(url)
+	
+	s = get_session(netloc)
 		
 	if header:
 		s.headers.update(header)
