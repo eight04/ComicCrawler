@@ -147,6 +147,7 @@ def do_request(s, url, proxies, retry, **kwargs):
 				raise Exception("status 302 without location header")
 			url = match.group(1)
 			continue
+		print(r)
 		print("retry after {sleep_time} seconds".format(sleep_time=sleep_time))
 		sleep(sleep_time)
 		sleep_time *= 2

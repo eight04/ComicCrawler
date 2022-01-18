@@ -19,6 +19,7 @@ class SelectEpisodeDialog(Dialog):
 		self.window = None
 		self.window_column = 0
 		self.window_left = 0
+		self.style = None
 		
 		super().__init__(parent, title, on_closed=on_closed)
 		
@@ -49,7 +50,10 @@ class SelectEpisodeDialog(Dialog):
 			else:
 				self.anchor_index = index
 				
-		check = ttk.Checkbutton(self.window, text=safe_tk(ep.title))
+		style = "TCheckbutton"
+		if ep.complete:
+			style = "Complete.TCheckbutton"
+		check = ttk.Checkbutton(self.window, text=safe_tk(ep.title), style=style)
 		check.bind("<ButtonRelease-1>", handle_click)
 		check.state(("!alternate",))
 		if not ep.skip:
@@ -83,6 +87,9 @@ class SelectEpisodeDialog(Dialog):
 		)
 
 	def create_body(self):
+		self.style = ttk.Style()
+		self.style.configure("Complete.TCheckbutton", foreground="green")
+
 		xscrollbar = ttk.Scrollbar(self.body, orient="horizontal")
 		self.canvas = tk.Canvas(
 			self.body,
