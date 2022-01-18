@@ -13,7 +13,9 @@ domain = ["chan.sankakucomplex.com"]
 name = "Sankaku"
 noepfolder = True
 config = {
+	# curl for chan.sankakucomplex.com
 	"curl": "",
+	# curl for v.sankakucomplex.com. Note that you should leave this empty.
 	"curl_v": ""
 }
 
