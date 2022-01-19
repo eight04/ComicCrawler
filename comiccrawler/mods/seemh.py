@@ -10,6 +10,7 @@ from itertools import cycle
 from urllib.parse import urljoin, urlencode
 
 from node_vm2 import VM, eval
+from lzstring import LZString
 
 from ..core import Episode, grabhtml
 
@@ -57,16 +58,7 @@ def get_episodes(html, url):
 	if not episodes:
 		view_state = re.search(
 			r'id="__VIEWSTATE" value="([^"]+)', html).group(1)
-		js_main = re.search(r'src="([^"]+?/main_[^"]*?\.js)"', html).group(1)
-		js_main = grabhtml(js_main)
-		js_main = re.search(r'^window\[.+', js_main, re.M).group()
-		js = """
-			var window = global;
-		""" + js_main
-		
-		with VM(js) as vm:
-			ep_html = vm.call("LZString.decompressFromBase64", view_state)
-			
+		ep_html = LZString.decompressFromBase64(view_state)
 		episodes = get_list(ep_html, cid)
 		
 	episodes = [Episode(v[0].strip(), urljoin(url, v[1])) for v in episodes]
@@ -90,10 +82,10 @@ def get_images(html, url):
 	"""
 	
 	configjs_url = re.search(
-		r'src="(https?://[^"]+?/config_\w+?\.js)"',
+		r'src="([^"]+?/config_\w+?\.js)"',
 		html
 	).group(1)
-	configjs = grabhtml(configjs_url, referer=url)
+	configjs = grabhtml(urljoin(url, configjs_url), referer=url)
 	js += re.search(
 		r'^(var CryptoJS|window\["\\x65\\x76\\x61\\x6c"\]).+',
 		configjs,
@@ -112,10 +104,10 @@ def get_images(html, url):
 	# "http://c.3qfm.com/scripts/core_5C348B32A78647FF4208EACA42FC5F84.js"
 	# getpath()
 	corejs_url = re.search(
-		r'src="(https?://[^"]+?/core_\w+?\.js)"',
+		r'src="([^"]+?/core_\w+?\.js)"',
 		html
 	).group(1)
-	corejs = grabhtml(corejs_url, referer=url)
+	corejs = grabhtml(urljoin(url, corejs_url), referer=url)
 	
 	# cache server list
 	servs = re.search(r"var servs=(.+?),pfuncs=", corejs).group(1)
