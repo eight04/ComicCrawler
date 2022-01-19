@@ -12,6 +12,7 @@ from ..episode import Episode
 from ..grabber import grabber
 from ..url import update_qs
 from ..util import extract_curl
+from ..error import is_http, SkipEpisodeError
 
 domain = ["twitter.com"]
 name = "twitter"
@@ -193,6 +194,23 @@ def user_media_graph(**kwargs):
 		"https://twitter.com/i/api/graphql/JWaFyG5p4-UvSyxGMe15-g/UserMedia",
 		{"variables": json.dumps(variables)}
 	)
+
+def tweet_detail_graph(**kwargs):
+	variables = {"focalTweetId":"1438138335042564102","with_rux_injections":False,"includePromotedContent":True,"withCommunity":True,"withQuickPromoteEligibilityTweetFields":True,"withTweetQuoteCount":True,"withBirdwatchNotes":False,"withSuperFollowsUserFields":True,"withBirdwatchPivots":False,"withDownvotePerspective":False,"withReactionsMetadata":False,"withReactionsPerspective":False,"withSuperFollowsTweetFields":True,"withVoice":True,"withV2Timeline":False,"__fs_interactive_text":False,"__fs_dont_mention_me_view_api_enabled":False}
+	variables.update(kwargs)
+	return update_qs(
+		"https://twitter.com/i/api/graphql/s2RO46g9Rhw53GX2BEMfiA/TweetDetail",
+		{"variables": json.dumps(variables)}
+	)
+
+def errorhandler(err, crawler):
+	if is_http(err, 404):
+		tid = re.search("status/(\d+)", crawler.ep.current_url).group(1)
+		u = tweet_detail_graph(focalTweetId=tid)
+		r = grab_json(u)
+		if r.get("errors", None):
+			if "No status found" in r["errors"][0]["message"]:
+				raise SkipEpisodeError(always=True)
 
 def get_next_page(html, url):
 	return next_page_cache.pop(url, None)
