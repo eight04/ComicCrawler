@@ -1,5 +1,5 @@
 #! python3
-
+import webbrowser
 import tkinter as tk
 from tkinter import ttk
 
@@ -49,12 +49,16 @@ class SelectEpisodeDialog(Dialog):
 						check.state(("selected", ))
 			else:
 				self.anchor_index = index
+
+		def handle_right_click(_event):
+			webbrowser.open(ep.url)
 				
 		style = "TCheckbutton"
 		if ep.complete:
 			style = "Complete.TCheckbutton"
 		check = ttk.Checkbutton(self.window, text=safe_tk(ep.title), style=style)
 		check.bind("<ButtonRelease-1>", handle_click)
+		check.bind("<ButtonRelease-3>", handle_right_click)
 		check.state(("!alternate",))
 		if not ep.skip:
 			check.state(("selected",))
