@@ -14,7 +14,7 @@ from lzstring import LZString
 
 from ..core import Episode, grabhtml
 
-domain = ["seemh.com", "ikanman.com", "manhuagui.com"]
+domain = ["seemh.com", "ikanman.com", "manhuagui.com", "www.mhgui.com"]
 name = "看漫畫"
 config = {
 	"nowebp": "False"
