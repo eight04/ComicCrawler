@@ -2,7 +2,7 @@ language: python
 python:
   - "3.6"
 install:
+  - cat requirements-lock.txt | xargs -n 1 pip install
   - pip install -e .
-  - pip install -r requirements-lock.txt
 script:
   - python cute.py test
