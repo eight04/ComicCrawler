@@ -10,6 +10,7 @@ from urllib.parse import quote, urlsplit, urlunsplit
 from mimetypes import guess_extension
 
 import requests
+import magic
 from worker import async_, await_, sleep, Defer
 
 from .config import setting
@@ -193,14 +194,24 @@ def _get_ext(r):
 			b"\xA6\xD9\x00\xAA\x00\x62\xCE\x6C"):
 		return ".wmv"
 		
+	mime = None
 	if "Content-Type" in r.headers:
 		mime = re.search("^(.*?)(;|$)", r.headers["Content-Type"]).group(1)
 		mime = mime.strip()
+		if "octet-stream" in mime:
+			mime = None
 
-		if mime and mime != "application/octet-stream":
-			ext = guess_extension(mime)
-			if ext:
-				return ext
+	if not mime:
+		mime = magic.from_buffer(b, mime=True)
+	
+	if mime:
+		ext = guess_extension(mime)
+		if ext:
+			return ext
+		# guess_extension doesn't handle video/x-m4v
+		match = re.match("\w+/x-(\w+)$", mime)
+		if match:
+			return f".{match.group(1)}"
 		
 def get_ext(r):
 	"""Get file extension"""
