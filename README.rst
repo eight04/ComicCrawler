@@ -1,10 +1,6 @@
 Comic Crawler
 =============
 
-.. image:: https://api.codacy.com/project/badge/Grade/a0c981612220477e96b2c0f8eccfffbf
-   :alt: Codacy Badge
-   :target: https://www.codacy.com/app/eight04/ComicCrawler?utm_source=github.com&utm_medium=referral&utm_content=eight04/ComicCrawler&utm_campaign=badger
-   
 .. image:: https://travis-ci.org/eight04/ComicCrawler.svg?branch=master
    :target: https://travis-ci.org/eight04/ComicCrawler
 
@@ -45,7 +41,7 @@ Install Comic Crawler
 
 ::
 
-    pip install --upgrade comiccrawler
+    pip install comiccrawler --upgrade --upgrade-strategy eager
     
 最後在 cmd 底下輸入以下指令執行 Comic Crawler︰
 
@@ -173,7 +169,15 @@ or you can use it in your python script:
 -  設定檔位於 ``~\comiccrawler\setting.ini``。可以在執行時指定 ``--profile`` 選項以變更預設的位置。（在 Windows 中 ``~`` 會被展開為 ``%HOME%`` 或 ``%USERPROFILE%``）
 -  執行一次 ``comiccrawler gui`` 後關閉，設定檔會自動產生。若 Comic Crawler 更新後有新增的設定，在關閉後會自動將新設定加入設定檔。
 -  各別的網站會有自己的設定，通常是要填入一些登入相關資訊
+   
+   - 以 curl 開頭的設定，要填入對應網址的 curl 指令。以 twitter 為例︰https://github.com/eight04/ComicCrawler/issues/241#issuecomment-904411605
+   - 以 cookie 開頭的設定，要填入對應的 cookie。
+
 -  設定檔會在重新啟動後生效。若 ComicCrawler 正在執行中，可以點「重載設定檔」來載入新設定
+
+   .. warning::
+
+      若在執行時，修改設定檔並儲存，接著結束 ComicCrawler，修改會遺失。因為 ComicCrawler 結束前會把設定寫回設定檔。
 -  各別網站的設定不會互相影響。假如在 [DEFAULT] 設 savepath = a；在 [Pixiv] 設 savepath = b，那麼從 pixiv 下載的都會存到 b 資料夾，其它的就用預設值，存到 a 資料夾。
 
 Module example
@@ -350,6 +354,24 @@ Todos
 
 Changelog
 ---------
+
+-  2022.2.3
+
+   - Fix: analyze error in seemh.
+   - Add: support fantia.jp
+
+   - Add: support br encoding.
+
+   - Add: open episode URL on right-click when selecting episodes.
+
+   - Add: display completed episodes as green.
+
+   - Add: exponential backoff.
+
+   - Change: use curl in sankaku.
+
+   - Change: skip 404 ep on twitter.
+   - Change: use python-magic to detect file type.
 
 -  2021.12.2
 
