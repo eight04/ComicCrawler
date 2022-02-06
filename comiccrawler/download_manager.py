@@ -13,7 +13,7 @@ from threading import Lock
 from os.path import join as path_join
 from time import time
 
-from worker import Worker, current, await_, create_worker
+from worker import Worker, current, await_, create_worker, async_
 
 from .analyzer import Analyzer
 from .safeprint import print
@@ -92,16 +92,24 @@ class DownloadManager:
 			if default_cmd and default_cmd not in commands:
 				commands.append(default_cmd)
 			
-			for command in commands:
-				command += " " + quote(path_join(
-					profile(event.data.module.config["savepath"]),
-					safefilepath(event.data.title)
-				))
-				try:
-					await_(subprocess.call, command, shell=True) # nosec
-				except (OSError, subprocess.SubprocessError):
-					traceback.print_exc()
-					
+			def run_command():
+				for command in commands:
+					target = quote(path_join(
+						profile(event.data.module.config["savepath"]),
+						safefilepath(event.data.title)
+					))
+					if "{target}" in command:
+						command = command.format(target=target)
+					else:
+						command += " " + target
+					print(f"run command: {command}")
+					try:
+						await_(subprocess.call, command, shell=True) # nosec
+					except (OSError, subprocess.SubprocessError):
+						traceback.print_exc()
+
+			async_(run_command)
+						
 		@thread.listen("DOWNLOAD_FINISHED")
 		@thread.listen("DOWNLOAD_ERROR")
 		def _(event):

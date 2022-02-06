@@ -122,8 +122,8 @@ or you can use it in your python script:
 ::
 
     [DEFAULT]
-    ; 設定下載完成後要執行的程式，會傳入下載資料夾的位置
-    runafterdownload =
+    ; 設定下載完成後要執行的程式，{target} 會被替換成任務資料夾的絕對路徑
+    runafterdownload = 7z a "{target}.zip" "{target}"
 
     ; 啟動時自動檢查圖書館更新
     libraryautocheck = true
