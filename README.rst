@@ -355,6 +355,12 @@ Todos
 Changelog
 ---------
 
+- 2022.2.6
+
+  - Fix: magic import error.
+
+  - Add: support replacing argument in runafterdownload.
+
 -  2022.2.3
 
    - Fix: analyze error in seemh.
