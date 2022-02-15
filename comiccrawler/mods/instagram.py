@@ -74,27 +74,22 @@ def get_init_data(html, page):
 	
 def get_extra_data(html):
 	text = re.search("window\.__additionalDataLoaded\('[^']+',(.*?)\);</script>", html).group(1)
-	data = json.loads(text)
-	return data["graphql"]
+	return json.loads(text)
+
+def find_media(media):
+	if "video_versions" in media:
+		return max(media["video_versions"], key=lambda i: i["height"])["url"]
+	return max(media["image_versions2"]["candidates"], key=lambda i: i["height"])["url"]
 	
 def get_images(html, url):
-	media = get_extra_data(html)["shortcode_media"]
-	
-	def node_to_source(node):
-		result = node.get("video_url", None) or node.get("display_url", None)
-		if not result:
-			raise Exception("failed finding media source")
-		return result
-		
-	try:
-		sidecard_children = media["edge_sidecar_to_children"]["edges"]
-	except KeyError:
-		pass
-	else:
-		if sidecard_children:
-			return [node_to_source(e["node"]) for e in sidecard_children]
-	
-	return 	node_to_source(media)
+	result = []
+	data = get_extra_data(html)
+	for item in data["items"]:
+		if item.get("carousel_media", None):
+			result += [find_media(m) for m in item["carousel_media"]]
+		else:
+			result.append(find_media(item))
+	return result
 
 def get_next_page(html, url):
 	return cache_next_page.get(url)
