@@ -41,6 +41,9 @@ def get_episodes(html, url):
 def get_images(html, url):
 	post_id = re.search("posts/(\d+)", url).group(1)
 	result = grabber(f"https://fantia.jp/api/v1/posts/{post_id}").json()
+	thumb = result["post"].get("thumb", {}).get("original")
+	if thumb:
+		yield thumb
 	for content in result["post"]["post_contents"]:
 		for photo in content.get("post_content_photos", []):
 			i_html = grabhtml(urljoin(url, photo["show_original_uri"]), referer=url)

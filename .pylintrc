@@ -1,13 +1,7 @@
 [MESSAGES CONTROL]
 disable=
-	raw-checker-failed, locally-disabled, locally-enabled, file-ignored,
+	raw-checker-failed, locally-disabled, file-ignored,
 	suppressed-message, fixme,
-	
-	# seems continuation checker doesn't work with tabs
-	mixed-indentation, bad-continuation,
-	
-	# https://github.com/PyCQA/pylint/issues/1368
-	bad-whitespace,
 	
 	# https://github.com/PyCQA/pylint/issues/1369
 	function-redefined,
@@ -23,7 +17,6 @@ disable=
 	global-statement,
 	inconsistent-return-statements,
 	missing-docstring, multiple-imports,
-	no-self-use,
 	redefined-outer-name, redefined-builtin,
 	trailing-whitespace, too-many-statements, too-many-return-statements,
 	unused-argument,
@@ -46,7 +39,6 @@ method-rgx=(([a-z][a-z0-9_]{1,30})|(_[a-z0-9_]*))$
 variable-rgx=(([a-z][a-z0-9_]{,30})|(_[a-z0-9_]*))$
 
 [FORMAT]
-no-space-check=trailing-comma,empty-line
 indent-string="\t"
 
 [VARIABLES]
