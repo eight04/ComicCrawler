@@ -7,5 +7,5 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: '3.x'
-      - run: cat requirements-lock.txt | xargs -n 1 pip install
+      - run: cat requirements-lock.txt | xargs -n 1 pip install --no-deps || exit 0
       - run: python cute.py test
