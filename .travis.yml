@@ -1,8 +1,0 @@
-language: python
-python:
-  - "3.6"
-install:
-  - cat requirements-lock.txt | xargs -n 1 pip install --no-deps || exit 0
-  - pip install -e .
-script:
-  - python cute.py test

@@ -10,7 +10,7 @@ from urllib.parse import quote, urlsplit, urlunsplit
 from mimetypes import guess_extension
 
 import requests
-import magic
+import puremagic
 from worker import async_, await_, sleep, Defer
 
 from .config import setting
@@ -202,7 +202,7 @@ def _get_ext(r):
 			mime = None
 
 	if not mime:
-		mime = magic.from_buffer(b, mime=True)
+		mime = puremagic.from_string(b, mime=True)
 	
 	if mime:
 		ext = guess_extension(mime)

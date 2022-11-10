@@ -13,9 +13,12 @@ from node_vm2 import VM
 
 from ..core import Episode, grabhtml
 from ..util import clean_tags
+from ..url import update_qs
 
-domain = ["www.8comic.com", "www.comicvip.com", "comicbus.com"]
+domain = ["www.8comic.com", "www.comicvip.com", "comicbus.com", "www.comicabc.com"]
 name = "無限"
+next_page_cache = {}
+nview = None
 
 def get_title(html, url):
 	return re.search('addhistory\("\d+","([^"]+)',html).group(1)
@@ -57,9 +60,11 @@ def get_episodes(html, url):
 	return s
 	
 def get_images(html, url):
-	nview = re.search('src="([^"]*nview\.js[^"]*)"', html).group(1)
-	nview = urljoin(url, nview)
-	nview = grabhtml(nview)
+	global nview
+	if not nview:
+		nview = re.search('src="([^"]*nview\.js[^"]*)"', html).group(1)
+		nview = urljoin(url, nview)
+		nview = grabhtml(nview)
 	
 	try:
 		# http://www.comicbus.com/html/103.html
@@ -75,7 +80,7 @@ def get_images(html, url):
 			location: {
 				toString() {return url;},
 				get href() {return url;},
-				set href(_url) {url = _url; scriptBody()}
+				set href(_url) {url = _url;}
 			},
 			getElementById() {
 				return {
@@ -96,17 +101,22 @@ def get_images(html, url):
 	function scriptBody() {
 		initpage = () => {};
 	""" + nview + script + """
-		jn();
+		return [images[0], p, ps];
 	}
 	
 	function getImages(url) {
 		images = [];
 		document.location.href = url;
-		return images;
+		return scriptBody();
 	}
 	"""
 	
 	with VM(js) as vm:
-		images = vm.call("getImages", url)
+		img, p, ps = vm.call("getImages", url)
+	if p < ps:
+		next_page_cache[url] = update_qs(url, {"p": p + 1})
 	
-	return [urljoin(url, i) for i in images]
+	return urljoin(url, img)
+
+def get_next_page(html, url):
+	return next_page_cache.pop(url, None)
