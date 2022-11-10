@@ -13,7 +13,21 @@ from sys import version_info
 
 from ..config import config
 from ..profile import get as profile
-from ..grabber import cooldown
+from ..grabber import cooldown, get_session
+from ..util import extract_curl
+from ..url import urlparse
+
+def setup_curl(d):
+	for key, value in d.items():
+		if key.startswith("curl") and value:
+			url, headers, cookies = extract_curl(value)
+			netloc = urlparse(url).netloc
+			s = get_session(netloc)
+			for key in list(headers.keys()):
+				if key.startswith("If-"):
+					headers.pop(key)
+			s.headers.update(headers)
+			s.cookies.update(cookies)
 
 def import_module_file(ns, file):
 	# pylint: disable=import-outside-toplevel
@@ -115,6 +129,9 @@ class ModLoader:
 				
 			if hasattr(mod, "load_config"):
 				mod.load_config()
+
+			if getattr(mod, "autocurl", False):
+				setup_curl(mod.config)
 	
 mod_loader = ModLoader()
 list_domain = mod_loader.list_domain

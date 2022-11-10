@@ -3,9 +3,9 @@ import re
 from html import unescape
 
 from ..episode import Episode
-from ..grabber import grabber, get_session, grabhtml
-from ..url import urljoin, urlparse
-from ..util import extract_curl, clean_tags
+from ..grabber import grabber, grabhtml
+from ..url import urljoin
+from ..util import clean_tags
 
 domain = ["fantia.jp"]
 name = "fantia"
@@ -13,18 +13,10 @@ config = {
 	"curl": ""
 }
 noepfolder = True
+autocurl = True
 
 next_page_cache = {}
 pin_entry_cache = {}
-
-def load_config():
-	for key, value in config.items():
-		if key.startswith("curl") and value:
-			url, headers, cookies = extract_curl(value)
-			netloc = urlparse(url).netloc
-			s = get_session(netloc)
-			s.headers.update(headers)
-			s.cookies.update(cookies)
 
 def get_title(html, url):
 	name = re.search('<h1 class="fanclub-name">(.+?)</h1', html).group(1)

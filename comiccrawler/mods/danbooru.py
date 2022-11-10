@@ -12,9 +12,6 @@ from html import unescape
 from urllib.parse import urljoin
 
 from ..core import Episode
-from ..util import extract_curl
-from ..url import urlparse
-from ..grabber import get_session
 
 domain = ["danbooru.donmai.us"]
 name = "Danbooru"
@@ -23,15 +20,7 @@ config = {
 	"curl": "",
 	"curl_cdn": ""
 }
-
-def load_config():
-	for key, value in config.items():
-		if key.startswith("curl") and value:
-			url, headers, cookies = extract_curl(value)
-			netloc = urlparse(url).netloc
-			s = get_session(netloc)
-			s.headers.update(headers)
-			s.cookies.update(cookies)
+autocurl = True
 
 def get_title(html, url):
 	title = re.search(r"<title>(.+?)</title>", html, re.DOTALL).group(1)

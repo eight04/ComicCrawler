@@ -6,8 +6,6 @@ from urllib.parse import urlparse, parse_qs, quote, urljoin
 
 from ..core import Episode
 from ..error import PauseDownloadError
-from ..grabber import get_session
-from ..util import extract_curl
 
 domain = ["chan.sankakucomplex.com"]
 name = "Sankaku"
@@ -18,15 +16,7 @@ config = {
 	# curl for v.sankakucomplex.com. Note that you should leave this empty.
 	"curl_v": ""
 }
-
-def load_config():
-	for key, value in config.items():
-		if key.startswith("curl") and value:
-			url, headers, cookies = extract_curl(value)
-			netloc = urlparse(url).netloc
-			s = get_session(netloc)
-			s.headers.update(headers)
-			s.cookies.update(cookies)
+autocurl = True
 
 def login_check(html):
 	if '<a href="/user/login">' in html:
