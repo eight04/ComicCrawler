@@ -355,6 +355,14 @@ Todos
 Changelog
 ---------
 
+- 2022.11.11
+
+  - Fix: now danbooru requires curl.
+  - Fix: 8comic doesn't use ajax anymore.
+  - Fix: download error in instagram.
+  - Change: download thumbnail in fantia.
+  - Change: require python 3.10.
+
 - 2022.2.6
 
   - Fix: magic import error.
