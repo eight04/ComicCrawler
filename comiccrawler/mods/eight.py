@@ -101,7 +101,7 @@ def get_images(html, url):
 	function scriptBody() {
 		initpage = () => {};
 	""" + nview + script + """
-		return [images[0], p, ps];
+		return [images[0], p, ps, ch];
 	}
 	
 	function getImages(url) {
@@ -112,10 +112,16 @@ def get_images(html, url):
 	"""
 	
 	with VM(js) as vm:
-		img, p, ps = vm.call("getImages", url)
+		img, p, ps, ch = vm.call("getImages", url)
 	if p < ps:
-		next_page_cache[url] = update_qs(url, {"p": p + 1})
+		if "/ReadComic/" in url:
+			# https://www.comicabc.com/ReadComic/6997/734/734_8d00xI27S.html?p=2
+			next_page_cache[url] = update_qs(url, {"p": p + 1})
+		else:
+			# https://www.comicabc.com/online/new-18117.html?ch=122-2
+			next_page_cache[url] = update_qs(url, {"ch": f"{ch}-{p + 1}"})
 	
+
 	return urljoin(url, img)
 
 def get_next_page(html, url):
