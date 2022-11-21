@@ -202,7 +202,8 @@ def _get_ext(r):
 			mime = None
 
 	if not mime:
-		mime = puremagic.from_string(b, mime=True)
+		filename = urlsplit(r.url).path
+		mime = puremagic.from_string(b, mime=True, filename=filename)
 	
 	if mime:
 		ext = guess_extension(mime)
