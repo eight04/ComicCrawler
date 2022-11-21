@@ -21,7 +21,7 @@ VALID_FILE_TYPES = (
 	# videos
 	".mp4", ".m4v", ".mkv", ".swf", ".webm", ".mov", ".wmv",
 	# json
-	".json"
+	".json", ".txt"
 )
 
 class Crawler:
