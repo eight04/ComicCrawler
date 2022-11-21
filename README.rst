@@ -355,6 +355,12 @@ Todos
 Changelog
 ---------
 
+- 2022.11.21
+
+  - Fix: switching pages error in 8comic.
+  - Fix: use url path to guess extension.
+  - Add: allow to download txt file.
+
 - 2022.11.11
 
   - Fix: now danbooru requires curl.
