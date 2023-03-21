@@ -162,9 +162,12 @@ class Crawler:
 		sleep(getattr(self.mod, "rest", 0))
 		
 	def get_next_page(self):
-		if (hasattr(self.mod, "get_next_page") 
-				and isinstance(self.html, str)):
-			# self.html is not a str if self.ep.image is not None
+		# self.html is not a str if self.ep.image is not None
+		if not isinstance(self.html, str):
+			return
+		if hasattr(self.mod, "get_next_image_page"):
+			return self.mod.get_next_image_page(self.html, self.ep.current_url)
+		if hasattr(self.mod, "get_next_page"):
 			return self.mod.get_next_page(
 				self.html,
 				self.ep.current_url

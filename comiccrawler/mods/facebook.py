@@ -10,20 +10,18 @@ Ex:
 
 """
 
-import re, urllib.parse, json
-# from urllib.parse import urljoin
+import re, json
 from html import unescape
-from ..core import Episode, grabhtml
-from ..url import urljoin, urlparse, parse_qs
+from ..core import Episode
 
 domain = ["www.facebook.com"]
 name = "FB"
 circular = True
 noepfolder = True
 config = {
-	"cookie_c_user": "",
-	"cookie_xs": ""
+	"curl": ""
 }
+autocurl = True
 
 def get_title(html, url):
 	try:
@@ -37,49 +35,28 @@ def get_title(html, url):
 def get_episodes(html, url):
 	return [Episode("image", url)]
 	
-def get_url_info(url):
-	try:
-		return re.search('photos/([^/]+)/([^/]+)', url).groups()
-	except AttributeError:
-		pass
-	query = urlparse(url).query
-	query = parse_qs(query)
-	return query["set"], query["fbid"]
-
 def get_images(html, url):
-	fbset, fbid = get_url_info(url)
-	fb_dtsg = re.search('name="fb_dtsg" value="([^"]+)', html).group(1)
-	# fb_dtsg = re.search('"DTSGInitialData".*?"token":"([^"]+?)', html).group(1)
-	response = grabhtml(
-		"https://www.facebook.com/ajax/photos/snowlift/menu/",
-		params={"fbid": fbid, "set": fbset},
-		method="POST",
-		data={"__a": 1, "fb_dtsg": fb_dtsg}
-	)
-	# with open("test.js", "w") as f:
-		# f.write(response)
-	download_url = re.search('"download_photo","href":(.+?),"', response).group(1)
-	download_url = json.loads(download_url)
-	return urljoin(url, download_url)
+	# with open("test.html", "w", encoding="utf-8") as f:
+	# 	f.write(html)
+	i = html.index("currMedia")
+	rx = re.compile(r'"image":\{"uri":("[^"]+")')
+	uri = rx.search(html, i).group(1)
+	uri = json.loads(uri)
+	return [uri]
 
-def get_next_page(html, url):
-	match = re.search('photoPageNextNav"[^>]*?href="([^"]+)', html)
+def get_next_image_page(html, url):
+	i = html.index("nextMediaAfterNodeId")
+	rx = re.compile(r'"id":"([^"]+)"')
+	next_id = rx.search(html, i).group(1)
+	return get_next_url(url, next_id)
+
+def get_next_url(url, next_id):
+	match = re.match(r'(https://www\.facebook\.com/[^/]+/photos/[^/]+/)\d+(.*)', url)
 	if match:
-		return urllib.parse.urljoin(url, match.group(1))
-		
-	fbset, fbid = get_url_info(url)
-	fb_dtsg_ag = re.search('async_get_token":"([^"]+)', html).group(1)
-	params = {
-		"fb_dtsg_ag": fb_dtsg_ag,
-		"data": json.dumps({"fbid": fbid, "set": fbset}),
-		"__a": 1
-	}
-	pagelet = grabhtml(
-		"https://www.facebook.com/ajax/pagelet/generic.php/PhotoViewerInitPagelet",
-		params=params)
-	
-	match = re.search(r'"addPhotoFbids".*?(\d+)', pagelet)
+		return match.group(1) + next_id + match.group(2)
+
+	match = re.match(r'(.*fbid=)\d+(.*)', url)
 	if match:
-		next_id = match.group(1)
-		return urllib.parse.urljoin(url, "../" + next_id + "/")
-	
+		return match.group(1) + next_id + match.group(2)
+
+	raise TypeError("Can't find next url")
