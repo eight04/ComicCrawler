@@ -59,8 +59,7 @@ def get_bound_countent(contents):
 		media = contents["boundContent"]["data"]["media"]["watermark"]["hashedProxyValue"]
 	except KeyError:
 		return []
-	else:
-		return [media]
+	return [media]
 
 def imagehandler(ext, bin):
 	if ext == ".json":

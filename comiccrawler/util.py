@@ -14,9 +14,8 @@ def extract_curl(cmd):
 	try:
 		context = uncurl.parse_context(cmd)
 	except SystemExit:
-		raise Exception(f"Failed parsing curl: {cmd}") from None
-	else:
-		return context.url, context.headers, context.cookies
+		raise ValueError(f"Failed parsing curl: {cmd}") from None
+	return context.url, context.headers, context.cookies
 
 def create_safefilepath_table():
 	table = {}

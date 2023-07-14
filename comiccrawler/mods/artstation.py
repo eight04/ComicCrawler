@@ -47,7 +47,7 @@ def get_images(html, url):
 	elif re.search("/projects/(\w+)\.json", url):
 		data_json = html
 	else:
-		raise Exception("Unknown page {}".format(url))
+		raise ValueError("Unknown page {}".format(url))
 	data = json.loads(data_json)
 	return [a["image_url"] for a in data["assets"]]
 	

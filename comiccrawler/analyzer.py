@@ -148,7 +148,7 @@ class Analyzer:
 			self.mission.last_update = time.time()
 		
 		if not self.mission.episodes:
-			raise Exception("Episode list is empty")
+			raise TypeError("Episode list is empty")
 			
 	def get_next_page(self, html, url):
 		if not hasattr(self.mission.module, "get_next_page"):
