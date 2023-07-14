@@ -78,7 +78,7 @@ class Decoder:
 			});
 		};
 		"""
-		import pathlib
+		# import pathlib
 		# pathlib.Path("bili.js").write_text(js, encoding="utf8")
 		self.module = NodeVM.code(js)
 
