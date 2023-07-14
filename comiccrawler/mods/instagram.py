@@ -65,7 +65,7 @@ def get_episodes(html, url):
 			build_next_page(url, cursor, data["user"]["id"])
 		return eps
 		
-	raise Exception("unknown URL: {}".format(url))
+	raise ValueError("unknown URL: {}".format(url))
 	
 def get_init_data(html, page):
 	shared_data = re.search("window\._sharedData = ([\s\S]+?);</script", html).group(1)

@@ -45,6 +45,6 @@ def get_next_page(html, url):
 	if re.search("/posts/\d+", url):
 		return
 		
-	m = (re.search(r'<a [^>]*rel="next"[^>]*?href="([^"]+)', html))
+	m = re.search(r'<a [^>]*rel="next"[^>]*?href="([^"]+)', html)
 	if m:		
 		return urljoin(url, unescape(m.group(1)))

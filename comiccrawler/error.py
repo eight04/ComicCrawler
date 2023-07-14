@@ -33,7 +33,7 @@ class ComicCrawlerError(Exception):
 class ModuleError(ComicCrawlerError):
 	"""Can't find module."""
 	pass
-	
+
 def is_403(err):
 	return is_http(err, code=403)
 	

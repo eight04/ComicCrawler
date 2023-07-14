@@ -6,7 +6,7 @@ from worker import WorkerExit, sleep
 from .save_path import SavePath
 from .module_grabber import ModuleGrabber
 from .image import Image
-from .error import LastPageError, PauseDownloadError, SkipEpisodeError, is_http, SkipPageError
+from .error import LastPageError, PauseDownloadError, SkipEpisodeError, is_http, SkipPageError, ComicCrawlerError
 
 from .io import path_each, content_read, content_write
 from .util import url_extract_filename, debug_log
@@ -95,10 +95,10 @@ class Crawler:
 			ext = ".json"
 			
 		if not ext:
-			raise Exception("Can't determine file type.")
+			raise ValueError("Bad file type, the file extension is undefined")
 			
 		if ext not in VALID_FILE_TYPES:
-			raise Exception("Bad file type: " + ext)
+			raise ValueError("Bad file type: " + ext)
 			
 		self.image_bin = bin
 		self.image_ext = ext
@@ -196,7 +196,7 @@ class Crawler:
 		if isinstance(images, str):
 			images = [images]
 		if not images and not skip_page:
-			raise Exception("get_images returns an empty array")
+			raise ValueError("get_images returns an empty array")
 		try:
 			self.images = iter(images)
 		except TypeError:
@@ -233,7 +233,7 @@ def download(mission, savepath):
 		# Check if mission is complete
 		for ep in mission.episodes:
 			if not ep.complete and not ep.skip:
-				raise Exception("Mission is not completed")
+				raise ComicCrawlerError("Mission is not completed")
 
 	except WorkerExit:
 		mission.state = "PAUSE"

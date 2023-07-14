@@ -14,13 +14,13 @@ class ModuleGrabber:
 		return self.grab(grabimg, url, **kwargs)
 		
 	def grab(self, grab_method, url=None, **kwargs):
-		new_kwargs = dict(
-			header=self.get_header(),
-			cookie=self.get_cookie(),
-			done=self.handle_grab,
-			proxy=self.mod.config.get("proxy"),
-			verify=self.mod.config.getboolean("verify", True)
-		)
+		new_kwargs = {
+			"header": self.get_header(),
+			"cookie": self.get_cookie(),
+			"done": self.handle_grab,
+			"proxy": self.mod.config.get("proxy"),
+			"verify": self.mod.config.getboolean("verify", True)
+			}
 		new_kwargs.update(kwargs)
 		
 		if hasattr(self.mod, "grabhandler"):

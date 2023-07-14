@@ -129,7 +129,7 @@ def do_request(s, url, proxies, retry, **kwargs):
 		if r.status_code == 200:
 			content_length = r.headers.get("Content-Length")
 			if content_length and int(content_length) != r.raw.tell():
-				raise Exception(
+				raise ValueError(
 					"incomplete response. Content-Length: {content_length}, got: {actual}"
 						.format(content_length=content_length, actual=r.raw.tell())
 				)
@@ -145,7 +145,7 @@ def do_request(s, url, proxies, retry, **kwargs):
 				re.M + re.I
 			)
 			if not match:
-				raise Exception("status 302 without location header")
+				raise TypeError("status 302 without location header")
 			url = match.group(1)
 			continue
 		print(r)
