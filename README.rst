@@ -264,6 +264,10 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         If is a multi-page list, specify the URL of the next page in
         get_next_page. Comic Crawler would grab the next page and call this
         function again.
+
+        The `Episode` object accepts an `image` property which can be a list of `Image`.
+        However, unlike `get_images`, the `Episode` object is JSON-stringified and saved
+        to the disk, therefore you must only use JSON-compatible types i.e. no `Image.get_url`.
         """
         match_list = re.findall("<a href='(.+?)'>(.+?)</a>", html)
         return [Episode(title, urljoin(url, ep_url))
