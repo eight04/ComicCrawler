@@ -22,27 +22,34 @@ class ComicDetail(dict):
 			"https://manga.bilibili.com/twirp/comic.v2.Comic/ComicDetail?device=pc&platform=web",
 			method="POST",
 			json={"comic_id": id}
-		)
+			)
 		result = json.loads(result)
 		self[id] = result
-		
+
 comic_detail = ComicDetail()
 
 class Decoder:
 	def __init__(self):
 		self.module = None
-		
+
 	def loaded(self):
 		return bool(self.module)
-		
+
 	def load(self, bili_js_url):
 		bili_js = grabhtml(bili_js_url)
 		js = """
 		const window = {};
+		const self = window;
 		""" + bili_js + """
 		let decode;
 		let factory;
-		for (const fn of Object.values(window.webpackJsonp[0][1])) {
+		let webpack;
+		for (const key in window) {
+			if (key.startsWith("webpack")) {
+				webpack = window[key];
+			}
+		}
+		for (const fn of Object.values(webpack[0][1])) {
 		  if (fn.toString().includes('Indexer')) {
 			factory = fn;
 			break;
@@ -56,7 +63,8 @@ class Decoder:
 			};
 		  }
 		});
-		_require.d = (exports, name, getValue) => {
+		_require.d = (exports, o) => {
+		  const getValue = Object.values(o)[0];
 		  decode = getValue();
 		};
 
@@ -70,11 +78,13 @@ class Decoder:
 			});
 		};
 		"""
+		# import pathlib
+		# pathlib.Path("bili.js").write_text(js, encoding="utf8")
 		self.module = NodeVM.code(js)
-		
+
 	def decode(self, id, ep_id, data):
 		return bytes(self.module.call_member('decode', id, ep_id, list(data)))
-		
+
 decoder = Decoder()
 
 def get_title(html, url):
@@ -91,7 +101,7 @@ def get_episodes(html, url):
 	return [Episode(
 		"{} - {}".format(ep["short_title"], ep["title"]),
 		urljoin(url, "/mc{}/{}?from=manga_detail".format(id, ep["id"]))
-	) for ep in reversed(detail["data"]["ep_list"])]
+		) for ep in reversed(detail["data"]["ep_list"])]
 
 def get_images(html, url):
 	id, ep_id = (int(n) for n in re.search(r'mc(\d+)/(\d+)', url).groups())
@@ -102,7 +112,7 @@ def get_images(html, url):
 		"https://manga.bilibili.com/twirp/comic.v1.Comic/GetImageIndex?device=pc&platform=web",
 		method="POST",
 		json={"ep_id": ep_id}
-	)
+		)
 	image_index = json.loads(image_index)
 	image_index_file = grabber(urljoin(image_index["data"]["host"], image_index["data"]["path"])).content
 	image_index_file = decoder.decode(id, ep_id, image_index_file)
@@ -113,17 +123,17 @@ def get_images(html, url):
 def read_zip(b, filename):
 	with ZipFile(io.BytesIO(b)) as zip:
 		return zip.read(filename).decode("utf8")
-	
+
 class ImageGetter:
 	def __init__(self, path):
 		self.path = path
-		
+
 	def __call__(self):
 		result = grabhtml(
 			"https://manga.bilibili.com/twirp/comic.v1.Comic/ImageToken?device=pc&platform=web",
 			method="POST",
 			json={"urls": json.dumps([self.path])}
-		)
+			)
 		result = json.loads(result)
 		return "{}?token={}".format(result["data"][0]["url"], result["data"][0]["token"])
-	
+

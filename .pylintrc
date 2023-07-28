@@ -18,7 +18,10 @@ disable=
 	inconsistent-return-statements,
 	missing-docstring, multiple-imports,
 	redefined-outer-name, redefined-builtin,
-	trailing-whitespace, too-many-statements, too-many-return-statements,
+  trailing-newlines,
+	trailing-whitespace,
+  too-many-statements,
+  too-many-return-statements,
 	unused-argument,
   unnecessary-pass,
 	line-too-long
