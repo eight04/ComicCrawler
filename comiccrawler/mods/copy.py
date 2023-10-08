@@ -1,7 +1,6 @@
 #! python3
 """
-https://copymanga.com/comic/bulunshitang
-
+https://www.mangacopy.com/comic/{name}
 """
 
 import re
@@ -15,7 +14,7 @@ from ..episode import Episode
 from ..grabber import grabhtml
 from ..url import urljoin
 
-domain = ["copymanga.com"]
+domain = ["copymanga.com", "www.mangacopy.com"]
 name = "拷貝"
 
 def get_title(html, url):
