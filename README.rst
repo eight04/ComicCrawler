@@ -306,6 +306,14 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         match = re.search("<a id='nextpage' href='(.+?)'>next</a>", html)
         if match:
             return match.group(1)
+
+    def get_next_image_page(html, url):
+        """Return the URL of the next page.
+
+        If this method is defined, it will be used by the crawler and ``get_next_page`` would be ignored.
+        Therefore ``get_next_page`` will only be used by the analyzer.
+        """
+        pass
             
     def redirecthandler(response, crawler):
         """Downloader will call this hook if redirect happens during downloading
@@ -358,6 +366,17 @@ Todos
 
 Changelog
 ---------
+
+- 2023.10.8
+
+  - Fix: unable to download bili free chapters.
+  - Fix: facebook module.
+  - Add: copymanga new domain.
+  - Add: kemono module.
+  - Add: linevoom module.
+  - Add: support more audio formats.
+  - Add: new plugin hook ``get_next_image_page``.
+  
 
 - 2022.11.21
 
