@@ -20,6 +20,8 @@ VALID_FILE_TYPES = (
 	".zip", ".rar",
 	# videos
 	".mp4", ".m4v", ".mkv", ".swf", ".webm", ".mov", ".wmv",
+	# audio
+	".mp3", ".aac", ".flac", ".wav",
 	# json
 	".json", ".txt"
 )
