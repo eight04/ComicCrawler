@@ -10,7 +10,7 @@ from ..core import Episode
 from ..error import is_http, SkipEpisodeError, SkipPageError
 from ..url import update_qs
 from ..grabber import grabber
-from ..util import extract_curl, dump
+from ..util import extract_curl
 
 domain = ["www.instagram.com"]
 name = "Instagram"

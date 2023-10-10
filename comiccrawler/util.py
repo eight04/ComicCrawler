@@ -1,6 +1,7 @@
 import re
 import string
 from functools import total_ordering
+from pathlib import Path
 
 import uncurl
 
@@ -9,7 +10,6 @@ from .io import content_write
 from .profile import get as profile
 
 def dump(html):
-	from pathlib import Path
 	Path("dump.html").write_text(html, encoding="utf-8")
 
 def extract_curl(cmd):
