@@ -4,12 +4,13 @@ https://www.instagram.com/haneame_cos/?hl=zh-tw
 
 import re
 import json
-from urllib.parse import urlencode, parse_qs, urlparse
 from html import unescape
 
 from ..core import Episode
 from ..error import is_http, SkipEpisodeError, SkipPageError
 from ..url import update_qs
+from ..grabber import grabber
+from ..util import extract_curl, dump
 
 domain = ["www.instagram.com"]
 name = "Instagram"
@@ -17,13 +18,26 @@ noepfolder = True
 
 cache_next_page = {}
 config = {
-	"cookie_sessionid": ""
+	"curl": "",
+	"api_curl": ""
 }
+autocurl = True
 
 def get_title(html, url):
 	title = re.search("<title>([^<]+)", html).group(1)
 	return "[instagram] {}".format(unescape(title).strip())
 	
+def grabhandler(grab_method, url, **kwargs):
+	if "api/v1" in url:
+		return grab_json(url, **kwargs)
+
+def grab_json(url, **kwargs):
+	_url, header, cookie = extract_curl(config["api_curl"])
+	# NOTE: method-level header/cookies won't be stored into session
+	kwargs["headers"] = header
+	kwargs["cookies"] = cookie
+	return grabber(url, **kwargs).json()
+
 def get_episodes_from_data(data):
 	user = data["user"]
 	timeline = user["edge_owner_to_timeline_media"]
@@ -38,46 +52,28 @@ def get_episodes_from_data(data):
 		end_cursor = timeline["page_info"]["end_cursor"]
 	return reversed(eps), end_cursor
 	
-def build_next_page(key, cursor, user_id):
-	cache_next_page[key] = "https://www.instagram.com/graphql/query/?{}".format(urlencode({
-		"query_hash": "2c5d4d8b70cad329c4a6ebe3abb6eedd",
-		"variables": json.dumps({
-			"id": user_id,
-			"first": 12,
-			"after": cursor
-		})
-	}))
-
 def get_episodes(html, url):
-	if re.match(r"https://www\.instagram\.com/graphql/query/", url):
-		body = json.loads(html)
-		eps, cursor = get_episodes_from_data(body["data"])
-		if cursor:
-			variables = parse_qs(urlparse(url).query)["variables"][0]
-			variables = json.loads(variables)
-			build_next_page(url, cursor, variables["id"])
-		return eps
-
 	if match := re.match(r"https://www\.instagram\.com/([^/]+)/", url):
 		username = match.group(1)
-		next_url = f"https://www.instagram.com/api/v1/feed/user/{username}/username/?count=12"
-		cache_next_page[url] = next_url
-		raise SkipPageError
+		if username != "api":
+			next_url = f"https://www.instagram.com/api/v1/feed/user/{username}/username/?count=12"
+			cache_next_page[url] = next_url
+			raise SkipPageError
 
-	if re.match(r"api/v1/feed", url):
-		body = json.loads(html)
-		eps = []
+	if "api/v1/feed" in url:
+		body = html
+		result = []
 		for item in body["items"]:
-			eps.append(Episode(
+			result.append(Episode(
 				str(item["code"]),
 				f"https://www.instagram.com/p/{item['code']}/"
 			))
 		
-		if eps and (next_max_id := body.get("next_max_id", None)):
+		if result and (next_max_id := body.get("next_max_id", None)):
 			next_url = update_qs(url, {"max_id": next_max_id})
 			cache_next_page[url] = next_url
 
-		return eps[::-1]
+		return result[::-1]
 		
 	raise ValueError("unknown URL: {}".format(url))
 	
@@ -91,18 +87,44 @@ def get_extra_data(html):
 	return json.loads(text)
 
 def find_media(media):
-	if "video_versions" in media:
+	if media.get("video_versions", None):
 		return max(media["video_versions"], key=lambda i: i["height"])["url"]
 	return max(media["image_versions2"]["candidates"], key=lambda i: i["height"])["url"]
+
+def extract_json(html, filter=None):
+	for match in re.finditer(r'<script type="application/json"[^>]+>([^<]+)</script>', html):
+		text = match.group(1)
+		if filter and not filter(text):
+			continue
+		yield json.loads(text)
+
+def extract_json_value(data, key):
+	# find object value in nested dict
+	if isinstance(data, dict):
+		for k, v in data.items():
+			if k == key:
+				yield v
+			else:
+				yield from extract_json_value(v, key)
+	# find value in list
+	elif isinstance(data, list):
+		for item in data:
+			yield from extract_json_value(item, key)
 	
 def get_images(html, url):
 	result = []
-	data = get_extra_data(html)
-	for item in data["items"]:
-		if item.get("carousel_media", None):
-			result += [find_media(m) for m in item["carousel_media"]]
-		else:
-			result.append(find_media(item))
+	key = "xdt_api__v1__media__shortcode__web_info"
+	for data in extract_json(html, filter=lambda s: key in s):
+		for web_info in extract_json_value(data, key):
+			for item in web_info["items"]:
+				if item.get("carousel_media", None):
+					result += [find_media(m) for m in item["carousel_media"]]
+				else:
+					result.append(find_media(item))
+	# FIXME: need a way to detect 404 page
+	if not result:
+		print("no image found")
+		raise SkipEpisodeError(always=True)
 	return result
 
 def get_next_page(html, url):

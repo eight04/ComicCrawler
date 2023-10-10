@@ -8,6 +8,10 @@ from .config import setting
 from .io import content_write
 from .profile import get as profile
 
+def dump(html):
+	from pathlib import Path
+	Path("dump.html").write_text(html, encoding="utf-8")
+
 def extract_curl(cmd):
 	if not cmd:
 		return
