@@ -9,7 +9,7 @@ import re
 from html import unescape
 from urllib.parse import urljoin
 
-from node_vm2 import eval
+from deno_vm import eval
 
 from ..core import Episode
 from ..grabber import grabhtml

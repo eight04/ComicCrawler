@@ -13,7 +13,7 @@ import json
 from urllib.parse import urljoin
 from html import unescape
 
-from node_vm2 import eval
+from deno_vm import eval
 
 from ..core import Episode, grabhtml
 from ..error import is_http, SkipEpisodeError

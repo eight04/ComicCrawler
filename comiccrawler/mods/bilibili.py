@@ -7,7 +7,7 @@ https://163.bilibili.com/source/5302242712730021771
 import json
 import re
 from html import unescape
-from node_vm2 import eval
+from deno_vm import eval
 
 from ..core import Episode
 from ..grabber import grabhtml

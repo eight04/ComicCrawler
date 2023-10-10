@@ -9,7 +9,7 @@ import re
 from itertools import cycle
 from urllib.parse import urljoin, urlencode
 
-from node_vm2 import VM, eval
+from deno_vm import VM, eval
 from lzstring import LZString
 
 from ..core import Episode, grabhtml

@@ -10,7 +10,7 @@ import json
 from html import unescape
 from urllib.parse import urljoin
 
-from node_vm2 import eval, NodeVM
+from deno_vm import eval, VM
 
 from ..core import Episode
 from ..grabber import grabhtml
@@ -38,14 +38,14 @@ def get_episodes(html, url):
 	# breakpoint()
 	ep_data = json.loads(code)
 	
-	ep_url_code = "module.exports = value => " + re.search('href = ("/series-.+)', html).group(1)
-	with NodeVM.code(ep_url_code) as make_url:
+	ep_url_code = "var moduleExports = value => " + re.search('href = ("/series-.+)', html).group(1)
+	with VM(ep_url_code) as make_url:
 		s = []
 		for item in ep_data["msg"]:
 			sys = item["system"]
 			s.append(Episode(
 				sys["title"],
-				urljoin(url, make_url.call(sys))
+				urljoin(url, make_url.call("moduleExports", sys))
 			))
 	return s[::-1]
 	

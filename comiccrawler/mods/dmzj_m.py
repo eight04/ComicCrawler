@@ -7,7 +7,7 @@ Ex. http://m.dmzj.com/info/qiyuanzui.html
 import re
 from urllib.parse import urljoin
 
-from node_vm2 import eval
+from deno_vm import eval
 
 from ..core import Episode
 

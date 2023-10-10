@@ -5,7 +5,7 @@ http://ac.qq.com/Comic/comicInfo/id/626619
 """
 
 import re
-import node_vm2
+from deno_vm import eval
 
 from ..core import Episode
 from ..grabber import grabhtml
@@ -60,5 +60,5 @@ def get_images(html, url):
 		view_js
 	])
 	
-	data = node_vm2.eval(code)
+	data = eval(code)
 	return [p["url"] for p in data["picture"]]

@@ -12,7 +12,7 @@ from html import unescape
 from urllib.parse import urljoin
 import re
 
-from node_vm2 import eval
+from deno_vm import eval
 
 from ..episode import Episode
 from ..grabber import grabhtml

@@ -9,7 +9,7 @@ Ex:
 
 import re
 
-from node_vm2 import VM
+from deno_vm import VM
 
 from ..core import Episode, grabhtml
 
