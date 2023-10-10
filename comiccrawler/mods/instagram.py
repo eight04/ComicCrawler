@@ -8,7 +8,8 @@ from urllib.parse import urlencode, parse_qs, urlparse
 from html import unescape
 
 from ..core import Episode
-from ..error import is_http, SkipEpisodeError
+from ..error import is_http, SkipEpisodeError, SkipPageError
+from ..url import update_qs
 
 domain = ["www.instagram.com"]
 name = "Instagram"
@@ -57,13 +58,26 @@ def get_episodes(html, url):
 			build_next_page(url, cursor, variables["id"])
 		return eps
 
-	if re.match(r"https://www\.instagram\.com/[^/]+/", url):
-		# get episodes from init data
-		data = get_init_data(html, "ProfilePage")
-		eps, cursor = get_episodes_from_data(data)
-		if cursor:
-			build_next_page(url, cursor, data["user"]["id"])
-		return eps
+	if match := re.match(r"https://www\.instagram\.com/([^/]+)/", url):
+		username = match.group(1)
+		next_url = f"https://www.instagram.com/api/v1/feed/user/{username}/username/?count=12"
+		cache_next_page[url] = next_url
+		raise SkipPageError
+
+	if re.match(r"api/v1/feed", url):
+		body = json.loads(html)
+		eps = []
+		for item in body["items"]:
+			eps.append(Episode(
+				str(item["code"]),
+				f"https://www.instagram.com/p/{item['code']}/"
+			))
+		
+		if eps and (next_max_id := body.get("next_max_id", None)):
+			next_url = update_qs(url, {"max_id": next_max_id})
+			cache_next_page[url] = next_url
+
+		return eps[::-1]
 		
 	raise ValueError("unknown URL: {}".format(url))
 	

@@ -10,7 +10,7 @@ Ex:
 from itertools import cycle
 import re
 
-from node_vm2 import VM
+from deno_vm import VM
 
 from ..core import Episode, grabhtml
 from ..url import urlparse, urlupdate, urljoin
