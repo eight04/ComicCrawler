@@ -234,7 +234,7 @@ def grabimg(*args, **kwargs):
 		for chunk in r.iter_content(2 ** 10):
 			content_list.append(chunk)
 			counter.update(len(chunk))
-	r._content = b"".join(content_list)
+	r._content = b"".join(content_list) # pylint: disable=protected-access
 	return ImgResult(r)
 
 class ImgResult:
