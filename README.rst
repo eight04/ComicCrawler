@@ -16,17 +16,22 @@ python 後，可以直接用 pip 指令自動安裝。
 Install Python
 ~~~~~~~~~~~~~~
 
-你需要 Python 3.4 以上。安裝檔可以從它的
+你需要 Python 3.8 以上。安裝檔可以從它的
 `官方網站 <https://www.python.org/>`__ 下載。
 
 安裝時記得要選「Add python.exe to path」，才能使用 pip 指令。
 
-Install Node.js
-~~~~~~~~~~~~~~~
+Install Deno
+~~~~~~~~~~~~
 
-Comic Crawler 使用 Node.js 來分析需要執行 JavaScript 的網站。
+Comic Crawler 使用 Deno 來分析需要執行 JavaScript 的網站︰
+https://docs.deno.com/runtime/manual/getting_started/installation
 
-至少需要 6.0 以上的版本︰ https://nodejs.org/
+Windows 10 (1709) 以上的版本，可以直接在 cmd 底下輸入以下指令安裝︰
+
+::
+
+   winget install deno
 
 Install Comic Crawler
 ~~~~~~~~~~~~~~~~~~~~~
@@ -147,6 +152,7 @@ or you can use it in your python script:
     ; 自動轉換集數名稱中數字的格式，可以用於補0
     ; 例︰第1集 -> 第001集
     ; 詳細的格式指定方式請參考 https://docs.python.org/3/library/string.html#format-specification-mini-language
+    ; 注意︰這個設定會影響檔名中的所有數字，包括檔名中英數混合的ID如instagram
     titlenumberformat = {:03d}
     
     ; 連線時使用 http/https proxy
@@ -366,6 +372,12 @@ Todos
 
 Changelog
 ---------
+
+- 2023.10.11
+
+  - Fix: instagram, fantia, seemh, sanka modules.
+  - Add: progress bar.
+  - Change: switch to deno_vm.
 
 - 2023.10.8
 
