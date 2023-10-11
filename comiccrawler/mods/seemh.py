@@ -9,7 +9,7 @@ import re
 from itertools import cycle
 from urllib.parse import urljoin, urlencode
 
-from node_vm2 import VM, eval
+from deno_vm import VM, eval
 from lzstring import LZString
 
 from ..core import Episode, grabhtml
@@ -69,7 +69,7 @@ servers = None
 def get_images(html, url):
 	# build js context
 	js = """
-	var window = global;
+	var window = self;
 	var cInfo;
 	var SMH = {
 		imgData: function(data) {

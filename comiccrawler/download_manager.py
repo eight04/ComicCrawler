@@ -252,6 +252,8 @@ class DownloadManager:
 				
 		self.library_err_count = 0
 		def on_item_finished(err, mission):
+			if err:
+				traceback.print_exception(err)
 			if mission.state == "UPDATE":
 				mission_manager.lift("library", mission)
 			elif mission.state == "ERROR":

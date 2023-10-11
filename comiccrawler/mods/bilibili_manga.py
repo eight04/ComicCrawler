@@ -8,7 +8,7 @@ import io
 from urllib.parse import urljoin
 from zipfile import ZipFile
 
-from node_vm2 import NodeVM
+from deno_vm import VM
 
 from ..core import Episode
 from ..grabber import grabhtml, grabber
@@ -70,7 +70,7 @@ class Decoder:
 
 		factory({}, {}, _require);
 
-		exports.decode = (seasonId, episodeId, data) => {
+		var exportDecode = (seasonId, episodeId, data) => {
 		  return decode(seasonId, episodeId, Buffer.from(data))
 			.catch(err => {
 				if (err.message !== "extract data") throw err;
@@ -80,10 +80,10 @@ class Decoder:
 		"""
 		# import pathlib
 		# pathlib.Path("bili.js").write_text(js, encoding="utf8")
-		self.module = NodeVM.code(js)
+		self.module = VM(js)
 
 	def decode(self, id, ep_id, data):
-		return bytes(self.module.call_member('decode', id, ep_id, list(data)))
+		return bytes(self.module.call('exportDecode', id, ep_id, list(data)))
 
 decoder = Decoder()
 

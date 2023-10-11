@@ -5,12 +5,13 @@ from html import unescape
 from ..episode import Episode
 from ..grabber import grabber, grabhtml
 from ..url import urljoin
-from ..util import clean_tags
+from ..util import clean_tags, extract_curl
 
 domain = ["fantia.jp"]
 name = "fantia"
 config = {
-	"curl": ""
+	"curl": "",
+	"api_curl": ""
 }
 noepfolder = True
 autocurl = True
@@ -22,6 +23,14 @@ def get_title(html, url):
 	name = re.search('<h1 class="fanclub-name">(.+?)</h1', html).group(1)
 	return f"[fantia] {clean_tags(name)}"
 	
+def curl_to_kwargs(curl):
+	kwargs = {}
+	_url, header, cookie = extract_curl(curl)
+	# NOTE: method-level header/cookies won't be stored into session
+	kwargs["headers"] = header
+	kwargs["cookies"] = cookie
+	return kwargs
+
 def get_episodes(html, url):
 	result = []
 	for match in re.finditer('<a[^>]+href="(/posts/(\d+))"[^>]+title="([^"]+)', html):
@@ -32,7 +41,7 @@ def get_episodes(html, url):
 
 def get_images(html, url):
 	post_id = re.search("posts/(\d+)", url).group(1)
-	result = grabber(f"https://fantia.jp/api/v1/posts/{post_id}").json()
+	result = grabber(f"https://fantia.jp/api/v1/posts/{post_id}", **curl_to_kwargs(config["api_curl"])).json()
 	thumb = result["post"].get("thumb", {}).get("original")
 	if thumb:
 		yield thumb

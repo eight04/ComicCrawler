@@ -8,7 +8,7 @@ https://www.mh160.com/kanmanhua/30526/
 import re
 from html import unescape
 from urllib.parse import urlparse, urljoin
-from node_vm2 import eval
+from deno_vm import eval
 
 from ..core import Episode
 from ..grabber import grabhtml

@@ -9,7 +9,7 @@ import json
 import math
 import re
 
-from node_vm2 import eval
+from deno_vm import eval
 
 from ..url import urljoin, urlparse, parse_qs, update_qs
 from ..core import Episode

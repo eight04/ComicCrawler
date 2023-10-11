@@ -12,7 +12,7 @@ import json
 from html import unescape
 from urllib.parse import urlparse
 
-from node_vm2 import eval
+from deno_vm import eval
 
 from ..error import PauseDownloadError
 from ..core import Episode
