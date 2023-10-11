@@ -9,6 +9,7 @@ from threading import Lock
 from urllib.parse import quote, urlsplit, urlunsplit
 from mimetypes import guess_extension
 
+import enlighten
 import requests
 import puremagic
 from worker import async_, await_, sleep, Defer
@@ -26,6 +27,7 @@ default_header = {
 cooldown = {}
 grabber_pool = {}
 grabber_pool_lock = Lock()
+pb_manager = enlighten.get_manager()
 
 @contextmanager
 def get_request_lock(url):
@@ -128,7 +130,7 @@ def do_request(s, url, proxies, retry, **kwargs):
 
 		if r.status_code == 200:
 			content_length = r.headers.get("Content-Length")
-			if content_length and int(content_length) != r.raw.tell():
+			if not kwargs.get("stream", False) and content_length and int(content_length) != r.raw.tell():
 				raise ValueError(
 					"incomplete response. Content-Length: {content_length}, got: {actual}"
 						.format(content_length=content_length, actual=r.raw.tell())
@@ -224,7 +226,16 @@ def get_ext(r):
 
 def grabimg(*args, **kwargs):
 	"""Grab the image. Return ImgResult"""
-	return ImgResult(grabber(*args, **kwargs))
+	kwargs["stream"] = True
+	r = grabber(*args, **kwargs)
+	total = int(r.headers.get("Content-Length", "0")) or None
+	content_list = []
+	with pb_manager.counter(total=total, unit="b", leave=False) as counter:
+		for chunk in r.iter_content(2 ** 10):
+			content_list.append(chunk)
+			counter.update(len(chunk))
+	r._content = b"".join(content_list)
+	return ImgResult(r)
 
 class ImgResult:
 	def __init__(self, response):
