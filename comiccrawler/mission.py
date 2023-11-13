@@ -18,7 +18,7 @@ class Mission:
 		self.module = get_module(url)
 		self.last_update = last_update
 		if not self.module:
-			raise ModuleError("Get module failed!")
+			raise ModuleError(f"Get module failed: {url}")
 			
 mission_lock = Lock()
 class MissionProxy:
