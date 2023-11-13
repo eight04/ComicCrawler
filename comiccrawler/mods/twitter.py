@@ -117,6 +117,9 @@ def extract_added_entries(entries, url):
 	for entry in entries:
 		if entry["content"]["entryType"] == "TimelineTimelineItem":
 			has_timeline = True
+			if "result" not in entry["content"]["itemContent"]["tweet_results"]:
+				# deleted post?
+				continue
 			ep = tweet_result_to_episode(entry["content"]["itemContent"]["tweet_results"]["result"])
 			if not ep:
 				continue
