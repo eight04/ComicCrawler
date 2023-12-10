@@ -373,6 +373,11 @@ Todos
 Changelog
 ---------
 
+- 2023.12.11
+
+  - Fix: seemh, twitter modules.
+  - Add: fanbox module.
+
 - 2023.10.11
 
   - Fix: instagram, fantia, seemh, sanka modules.
