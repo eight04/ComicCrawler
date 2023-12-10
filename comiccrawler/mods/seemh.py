@@ -100,9 +100,6 @@ def get_images(html, url):
 	with VM(js) as vm:
 		files, path, params = vm.run("[cInfo.files, cInfo.path, cInfo.sl]")
 	
-	# find server
-	# "http://c.3qfm.com/scripts/core_5C348B32A78647FF4208EACA42FC5F84.js"
-	# getpath()
 	corejs_url = re.search(
 		r'src="([^"]+?/core_\w+?\.js)"',
 		html
@@ -110,7 +107,7 @@ def get_images(html, url):
 	corejs = grabhtml(urljoin(url, corejs_url), referer=url)
 	
 	# cache server list
-	servs = re.search(r"var servs=(.+?),pfuncs=", corejs).group(1)
+	servs = re.search(r"var servs=(.+)", configjs).group(1)
 	servs = eval(servs)
 	servs = [host["h"] for category in servs for host in category["hosts"]]
 	
