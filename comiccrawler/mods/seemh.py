@@ -108,7 +108,7 @@ def get_images(html, url):
 	corejs = grabhtml(urljoin(url, corejs_url), referer=url)
 	
 	# cache server list
-	m = re.search(r"自动", configjs)
+	m = re.search(r"自动|自動", configjs)
 	s = balance(configjs, m.start(), "[", "]")
 	servs = eval(s)
 	servs = [host["h"] for category in servs for host in category["hosts"]]
