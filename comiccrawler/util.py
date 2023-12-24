@@ -33,15 +33,15 @@ def create_safefilepath_table():
 		":": "：",
 		"\"": "＂",
 		"*": "＊"
-	})
+		})
 	table.update({
 		c: None for c in set(chr(i) for i in range(128)).difference(string.printable)
-	})
+		})
 	table.update({
 		chr(i): " " for i in range(32) if chr(i) not in table
-	})
+		})
 	return str.maketrans(table)
-	
+
 safefilepath_table = create_safefilepath_table()
 dot_table = str.maketrans({".": "．"})
 
@@ -71,8 +71,39 @@ def clean_tags(html):
 class MinimumAny:
 	def __le__(self, other):
 		return True
-		
+
 	def __eq__(self, other):
 		return self is other
 
 MIN = MinimumAny()
+
+def balance(s: str, index: int, left="(", right=")", skip=0):
+	"""Return the string inside (including) matched left and right brackets."""
+	# backward search
+	count = 0
+	for i in range(index, -1, -1):
+		if s[i] == right:
+			count += 1
+		elif s[i] == left:
+			if count == -skip:
+				break
+			count -= 1
+	else:
+		raise ValueError(f"Unbalanced brackets: {s}")
+	start = i
+
+	# forward search
+	count = 0
+	for j in range(index, len(s)):
+		if s[j] == left:
+			count += 1
+		elif s[j] == right:
+			if count == -skip:
+				break
+			count -= 1
+	else:
+		raise ValueError(f"Unbalanced brackets: {s}")
+	end = j + 1
+
+	return s[start:end]
+
