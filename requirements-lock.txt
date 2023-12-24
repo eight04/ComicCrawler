@@ -12,7 +12,6 @@ dill==0.3.7
 docopt==0.6.2
 docutils==0.20.1
 enlighten==1.12.0
-future==0.18.3
 idna==3.4
 importlib-metadata==6.8.0
 isort==5.12.0
@@ -20,7 +19,6 @@ jaraco.classes==3.3.0
 jinxed==1.2.0
 keyring==24.2.0
 livereload==2.6.3
-lzstring==1.0.4
 markdown-it-py==3.0.0
 mccabe==0.7.0
 mdurl==0.1.2
