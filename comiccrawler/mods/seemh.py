@@ -10,7 +10,6 @@ from itertools import cycle
 from urllib.parse import urljoin, urlencode
 
 from deno_vm import VM, eval
-from lzstring import LZString
 
 from ..core import Episode, grabhtml
 from ..util import balance
@@ -24,6 +23,22 @@ grabber_cooldown = {
 	"www.manhuagui.com": 3,
 	"tw.manhuagui.com": 3
 }
+
+class LZString:
+	def __init__(self):
+		self.vm = None
+
+	def init(self, html, url):
+		if self.vm:
+			return
+		cryptojs = re.search(r'src="([^"]+?/crypt_\w+?\.js)"', html).group(1)
+		cryptojs = grabhtml(urljoin(url, cryptojs), referer=url)
+		self.vm = VM(f"window = self; {cryptojs}")
+
+	def decompress_from_base64(self, data):
+		return self.vm.call("LZString.decompressFromBase64", data)
+
+lzstring = LZString()
 
 def get_title(html, url):
 	return re.search(r'<h1>([^<]*)', html).group(1)
@@ -49,6 +64,8 @@ def get_list(html, cid):
 
 
 def get_episodes(html, url):
+	lzstring.init(html, url)
+
 	episodes = None
 	cid = re.search(r"comic/(\d+)", url).group(1)
 	
@@ -59,7 +76,7 @@ def get_episodes(html, url):
 	if not episodes:
 		view_state = re.search(
 			r'id="__VIEWSTATE" value="([^"]+)', html).group(1)
-		ep_html = LZString.decompressFromBase64(view_state)
+		ep_html = lzstring.decompress_from_base64(view_state)
 		episodes = get_list(ep_html, cid)
 		
 	episodes = [Episode(v[0].strip(), urljoin(url, v[1])) for v in episodes]
