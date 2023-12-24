@@ -30,10 +30,10 @@ comic_detail = ComicDetail()
 
 class Decoder:
 	def __init__(self):
-		self.module = None
+		self.vm = None
 
 	def loaded(self):
-		return bool(self.module)
+		return bool(self.vm)
 
 	def load(self, bili_js_url):
 		bili_js = grabhtml(bili_js_url)
@@ -71,7 +71,7 @@ class Decoder:
 		factory({}, {}, _require);
 
 		var exportDecode = (seasonId, episodeId, data) => {
-		  return decode(seasonId, episodeId, Buffer.from(data))
+		  return decode(seasonId, episodeId, (data))
 			.catch(err => {
 				if (err.message !== "extract data") throw err;
 				return Array.from(err.data);
@@ -80,10 +80,11 @@ class Decoder:
 		"""
 		# import pathlib
 		# pathlib.Path("bili.js").write_text(js, encoding="utf8")
-		self.module = VM(js)
+		self.vm = VM(js)
+		self.vm.create()
 
 	def decode(self, id, ep_id, data):
-		return bytes(self.module.call('exportDecode', id, ep_id, list(data)))
+		return bytes(self.vm.call('exportDecode', id, ep_id, list(data)))
 
 decoder = Decoder()
 
@@ -114,7 +115,8 @@ def get_images(html, url):
 		json={"ep_id": ep_id}
 		)
 	image_index = json.loads(image_index)
-	image_index_file = grabber(urljoin(image_index["data"]["host"], image_index["data"]["path"])).content
+	image_index_url = urljoin(image_index["data"]["host"], image_index["data"]["path"])
+	image_index_file = grabber(image_index_url).content
 	image_index_file = decoder.decode(id, ep_id, image_index_file)
 	index = read_zip(image_index_file, "index.dat")
 	index = json.loads(index)
