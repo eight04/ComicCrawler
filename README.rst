@@ -373,6 +373,11 @@ Todos
 Changelog
 ---------
 
+- 2023.12.24
+
+  - Fix: bili, cartoonmad, seemh module.
+  - Fix: support python 3.12.
+
 - 2023.12.11
 
   - Fix: seemh, twitter modules.
