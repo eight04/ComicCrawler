@@ -13,6 +13,7 @@ from deno_vm import VM, eval
 from lzstring import LZString
 
 from ..core import Episode, grabhtml
+from ..util import balance
 
 domain = ["seemh.com", "ikanman.com", "manhuagui.com", "www.mhgui.com"]
 name = "看漫畫"
@@ -107,8 +108,9 @@ def get_images(html, url):
 	corejs = grabhtml(urljoin(url, corejs_url), referer=url)
 	
 	# cache server list
-	servs = re.search(r"var servs=(.+)", configjs).group(1)
-	servs = eval(servs)
+	m = re.search(r"自动|自動", configjs)
+	s = balance(configjs, m.start(), "[", "]")
+	servs = eval(s)
 	servs = [host["h"] for category in servs for host in category["hosts"]]
 	
 	global servers
