@@ -2,7 +2,6 @@
 
 import re
 import time
-import imghdr
 from contextlib import contextmanager
 from pprint import pformat
 from threading import Lock
@@ -174,9 +173,6 @@ def guess_encoding(r):
 def _get_ext(r):
 	"""Get file extension"""
 	b = r.content
-	ext = imghdr.what("", b)
-	if ext:
-		return "." + ext
 
 	# imghdr issue: http://bugs.python.org/issue16512
 	if b[:2] == b"\xff\xd8":

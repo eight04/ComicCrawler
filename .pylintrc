@@ -17,6 +17,7 @@ disable=
 	global-statement,
 	inconsistent-return-statements,
 	missing-docstring, multiple-imports,
+  missing-final-newline,
 	redefined-outer-name, redefined-builtin,
   trailing-newlines,
 	trailing-whitespace,
