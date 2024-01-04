@@ -376,6 +376,7 @@ Changelog
 - 2024.1.4
 
   - Fix: vm error in seemh.
+  - Change: drop imghdr.
 
 - 2023.12.24
 
