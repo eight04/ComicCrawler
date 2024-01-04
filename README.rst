@@ -373,6 +373,10 @@ Todos
 Changelog
 ---------
 
+- 2024.1.4
+
+  - Fix: vm error in seemh.
+
 - 2023.12.24
 
   - Fix: bili, cartoonmad, seemh module.
