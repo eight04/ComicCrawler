@@ -33,7 +33,8 @@ class LZString:
 			return
 		cryptojs = re.search(r'src="([^"]+?/crypt_\w+?\.js)"', html).group(1)
 		cryptojs = grabhtml(urljoin(url, cryptojs), referer=url)
-		self.vm = VM(f"window = self; {cryptojs}")
+		self.vm = VM(f"window = self; {cryptojs}; delete String.prototype.splic;")
+		self.vm.create()
 
 	def decompress_from_base64(self, data):
 		return self.vm.call("LZString.decompressFromBase64", data)
