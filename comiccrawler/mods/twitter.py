@@ -79,19 +79,34 @@ def get_episodes(html, url):
 				
 def tweet_result_to_episode(tweet_result):
 	try:
-		all_media = tweet_result["legacy"]["entities"]["media"] + tweet_result["legacy"]["extended_entities"]["media"]
+		legacy = tweet_result["legacy"]
+	except KeyError:
+		legacy = tweet_result["tweet"]["legacy"]
+	
+	try:
+		all_media = legacy["entities"]["media"] + legacy["extended_entities"]["media"]
 	except KeyError:
 		return None
 	imgs = [find_media_source(m) for m in all_media]
 	imgs = list(OrderedDict.fromkeys(imgs).keys()) # remove dup
 	result = None
+
 	try:
 		result = tweet_result["legacy"]["retweeted_status_result"]["result"]
 	except KeyError:
 		result = tweet_result
-	
-	screen_name = result["core"]["user_results"]["result"]["legacy"]["screen_name"]
-	id_str = result["legacy"]["id_str"]	
+	try:
+		core = result["core"]
+	except KeyError:
+		core = result["tweet"]["core"]
+	screen_name = core["user_results"]["result"]["legacy"]["screen_name"]
+
+	try:
+		legacy = result["legacy"]
+	except KeyError:
+		legacy = result["tweet"]["legacy"]
+	id_str = legacy["id_str"]	
+
 	ep_url = f"https://twitter.com/{screen_name}/status/{id_str}"
 	
 	return Episode(
