@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 
 from ..core import Episode
 
-domain = ["kemono.party"]
+domain = ["kemono.party", "kemono.su"]
 name = "Kemono"
 noepfolder = True
 
