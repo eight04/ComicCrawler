@@ -3,6 +3,7 @@
 import re
 from html import unescape
 from urllib.parse import urlparse, parse_qs, quote, urljoin
+# from itertools import chain
 
 from ..core import Episode
 from ..error import PauseDownloadError, SkipEpisodeError
@@ -18,31 +19,33 @@ config = {
 }
 autocurl = True
 
+def valid_id(pid):
+	if pid in ["upload", "update"]:
+		return False
+	return True
+
 def login_check(html):
-	if '<a href="/user/login">' in html:
-		raise PauseDownloadError("You didn't login")
+	match = re.search(r"'setUserId', '([^']+')", html)
+	if not match:
+		raise PauseDownloadError("Not logged in")
 
 def get_title(html, url):
 	title = re.search(r"<title>/?(.+?) \|", html).group(1)
-	return "[sankaku] " + title
+	return "[sankaku] " + unescape(title)
 	
 next_page_cache = {}
 
 def get_episodes(html, url):
 	login_check(html)
 	s = []
-	pid = None
-	for m in re.finditer(r'href="(/(?:[^/]*/)?post/show/(\d+))"', html):
+
+	for m in re.finditer(r'href="([^"]*posts/([^"]+))', html):
 		ep_url, pid = m.groups()
+		if not valid_id(pid):
+			continue
 		e = Episode(pid, urljoin(url, ep_url))
 		s.append(e)
 	
-	if len(s) > 1:
-		# breakpoint()
-		tags = parse_qs(urlparse(url).query)["tags"][0]
-		tags = quote(tags)
-		next_page_cache[url] = f"https://chan.sankakucomplex.com/?tags={tags}&next={pid}"
-		
 	return s[::-1]
 
 def get_images(html, url):
@@ -57,6 +60,11 @@ def get_images(html, url):
 	return [urljoin(url, unescape(result))]
 
 def get_next_page(html, url):
-	if url in next_page_cache:
-		return next_page_cache.pop(url)
+	match = re.search('next-page-url="([^"]+)"', html)
+	if match:
+		u = unescape(unescape(match.group(1)))
+		return urljoin(url, u)
+
+def get_next_image_page(html, url):
+	pass
 		
