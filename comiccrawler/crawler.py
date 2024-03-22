@@ -1,7 +1,10 @@
 import hashlib
 import json
 import traceback
+from pathlib import Path
+
 from worker import WorkerExit, sleep
+from requests.exceptions import ReadTimeout
 
 from .save_path import SavePath
 from .module_grabber import ModuleGrabber
@@ -42,7 +45,9 @@ class Crawler:
 		self.images = None
 		self.image_bin = None
 		self.image_ext = None
-		self.filename = None
+		self.tempfile = None
+		self.tempfile_complete = False
+		self.support_range = False
 		
 	def init(self):
 		if not self.ep.current_url:
@@ -78,11 +83,22 @@ class Crawler:
 			
 	def download_image(self):
 		"""Download image"""
+		if not self.image:
+			raise ValueError("No image to download")
+
 		if self.image.url:
+			self.tempfile = self.savepath.full_fn(self.get_filename(), ".part")
+			def on_opened(r):
+				self.support_range = r.headers.get("Accept-Ranges") == "bytes"
 			result = self.downloader.img(
 				self.image.url,
-				referer=None if getattr(self.mod, "no_referer", False) else self.ep.current_url
+				referer=None if getattr(self.mod, "no_referer", False) else self.ep.current_url,
+				# FIXME: doesn't work with dynamic filename if redirected
+				tempfile=self.tempfile,
+				range=self.support_range,
+				on_opened=on_opened
 			)
+			self.tempfile_complete = True
 				
 			if result.response.history:
 				self.handle_redirect(result.response)
@@ -90,6 +106,7 @@ class Crawler:
 			# redirected and url changed
 			if result.response.history and not self.image.static_filename:
 				self.image.filename = url_extract_filename(result.response.url)
+
 			bin = result.bin
 			ext = result.ext
 		else:
@@ -113,6 +130,8 @@ class Crawler:
 	def handle_image(self):
 		"""Post processing"""
 		if hasattr(self.mod, "imagehandler"):
+			if not self.image_bin and self.tempfile_complete:
+				self.image_bin = content_read(self.tempfile, raw=True)
 			self.image_ext, self.image_bin = self.mod.imagehandler(
 				self.image_ext, self.image_bin)
 
@@ -121,18 +140,33 @@ class Crawler:
 		if getattr(self.mod, "circular", False):
 			if not self.checksums:
 				self.checksums = set()
-				path_each(
-					self.savepath.parent(),
-					lambda file: self.checksums.add(get_file_checksum(file))
-				)
+				for file in Path(self.savepath.parent()).iterdir():
+					if not file.is_file():
+						continue
+					if file.suffix not in VALID_FILE_TYPES:
+						continue
+					self.checksums.add(get_file_checksum(file))
 
-			checksum = get_checksum(self.image_bin)
+			if not self.image_bin and self.tempfile_complete:
+				checksum = get_file_checksum(self.tempfile)
+			else:
+				checksum = get_checksum(self.image_bin)
+
 			if checksum in self.checksums:
+				if self.tempfile:
+					Path(self.tempfile).unlink(True)
 				raise LastPageError
 			self.checksums.add(checksum)
+
+		if not self.image_ext:
+			raise ValueError("No image extension")
 				
 		try:
-			content_write(self.savepath.full_fn(self.get_filename(), self.image_ext), self.image_bin)
+			output = self.savepath.full_fn(self.get_filename(), self.image_ext)
+			if self.tempfile:
+				Path(self.tempfile).rename(output)
+			else:
+				content_write(output, self.image_bin)
 		except OSError as err:
 			traceback.print_exc()
 			raise PauseDownloadError("Failed to write file!") from err
@@ -146,6 +180,12 @@ class Crawler:
 		self.ep.current_url = next_page
 		self.ep.current_page = 1
 		
+		self.image_bin = None
+		self.image_ext = None
+		self.tempfile = None
+		self.tempfile_complete = False
+		self.support_range = False
+
 		self.init_images()
 
 	def next_image(self):
@@ -220,7 +260,9 @@ def get_checksum(b):
 	return hashlib.md5(b).hexdigest() # nosec
 
 def get_file_checksum(file):
-	return get_checksum(content_read(file, raw=True))
+	with Path(file).open("rb") as f:
+		digest = hashlib.file_digest(f, "md5")
+		return digest.hexdigest()
 
 def download(mission, savepath):
 	"""Download mission to savepath."""
@@ -337,7 +379,7 @@ def crawlpage(crawler):
 
 	error_loop(download, download_error)
 
-def error_loop(process, handle_error=None, limit=3):
+def error_loop(process, handle_error=None, limit=5):
 	"""Loop process until error. Has handle error limit."""
 	errorcount = 0
 	while True:
@@ -345,6 +387,7 @@ def error_loop(process, handle_error=None, limit=3):
 			process()
 		except Exception as er: # pylint: disable=broad-except
 			traceback.print_exc()
+			# FIXME: don't increase error count if some bytes are actually downloaded
 			errorcount += 1
 			if errorcount >= limit:
 				raise SkipEpisodeError(always=False) from None

@@ -14,7 +14,7 @@ def dump(html):
 
 def extract_curl(cmd):
 	if not cmd:
-		return
+		raise ValueError("Empty curl")
 	try:
 		context = uncurl.parse_context(cmd)
 	except SystemExit:

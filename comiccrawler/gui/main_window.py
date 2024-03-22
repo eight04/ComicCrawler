@@ -11,6 +11,7 @@ from tkinter import ttk, font, messagebox
 
 import desktop
 import worker
+import yt_dlp.cookies
 
 from ..mods import list_domain, get_module, load_config
 from ..config import setting, config
@@ -24,6 +25,7 @@ from ..download_manager import download_manager
 from ..mission_manager import mission_manager
 from ..channel import download_ch, mission_ch, message_ch
 from ..episode_loader import load_episodes, edit_mission_id
+from ..session_manager import session_manager
 
 from .table import Table
 from .dialog import Dialog
@@ -503,6 +505,10 @@ class MainWindow(ViewMixin, EventMixin):
 		self.register_listeners()
 		
 		printer.add_listener(self.sp_callback)
+
+		# FIXME
+		jar = yt_dlp.cookies.extract_cookies_from_browser("firefox", "p5cq5ia6.nightly")
+		session_manager.set_default_cookie(jar)
 
 		if (setting.getboolean("libraryautocheck") and
 			time() - setting.getfloat("lastcheckupdate", 0) > setting.getfloat("autocheck_interval") * 60 * 60):
