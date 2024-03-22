@@ -4,14 +4,13 @@ import traceback
 from pathlib import Path
 
 from worker import WorkerExit, sleep
-from requests.exceptions import ReadTimeout
 
 from .save_path import SavePath
 from .module_grabber import ModuleGrabber
 from .image import Image
 from .error import LastPageError, PauseDownloadError, SkipEpisodeError, is_http, SkipPageError, ComicCrawlerError
 
-from .io import path_each, content_read, content_write
+from .io import content_read, content_write
 from .util import url_extract_filename, debug_log
 from .channel import download_ch, mission_ch
 from .safeprint import print

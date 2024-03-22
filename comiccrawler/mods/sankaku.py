@@ -2,8 +2,7 @@
 
 import re
 from html import unescape
-from urllib.parse import urlparse, parse_qs, quote, urljoin
-# from itertools import chain
+from urllib.parse import urljoin
 
 from ..core import Episode
 from ..error import PauseDownloadError, SkipEpisodeError

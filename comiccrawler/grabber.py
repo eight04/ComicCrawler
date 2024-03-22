@@ -7,6 +7,7 @@ from pprint import pformat
 from threading import Lock
 from urllib.parse import quote, urlsplit, urlunsplit
 from mimetypes import guess_extension
+from pathlib import Path
 import socket
 
 import enlighten
@@ -158,7 +159,7 @@ def guess_encoding(r):
 			encoding = "gbk"
 		r.encoding = encoding
 
-def _get_ext(r, b):
+def _get_ext(r, b, tempfile):
 	"""Get file extension"""
 	# FIXME: should we read the disk and guess the extension?
 	if b:
@@ -188,9 +189,12 @@ def _get_ext(r, b):
 			mime = None
 
 	# FIXME: should we read b from disk?
-	if not mime and b:
-		filename = urlsplit(r.url).path
-		mime = puremagic.from_string(b, mime=True, filename=filename)
+	if not mime:
+		if b:
+			filename = urlsplit(r.url).path
+			mime = puremagic.from_string(b, mime=True, filename=filename)
+		elif tempfile:
+			mime = puremagic.from_file(tempfile, mime=True)
 
 	if mime:
 		ext = guess_extension(mime)
@@ -201,9 +205,9 @@ def _get_ext(r, b):
 		if match:
 			return f".{match.group(1)}"
 
-def get_ext(r, b):
+def get_ext(r, b, tempfile):
 	"""Get file extension"""
-	ext = _get_ext(r, b)
+	ext = _get_ext(r, b, tempfile)
 	# some mapping
 	if ext in (".jpeg", ".jpe"):
 		return ".jpg"
@@ -217,7 +221,7 @@ def grabimg(*args, on_opened=None, tempfile=None, range=False, header=None, **kw
 			loaded = Path(tempfile).stat().st_size
 		except FileNotFoundError:
 			loaded = 0
-		if not header
+		if not header:
 			header = {}
 		header["Range"] = f"bytes={loaded}-"
 	else:
@@ -244,9 +248,8 @@ def grabimg(*args, on_opened=None, tempfile=None, range=False, header=None, **kw
 					for chunk in r.iter_content(chunk_size=None):
 						content_list.append(chunk)
 						counter.update(len(chunk))
-			r._content = b"".join(content_list) # pylint: disable=protected-access
 	except WorkerExit:
-		socket.close(r.raw._fp.fileno())
+		socket.close(r.raw._fp.fileno()) # pylint: disable=protected-access
 		r.raw.release_conn()
 		raise
 	b = None
@@ -257,5 +260,5 @@ def grabimg(*args, on_opened=None, tempfile=None, range=False, header=None, **kw
 class ImgResult:
 	def __init__(self, response, tempfile=None, b=None):
 		self.response = response
-		self.ext = get_ext(response, b)
+		self.ext = get_ext(response, b, tempfile)
 		self.bin = b
