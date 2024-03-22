@@ -64,7 +64,7 @@ def url_extract_filename(url):
 def clean_tags(html):
 	html = re.sub("<script.+?</script>", "", html)
 	html = re.sub("<.+?>", "", html)
-	html = re.sub("\s+", " ", html)
+	html = re.sub(r"\s+", " ", html)
 	return html.strip()
 
 @total_ordering	

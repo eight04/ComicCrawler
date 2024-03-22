@@ -14,17 +14,12 @@ import enlighten
 import requests
 import puremagic
 from worker import WorkerExit, async_, await_, sleep, Defer
+from urllib3.util import is_fp_closed
 
 from .config import setting
 from .io import content_write
 from .profile import get as profile
 from .session_manager import session_manager
-
-default_header = {
-	"User-Agent": "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36",
-	"Accept-Language": "zh-tw,zh;q=0.8,en-us;q=0.5,en;q=0.3",
-	"Accept-Encoding": "gzip, deflate"
-	}
 
 cooldown = {}
 grabber_pool = {}
@@ -213,6 +208,17 @@ def get_ext(r, b, tempfile):
 		return ".jpg"
 	return ext
 
+def iter_content(r):
+	"""Iterate the content of the response."""
+	# FIXME: requests streaming is so broken wtf
+	# https://github.com/psf/requests/issues/5536
+	# https://github.com/urllib3/urllib3/issues/2123
+	if r.raw.chunked and r.raw.supports_chunked_reads():
+		yield from r.raw.read_chunked(decode_content=True)
+	else:
+		while not is_fp_closed(r.raw._fp) or len(r.raw._decoded_buffer) > 0: # pylint: disable=protected-access
+			yield r.raw.read1(decode_content=True)
+
 def grabimg(*args, on_opened=None, tempfile=None, range=False, header=None, **kwargs):
 	"""Grab the image. Return ImgResult"""
 	kwargs["stream"] = True
@@ -229,10 +235,10 @@ def grabimg(*args, on_opened=None, tempfile=None, range=False, header=None, **kw
 	r = grabber(*args, header=header, **kwargs)
 	if on_opened:
 		on_opened(r)
-	if range and r.status_code != 206:
+	if r.status_code != 206:
 		loaded = 0
-		Path(tempfile).unlink(missing_ok=True)
-		print(f"WARNING: server does not support range request: {r.url}")
+		if tempfile:
+			Path(tempfile).unlink(missing_ok=True)
 	total = int(r.headers.get("Content-Length", "0")) or None
 	content_list = []
 	try:
@@ -241,11 +247,11 @@ def grabimg(*args, on_opened=None, tempfile=None, range=False, header=None, **kw
 			with pb_manager.counter(total=total, unit="b", leave=False) as counter:
 				if tempfile:
 					with open(tempfile, "ab") as f:
-						for chunk in r.iter_content(chunk_size=None):
+						for chunk in iter_content(r):
 							f.write(chunk)
 							counter.update(len(chunk))
 				else:
-					for chunk in r.iter_content(chunk_size=None):
+					for chunk in iter_content(r):
 						content_list.append(chunk)
 						counter.update(len(chunk))
 	except WorkerExit:

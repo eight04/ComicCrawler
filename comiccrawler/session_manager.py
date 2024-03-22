@@ -6,6 +6,12 @@ from requests import Session
 
 from .util import extract_curl
 
+default_header = {
+	"User-Agent": "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36",
+	"Accept-Language": "zh-tw,zh;q=0.8,en-us;q=0.5,en;q=0.3",
+	"Accept-Encoding": "gzip, deflate"
+	}
+
 def default_key(url: str) -> tuple:
 	r = urlparse(url)
 	return (r.scheme, r.netloc)
@@ -28,10 +34,10 @@ class SessionManager:
 
 			if key not in self.sessions:
 				self.sessions[key] = Session()
-
-			if self.default_jar:
-				# FIXME: do we have to check cookies' domain?
-				self.sessions[key].cookies.update(self.default_jar)
+				self.sessions[key].headers.update(default_header)
+				if self.default_jar:
+					# FIXME: do we have to check cookies' domain?
+					self.sessions[key].cookies.update(self.default_jar)
 
 			return self.sessions[key]
 
