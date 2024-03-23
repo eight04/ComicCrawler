@@ -2,6 +2,7 @@ import hashlib
 import json
 import traceback
 from pathlib import Path
+from urllib.parse import urlparse
 
 from worker import WorkerExit, sleep
 
@@ -86,16 +87,19 @@ class Crawler:
 
 		if self.image.url:
 			self.tempfile = self.savepath.full_fn(self.get_filename(), ".part")
+
+			def on_opened(response):
+				if response.history:
+					self.handle_redirect(response)
+
 			result = self.downloader.img(
 				self.image.url,
 				referer=None if getattr(self.mod, "no_referer", False) else self.ep.current_url,
 				# FIXME: doesn't work with dynamic filename if redirected
 				tempfile=self.tempfile,
+				on_opened=on_opened
 			)
 			self.tempfile_complete = True
-				
-			if result.response.history:
-				self.handle_redirect(result.response)
 				
 			# redirected and url changed
 			if result.response.history and not self.image.static_filename:
@@ -212,7 +216,11 @@ class Crawler:
 		if self.ep.image:
 			self.html = True
 		else:
-			self.html = self.downloader.html(self.ep.current_url, referer=self.mission.url)
+			r = urlparse(self.mission.url)
+			self.html = self.downloader.html(self.ep.current_url, header={
+				"Referer": self.mission.url,
+				"Origin": f"{r.scheme}://{r.netloc}"
+				})
 		
 	def get_images(self):
 		"""Get images"""

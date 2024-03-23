@@ -127,8 +127,8 @@ class ModLoader:
 			if hasattr(mod, "load_config"):
 				mod.load_config()
 
-			if getattr(mod, "autocurl", False):
-				setup_curl(mod)
+			# if getattr(mod, "autocurl", False):
+			# 	setup_curl(mod)
 	
 mod_loader = ModLoader()
 list_domain = mod_loader.list_domain

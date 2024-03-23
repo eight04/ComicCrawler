@@ -16,6 +16,7 @@ import requests
 import puremagic
 from worker import WorkerExit, async_, await_, sleep, Defer
 from urllib3.util import is_fp_closed
+from urllib3.exceptions import IncompleteRead
 
 from .config import setting
 from .io import content_write
@@ -110,7 +111,7 @@ def do_request(s, url, proxies, retry, **kwargs):
 		with get_request_lock(url):
 			r = s.request(kwargs.pop("method", "GET"), url, timeout=(22, 60),
 				 proxies=proxies, **kwargs)
-		grabber_log(url, r.url, r.request.headers, r.headers)
+		grabber_log(url, r.url, r.status_code, r.request.headers, r.headers)
 
 		if r.status_code == 200:
 			content_length = r.headers.get("Content-Length")
@@ -256,20 +257,26 @@ def grabimg(*args, on_opened=None, tempfile=None, header=None, **kwargs):
 	try:
 		@await_
 		def _():
+			nonlocal loaded
 			with pb_manager.counter(total=total, unit="b", leave=False) as counter:
 				if tempfile:
+					Path(tempfile).parent.mkdir(parents=True, exist_ok=True)
 					with open(tempfile, "ab") as f:
 						for chunk in iter_content(r):
 							f.write(chunk)
 							counter.update(len(chunk))
+							loaded += len(chunk)
 				else:
 					for chunk in iter_content(r):
 						content_list.append(chunk)
 						counter.update(len(chunk))
+						loaded += len(chunk)
 	except WorkerExit:
 		socket.close(r.raw._fp.fileno()) # pylint: disable=protected-access
 		r.raw.release_conn()
 		raise
+	if total and loaded < total:
+		raise IncompleteRead(loaded, total - loaded)
 	b = None
 	if content_list:
 		b = b"".join(content_list)

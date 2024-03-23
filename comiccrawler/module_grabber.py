@@ -35,6 +35,7 @@ class ModuleGrabber:
 
 	def get_cookie(self):
 		"""Return downloader cookie."""
+		return {}
 		cookie = getattr(self.mod, "cookie", {})
 		config = getattr(self.mod, "config", {})
 		

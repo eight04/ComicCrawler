@@ -1,6 +1,7 @@
 import re
 import time
 import traceback
+from urllib.parse import urlparse
 
 from worker import WorkerExit, sleep
 
@@ -136,7 +137,11 @@ class Analyzer:
 			url = next_url
 			print('Analyzing {}...'.format(url))
 			sleep(getattr(self.mission.module, "rest_analyze", 0))
-			self.html = self.grabber.html(url, retry=True)
+			r = urlparse(self.mission.url)
+			self.html = self.grabber.html(url, retry=True, header={
+				"Referer": self.mission.url,
+				"Origin": f"{r.scheme}://{r.netloc}"
+				})
 		
 		has_new_ep = False
 		for ep in reversed(new_eps):

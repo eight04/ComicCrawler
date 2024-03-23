@@ -5,6 +5,8 @@ https://kemono.party/{service}/user/{id}
 import re
 from urllib.parse import urljoin
 
+from comiccrawler.error import SkipEpisodeError
+
 from ..core import Episode
 
 domain = ["kemono.party", "kemono.su"]
@@ -32,6 +34,8 @@ def get_images(html, url):
 	result = []
 	for match in re.finditer(r'<a[^>]*href="([^"]*)"\s+download', html):
 		result.append(match.group(1))
+	if not result:
+		raise SkipEpisodeError(True)
 	return result
 
 def get_next_page(html, url):

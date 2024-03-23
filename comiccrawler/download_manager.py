@@ -13,7 +13,7 @@ from threading import Lock
 from os.path import join as path_join
 from time import time
 
-from worker import Worker, current, await_, create_worker, async_
+from worker import Worker, current, await_, create_worker, async_, sleep
 
 from .analyzer import Analyzer
 from .safeprint import print
@@ -188,7 +188,7 @@ class DownloadManager:
 			
 		if isinstance(missions, str):
 			missions = [
-				create_mission(url=m) for m in re.split("\s+", missions) if m]
+				create_mission(url=m) for m in re.split(r"\s+", missions) if m]
 		missions = deque(missions)
 				
 		def gen_missions():
