@@ -1,14 +1,15 @@
 #! python3
 
-import re
-import time
 from contextlib import contextmanager
+from email.message import EmailMessage
+from mimetypes import guess_extension
+from pathlib import Path
 from pprint import pformat
 from threading import Lock
 from urllib.parse import quote, urlsplit, urlunsplit
-from mimetypes import guess_extension
-from pathlib import Path
+import re
 import socket
+import time
 
 import enlighten
 import requests
@@ -154,6 +155,12 @@ def guess_encoding(r):
 			encoding = "gbk"
 		r.encoding = encoding
 
+def get_filename_from_response(r):
+	msg = EmailMessage()
+	for key, value in r.headers.items():
+		msg.add_header(key, value)
+	return msg.get_filename()
+
 def _get_ext(r, b, tempfile):
 	"""Get file extension"""
 	# FIXME: should we read the disk and guess the extension?
@@ -175,6 +182,10 @@ def _get_ext(r, b, tempfile):
 		if (b[:16] == b"\x30\x26\xB2\x75\x8E\x66\xCF\x11"
 		 b"\xA6\xD9\x00\xAA\x00\x62\xCE\x6C"):
 			return ".wmv"
+
+	if filename := get_filename_from_response(r):
+		if suffix := Path(filename).suffix:
+			return suffix
 
 	mime = None
 	if "Content-Type" in r.headers:
@@ -219,23 +230,24 @@ def iter_content(r):
 		while not is_fp_closed(r.raw._fp) or len(r.raw._decoded_buffer) > 0: # pylint: disable=protected-access
 			yield r.raw.read1(decode_content=True)
 
-def grabimg(*args, on_opened=None, tempfile=None, range=False, header=None, **kwargs):
+def grabimg(*args, on_opened=None, tempfile=None, header=None, **kwargs):
 	"""Grab the image. Return ImgResult"""
 	kwargs["stream"] = True
-	if range and tempfile:
+	if tempfile:
 		try:
 			loaded = Path(tempfile).stat().st_size
 		except FileNotFoundError:
 			loaded = 0
-		if not header:
-			header = {}
-		header["Range"] = f"bytes={loaded}-"
+		if loaded:
+			if not header:
+				header = {}
+			header["Range"] = f"bytes={loaded}-"
 	else:
 		loaded = 0
 	r = grabber(*args, header=header, **kwargs)
 	if on_opened:
 		on_opened(r)
-	if r.status_code != 206:
+	if r.status_code == 200:
 		loaded = 0
 		if tempfile:
 			Path(tempfile).unlink(missing_ok=True)

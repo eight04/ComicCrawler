@@ -17,7 +17,7 @@ from .safeprint import print
 
 VALID_FILE_TYPES = (
 	# images
-	".jpg", ".jpeg", ".gif", ".png", ".svg", ".psd", ".webp", ".bmp",
+	".jpg", ".jpeg", ".gif", ".png", ".svg", ".psd", ".webp", ".bmp", ".clip",
 	# zips
 	".zip", ".rar",
 	# videos
@@ -46,7 +46,6 @@ class Crawler:
 		self.image_ext = None
 		self.tempfile = None
 		self.tempfile_complete = False
-		self.support_range = False
 		
 	def init(self):
 		if not self.ep.current_url:
@@ -87,15 +86,11 @@ class Crawler:
 
 		if self.image.url:
 			self.tempfile = self.savepath.full_fn(self.get_filename(), ".part")
-			def on_opened(r):
-				self.support_range = r.headers.get("Accept-Ranges") == "bytes"
 			result = self.downloader.img(
 				self.image.url,
 				referer=None if getattr(self.mod, "no_referer", False) else self.ep.current_url,
 				# FIXME: doesn't work with dynamic filename if redirected
 				tempfile=self.tempfile,
-				range=self.support_range,
-				on_opened=on_opened
 			)
 			self.tempfile_complete = True
 				
@@ -183,7 +178,6 @@ class Crawler:
 		self.image_ext = None
 		self.tempfile = None
 		self.tempfile_complete = False
-		self.support_range = False
 
 		self.init_images()
 
