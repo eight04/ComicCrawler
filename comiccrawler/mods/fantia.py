@@ -1,11 +1,13 @@
 #! python3
 import re
 from html import unescape
+from urllib.parse import urlparse
 
 from ..episode import Episode
 from ..grabber import grabber, grabhtml
 from ..url import urljoin
 from ..util import clean_tags, extract_curl
+from ..session_manager import session_manager
 
 domain = ["fantia.jp"]
 name = "fantia"
@@ -16,8 +18,10 @@ config = {
 noepfolder = True
 autocurl = True
 
-next_page_cache = {}
-pin_entry_cache = {}
+def session_key(url):
+	r = urlparse(url)
+	if r.path.startswith("/api"):
+		return (r.scheme, r.netloc, "/api")
 
 def get_title(html, url):
 	name = re.search('<h1 class="fanclub-name">(.+?)</h1', html).group(1)
@@ -33,15 +37,23 @@ def curl_to_kwargs(curl):
 
 def get_episodes(html, url):
 	result = []
-	for match in re.finditer('<a[^>]+href="(/posts/(\d+))"[^>]+title="([^"]+)', html):
+	for match in re.finditer(r'<a[^>]+href="(/posts/(\d+))"[^>]+title="([^"]+)', html):
 		ep_url, ep_id, ep_title = match.groups()
 		title = f"{ep_id} - {unescape(ep_title)}"
 		result.append(Episode(url=urljoin(url, ep_url), title=title))
 	return result[::-1]
 
 def get_images(html, url):
-	post_id = re.search("posts/(\d+)", url).group(1)
-	result = grabber(f"https://fantia.jp/api/v1/posts/{post_id}", **curl_to_kwargs(config["api_curl"])).json()
+	post_id = re.search(r"posts/(\d+)", url).group(1)
+
+	csrf_token = re.search('csrf-token" content="([^"]+)', html).group(1)
+	session = session_manager.get("https://fantia.jp/api/v1/posts/")
+	session.headers.update({
+		"X-CSRF-Token": csrf_token,
+		"X-Requested-With": "XMLHttpRequest",
+		})
+
+	result = grabber(f"https://fantia.jp/api/v1/posts/{post_id}", referer=url).json()
 	thumb = result["post"].get("thumb", {}).get("original")
 	if thumb:
 		yield thumb
