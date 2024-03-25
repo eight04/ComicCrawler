@@ -400,6 +400,9 @@ Changelog
 - 2024.3.25
 
   - Fix: skip episodes without images in kemono.
+  - Fix: sankaku.
+  - Fix: some posts are missing in twitter.
+  - Add: new domain kemono.su.
   - Add: .clip to valid file extensions.
   - Add: ability to write partial data to disk.
   - Add: browser and browser_profile settings which are used to extract cookies.
