@@ -51,7 +51,7 @@ class Config:
 		
 		self.config['DEFAULT']["savepath"] = normpath(self.config['DEFAULT']["savepath"])
 
-		if self.config["default"]["browser"]:
+		if self.config["DEFAULT"]["browser"]:
 			jar = yt_dlp.cookies.extract_cookies_from_browser(
 				self.config["DEFAULT"]["browser"], self.config["DEFAULT"]["browser_profile"])
 			session_manager.set_default_cookie(jar)

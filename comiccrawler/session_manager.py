@@ -7,7 +7,7 @@ from requests import Session
 from .util import extract_curl
 
 default_header = {
-	"User-Agent": "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36",
+	"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0",
 	"Accept-Language": "zh-tw,zh;q=0.8,en-us;q=0.5,en;q=0.3",
 	"Accept-Encoding": "gzip, deflate"
 	}

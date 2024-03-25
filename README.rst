@@ -392,14 +392,14 @@ Changelog
 
 - 2024.3.25
 
-  - Change: set referer and origin header in analyzer.
-  - Change: wait 3 seconds after analyze error.
+  - Fix: skip episodes without images in kemono.
   - Add: .clip to valid file extensions.
   - Add: ability to write partial data to disk.
   - Add: browser and browser_profile settings which are used to extract cookies.
-  - Change: skip episodes without images in kemono.
   - Add: after_request, session_key hooks.
   - Add: session_manager for better control of api sessions.
+  - Change: set referer and origin header in analyzer.
+  - Change: wait 3 seconds after analyze error.
 
 - 2024.1.4
 

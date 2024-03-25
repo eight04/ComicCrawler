@@ -6,8 +6,8 @@ from urllib.parse import urlparse
 from ..episode import Episode
 from ..grabber import grabber, grabhtml
 from ..url import urljoin
-from ..util import clean_tags, extract_curl
 from ..session_manager import session_manager
+from ..util import clean_tags
 
 domain = ["fantia.jp"]
 name = "fantia"
@@ -27,14 +27,6 @@ def get_title(html, url):
 	name = re.search('<h1 class="fanclub-name">(.+?)</h1', html).group(1)
 	return f"[fantia] {clean_tags(name)}"
 	
-def curl_to_kwargs(curl):
-	kwargs = {}
-	_url, header, cookie = extract_curl(curl)
-	# NOTE: method-level header/cookies won't be stored into session
-	kwargs["headers"] = header
-	kwargs["cookies"] = cookie
-	return kwargs
-
 def get_episodes(html, url):
 	result = []
 	for match in re.finditer(r'<a[^>]+href="(/posts/(\d+))"[^>]+title="([^"]+)', html):

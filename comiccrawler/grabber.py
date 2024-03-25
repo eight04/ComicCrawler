@@ -229,7 +229,10 @@ def iter_content(r):
 		yield from r.raw.read_chunked(decode_content=True)
 	else:
 		while not is_fp_closed(r.raw._fp) or len(r.raw._decoded_buffer) > 0: # pylint: disable=protected-access
-			yield r.raw.read1(decode_content=True)
+			b = r.raw.read1(decode_content=True)
+			yield b
+			if not b:
+				sleep(0.1)
 
 def grabimg(*args, on_opened=None, tempfile=None, header=None, **kwargs):
 	"""Grab the image. Return ImgResult"""
