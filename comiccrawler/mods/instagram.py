@@ -5,12 +5,12 @@ https://www.instagram.com/haneame_cos/?hl=zh-tw
 import re
 import json
 from html import unescape
+from urllib.parse import urlparse
 
 from ..core import Episode
 from ..error import is_http, SkipEpisodeError, SkipPageError
 from ..url import update_qs
-from ..grabber import grabber
-from ..util import extract_curl
+from ..session_manager import session_manager
 
 domain = ["www.instagram.com"]
 name = "Instagram"
@@ -18,26 +18,31 @@ noepfolder = True
 
 cache_next_page = {}
 config = {
-	"curl": "",
-	"api_curl": ""
+	"curl": r"""curl 'https://www.instagram.com/p/foo/' --compressed -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8' -H 'Accept-Language: zh-TW,en-US;q=0.7,en;q=0.3' -H 'Accept-Encoding: gzip, deflate, br' -H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -H 'Sec-Fetch-Dest: document' -H 'Sec-Fetch-Mode: navigate' -H 'Sec-Fetch-Site: none' -H 'Sec-Fetch-User: ?1' -H 'Priority: u=4' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache'""",
+	"curl_api": ""
 }
 autocurl = True
+
+def session_key(url):
+	r = urlparse(url)
+	if "api/v1" in r.path:
+		return (r.scheme, r.netloc, "api")
+
+def init_api_session(html):
+	session = session_manager.get("https://www.instagram.com/api/v1/feed")
+	if "X-CSRFToken" in session.headers:
+		return
+	token = session.cookies.get("csrftoken", domain=".instagram.com") or session.cookies.get("csrftoken")
+	app_id = re.search(r'"APP_ID":"([^"]+)', html).group(1)
+	session.headers.update({
+		"X-CSRFToken": token,
+		"X-IG-App-ID": app_id,
+		})
 
 def get_title(html, url):
 	title = re.search("<title>([^<]+)", html).group(1)
 	return "[instagram] {}".format(unescape(title).strip())
 	
-def grabhandler(grab_method, url, **kwargs):
-	if "api/v1" in url:
-		return grab_json(url, **kwargs)
-
-def grab_json(url, **kwargs):
-	_url, header, cookie = extract_curl(config["api_curl"])
-	# NOTE: method-level header/cookies won't be stored into session
-	kwargs["headers"] = header
-	kwargs["cookies"] = cookie
-	return grabber(url, **kwargs).json()
-
 def get_episodes_from_data(data):
 	user = data["user"]
 	timeline = user["edge_owner_to_timeline_media"]
@@ -56,12 +61,13 @@ def get_episodes(html, url):
 	if match := re.match(r"https://www\.instagram\.com/([^/]+)/", url):
 		username = match.group(1)
 		if username != "api":
+			init_api_session(html)
 			next_url = f"https://www.instagram.com/api/v1/feed/user/{username}/username/?count=12"
 			cache_next_page[url] = next_url
 			raise SkipPageError
 
 	if "api/v1/feed" in url:
-		body = html
+		body = json.loads(html)
 		result = []
 		for item in body["items"]:
 			result.append(Episode(
@@ -78,12 +84,12 @@ def get_episodes(html, url):
 	raise ValueError("unknown URL: {}".format(url))
 	
 def get_init_data(html, page):
-	shared_data = re.search("window\._sharedData = ([\s\S]+?);</script", html).group(1)
+	shared_data = re.search(r"window\._sharedData = ([\s\S]+?);</script", html).group(1)
 	shared_data = json.loads(shared_data)
 	return shared_data["entry_data"][page][0]["graphql"]
 	
 def get_extra_data(html):
-	text = re.search("window\.__additionalDataLoaded\('[^']+',(.*?)\);</script>", html).group(1)
+	text = re.search(r"window\.__additionalDataLoaded\('[^']+',(.*?)\);</script>", html).group(1)
 	return json.loads(text)
 
 def find_media(media):
@@ -92,7 +98,7 @@ def find_media(media):
 	return max(media["image_versions2"]["candidates"], key=lambda i: i["height"])["url"]
 
 def extract_json(html, filter=None):
-	for match in re.finditer(r'<script type="application/json"[^>]+>([^<]+)</script>', html):
+	for match in re.finditer(r'<script type="application/json"[^>]+>(.*?)</script>', html):
 		text = match.group(1)
 		if filter and not filter(text):
 			continue
@@ -112,6 +118,7 @@ def extract_json_value(data, key):
 			yield from extract_json_value(item, key)
 	
 def get_images(html, url):
+	# pid = re.search(r"https://www\.instagram\.com/p/([^/]+)/", url).group(1)
 	result = []
 	key = "xdt_api__v1__media__shortcode__web_info"
 	for data in extract_json(html, filter=lambda s: key in s):
@@ -121,10 +128,9 @@ def get_images(html, url):
 					result += [find_media(m) for m in item["carousel_media"]]
 				else:
 					result.append(find_media(item))
-	# FIXME: need a way to detect 404 page
-	if not result:
-		print("no image found")
-		raise SkipEpisodeError(always=True)
+	# FIXME: there is no way to distinguash between request error and 404
+	if "PolarisErrorRoot" in html:
+		raise SkipEpisodeError(always=False)
 	return result
 
 def get_next_page(html, url):

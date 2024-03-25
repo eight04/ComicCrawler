@@ -64,6 +64,7 @@ class BatchAnalyzer:
 				if self.stop_on_error and (not callable(self.stop_on_error) or self.stop_on_error(err)):
 					err.mission = mission
 					raise
+				sleep(3)
 			finally:
 				if self.on_item_finished:
 					self.on_item_finished(err, mission)

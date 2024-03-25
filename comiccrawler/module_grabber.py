@@ -2,6 +2,10 @@ from requests.utils import dict_from_cookiejar
 
 from .grabber import grabhtml, grabimg
 
+def purify_cookie(cookie):
+	"""Remove empty cookie value."""
+	return {key: value for key, value in cookie.items() if value and "請" not in value}
+
 class ModuleGrabber:
 	"""Bind grabber with module's header, cookie..."""
 	def __init__(self, mod):
@@ -16,7 +20,7 @@ class ModuleGrabber:
 	def grab(self, grab_method, url=None, **kwargs):
 		new_kwargs = {
 			"header": self.get_header(),
-			"cookie": self.get_cookie(),
+			"cookie": purify_cookie(self.get_cookie()),
 			"done": self.handle_grab,
 			"proxy": self.mod.config.get("proxy"),
 			"verify": self.mod.config.getboolean("verify", True)

@@ -1,6 +1,9 @@
 import hashlib
 import json
 import traceback
+from pathlib import Path
+from urllib.parse import urlparse
+
 from worker import WorkerExit, sleep
 
 from .save_path import SavePath
@@ -8,14 +11,15 @@ from .module_grabber import ModuleGrabber
 from .image import Image
 from .error import LastPageError, PauseDownloadError, SkipEpisodeError, is_http, SkipPageError, ComicCrawlerError
 
-from .io import path_each, content_read, content_write
-from .util import url_extract_filename, debug_log
+from .io import content_read, content_write
+from .util import url_extract_filename
 from .channel import download_ch, mission_ch
 from .safeprint import print
+from .logger import debug_log
 
 VALID_FILE_TYPES = (
 	# images
-	".jpg", ".jpeg", ".gif", ".png", ".svg", ".psd", ".webp", ".bmp",
+	".jpg", ".jpeg", ".gif", ".png", ".svg", ".psd", ".webp", ".bmp", ".clip",
 	# zips
 	".zip", ".rar",
 	# videos
@@ -42,7 +46,8 @@ class Crawler:
 		self.images = None
 		self.image_bin = None
 		self.image_ext = None
-		self.filename = None
+		self.tempfile = None
+		self.tempfile_complete = False
 		
 	def init(self):
 		if not self.ep.current_url:
@@ -78,18 +83,31 @@ class Crawler:
 			
 	def download_image(self):
 		"""Download image"""
+		if not self.image:
+			raise ValueError("No image to download")
+
 		if self.image.url:
+			self.tempfile = self.savepath.full_fn(self.get_filename(), ".part")
+
+			def on_opened(response):
+				if response.history:
+					self.handle_redirect(response)
+				if after_request := getattr(self.mod, "after_request", None):
+					after_request(self, response)
+
 			result = self.downloader.img(
 				self.image.url,
-				referer=None if getattr(self.mod, "no_referer", False) else self.ep.current_url
+				referer=None if getattr(self.mod, "no_referer", False) else self.ep.current_url,
+				# FIXME: doesn't work with dynamic filename if redirected
+				tempfile=self.tempfile,
+				on_opened=on_opened
 			)
-				
-			if result.response.history:
-				self.handle_redirect(result.response)
+			self.tempfile_complete = True
 				
 			# redirected and url changed
 			if result.response.history and not self.image.static_filename:
 				self.image.filename = url_extract_filename(result.response.url)
+
 			bin = result.bin
 			ext = result.ext
 		else:
@@ -113,6 +131,8 @@ class Crawler:
 	def handle_image(self):
 		"""Post processing"""
 		if hasattr(self.mod, "imagehandler"):
+			if not self.image_bin and self.tempfile_complete:
+				self.image_bin = content_read(self.tempfile, raw=True)
 			self.image_ext, self.image_bin = self.mod.imagehandler(
 				self.image_ext, self.image_bin)
 
@@ -121,18 +141,33 @@ class Crawler:
 		if getattr(self.mod, "circular", False):
 			if not self.checksums:
 				self.checksums = set()
-				path_each(
-					self.savepath.parent(),
-					lambda file: self.checksums.add(get_file_checksum(file))
-				)
+				for file in Path(self.savepath.parent()).iterdir():
+					if not file.is_file():
+						continue
+					if file.suffix not in VALID_FILE_TYPES:
+						continue
+					self.checksums.add(get_file_checksum(file))
 
-			checksum = get_checksum(self.image_bin)
+			if not self.image_bin and self.tempfile_complete:
+				checksum = get_file_checksum(self.tempfile)
+			else:
+				checksum = get_checksum(self.image_bin)
+
 			if checksum in self.checksums:
+				if self.tempfile:
+					Path(self.tempfile).unlink(True)
 				raise LastPageError
 			self.checksums.add(checksum)
+
+		if not self.image_ext:
+			raise ValueError("No image extension")
 				
 		try:
-			content_write(self.savepath.full_fn(self.get_filename(), self.image_ext), self.image_bin)
+			output = self.savepath.full_fn(self.get_filename(), self.image_ext)
+			if self.tempfile:
+				Path(self.tempfile).rename(output)
+			else:
+				content_write(output, self.image_bin)
 		except OSError as err:
 			traceback.print_exc()
 			raise PauseDownloadError("Failed to write file!") from err
@@ -146,6 +181,11 @@ class Crawler:
 		self.ep.current_url = next_page
 		self.ep.current_page = 1
 		
+		self.image_bin = None
+		self.image_ext = None
+		self.tempfile = None
+		self.tempfile_complete = False
+
 		self.init_images()
 
 	def next_image(self):
@@ -179,7 +219,11 @@ class Crawler:
 		if self.ep.image:
 			self.html = True
 		else:
-			self.html = self.downloader.html(self.ep.current_url, referer=self.mission.url)
+			r = urlparse(self.mission.url)
+			self.html = self.downloader.html(self.ep.current_url, header={
+				"Referer": self.mission.url,
+				"Origin": f"{r.scheme}://{r.netloc}"
+				})
 		
 	def get_images(self):
 		"""Get images"""
@@ -220,7 +264,10 @@ def get_checksum(b):
 	return hashlib.md5(b).hexdigest() # nosec
 
 def get_file_checksum(file):
-	return get_checksum(content_read(file, raw=True))
+	with Path(file).open("rb") as f:
+		# NOTE: this only works with python 3.11+
+		digest = hashlib.file_digest(f, "md5") # pylint: disable=no-member
+		return digest.hexdigest()
 
 def download(mission, savepath):
 	"""Download mission to savepath."""
@@ -337,7 +384,7 @@ def crawlpage(crawler):
 
 	error_loop(download, download_error)
 
-def error_loop(process, handle_error=None, limit=3):
+def error_loop(process, handle_error=None, limit=5):
 	"""Loop process until error. Has handle error limit."""
 	errorcount = 0
 	while True:
@@ -345,6 +392,7 @@ def error_loop(process, handle_error=None, limit=3):
 			process()
 		except Exception as er: # pylint: disable=broad-except
 			traceback.print_exc()
+			# FIXME: don't increase error count if some bytes are actually downloaded
 			errorcount += 1
 			if errorcount >= limit:
 				raise SkipEpisodeError(always=False) from None

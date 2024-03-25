@@ -13,21 +13,20 @@ from sys import version_info
 
 from ..config import config
 from ..profile import get as profile
-from ..grabber import cooldown, get_session
-from ..util import extract_curl
-from ..url import urlparse
+from ..grabber import cooldown
+from ..session_manager import session_manager
 
-def setup_curl(d):
-	for key, value in d.items():
-		if key.startswith("curl") and value:
-			url, headers, cookies = extract_curl(value)
-			netloc = urlparse(url).netloc
-			s = get_session(netloc)
-			for key in list(headers.keys()):
-				if key.startswith("If-"):
-					headers.pop(key)
-			s.headers.update(headers)
-			s.cookies.update(cookies)
+def setup_session(mod):
+	if getattr(mod, "autocurl", False):
+		for key, value in mod.config.items():
+			if key.startswith("curl") and value:
+				session_manager.update_by_curl(value)
+
+	# FIXME: we should assign module cookie to a session key instead of making it global
+	# if cookie := getattr(mod, "cookie", {}):
+	# 	for key, value in cookie.items():
+	# 		if value:
+	# 			session_manager.update_cookie(key, value)
 
 def import_module_file(ns, file):
 	# pylint: disable=import-outside-toplevel
@@ -77,6 +76,11 @@ class ModLoader:
 			for url in mod.domain:
 				self.domain_index[url] = mod
 			cooldown.update(getattr(mod, "grabber_cooldown", {}))
+
+		# build session key
+		for mod in self.mods:
+			if key_fn := getattr(mod, "session_key", None):
+				session_manager.add_session_key(key_fn)
 
 		# init config
 		for mod in self.mods:
@@ -130,8 +134,7 @@ class ModLoader:
 			if hasattr(mod, "load_config"):
 				mod.load_config()
 
-			if getattr(mod, "autocurl", False):
-				setup_curl(mod.config)
+			setup_session(mod)
 	
 mod_loader = ModLoader()
 list_domain = mod_loader.list_domain

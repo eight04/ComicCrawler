@@ -56,6 +56,8 @@ class SavePath:
 			def build_file_table(file):
 				_dir, name = os.path.split(file)
 				base, ext = os.path.splitext(name)
+				if ext == ".part":
+					return
 				self.files[base] = ext
 				
 			path_each(

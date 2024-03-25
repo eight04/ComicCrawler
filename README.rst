@@ -16,7 +16,7 @@ python 後，可以直接用 pip 指令自動安裝。
 Install Python
 ~~~~~~~~~~~~~~
 
-你需要 Python 3.8 以上。安裝檔可以從它的
+你需要 Python 3.11 以上。安裝檔可以從它的
 `官方網站 <https://www.python.org/>`__ 下載。
 
 安裝時記得要選「Add python.exe to path」，才能使用 pip 指令。
@@ -171,6 +171,13 @@ or you can use it in your python script:
     
     ; 是否驗證加密連線（SSL），預設是 true
     verify = false
+
+    ; 從瀏覽器中讀取 cookies，使用 yt-dlp 的 cookies-from-browser
+    ; https://github.com/yt-dlp/yt-dlp/blob/e5d4f11104ce7ea1717a90eea82c0f7d230ea5d5/yt_dlp/cookies.py#L109
+    browser = firefox
+    
+    ; 瀏覽器 profile 的名稱
+    browser_profile = act3nn7e.default
 
 -  設定檔位於 ``~\comiccrawler\setting.ini``。可以在執行時指定 ``--profile`` 選項以變更預設的位置。（在 Windows 中 ``~`` 會被展開為 ``%HOME%`` 或 ``%USERPROFILE%``）
 -  執行一次 ``comiccrawler gui`` 後關閉，設定檔會自動產生。若 Comic Crawler 更新後有新增的設定，在關閉後會自動將新設定加入設定檔。
@@ -360,11 +367,28 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         if "/api/" in URL:
            kwargs["headers"] = {"some-api-header": "some-value"}
            return grab_method(url, **kwargs)
+
+    def after_request(crawler, response):
+        """Called after the request is made."""
+        if response.url.endswith("404.jpg"):
+            raise Exception("Something went wrong")
+
+    def session_key(url):
+        """Return a key to identify the session. If the key is the same, the
+        session would be shared. Otherwise, a new session would be created.
+
+        For example, you may want to separate the session between the main site
+        and the API endpoint.
+
+        Return None to pass the URL to next key function.
+        """
+        r = urlparse(url)
+        if r.path.startswith("/api/"):
+           return (r.scheme, r.netloc, "api")
         
 Todos
 -----
 
--  Make grabber be able to return verbose info?
 -  Need a better error log system.
 -  Support pool in Sankaku.
 -  Add module.get_episode_id to make the module decide how to compare episodes.
@@ -372,6 +396,17 @@ Todos
 
 Changelog
 ---------
+
+- 2024.3.25
+
+  - Fix: skip episodes without images in kemono.
+  - Add: .clip to valid file extensions.
+  - Add: ability to write partial data to disk.
+  - Add: browser and browser_profile settings which are used to extract cookies.
+  - Add: after_request, session_key hooks.
+  - Add: session_manager for better control of api sessions.
+  - Change: set referer and origin header in analyzer.
+  - Change: wait 3 seconds after analyze error.
 
 - 2024.1.4
 

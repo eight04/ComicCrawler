@@ -11,8 +11,8 @@ from urllib.parse import urlparse, parse_qs
 from ..episode import Episode
 from ..grabber import grabber
 from ..url import update_qs
-from ..util import extract_curl
 from ..error import is_http, SkipEpisodeError
+from ..session_manager import session_manager
 
 domain = ["twitter.com"]
 name = "twitter"
@@ -24,22 +24,18 @@ noepfolder = True
 next_page_cache = {}
 pin_entry_cache = {}
 
+AUTH = "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
+
 def get_title(html, url):
 	name = re.search("twitter.com/([^/]+)", url).group(1)
 	if is_media(url):
 		return f"[twitter] {name} (media)"
 	return f"[twitter] {name}"
-	
-def grabhandler(grab_method, url, **kwargs):
-	if url.startswith("https://twitter.com/i/api/"):
-		return grab_json(url, **kwargs)
-		
-def grab_json(url, **kwargs):
-	_url, header, cookie = extract_curl(config["curl"])
-	# NOTE: method-level header/cookies won't be stored into session
-	kwargs["headers"] = header
-	kwargs["cookies"] = cookie
-	return grabber(url, **kwargs).json()
+
+def session_key(url):
+	r = urlparse(url)
+	if r.path.startswith("/i/api"):
+		return (r.scheme, r.netloc, "/i/api")
 	
 def is_media(url):
 	if re.search(r"twitter\.com/[^/]+/media", url):
@@ -48,7 +44,18 @@ def is_media(url):
 		return True
 	return False
 
+def init_api_session():
+	session = session_manager.get("https://twitter.com/i/api/")
+	session.headers.update({
+		"authorization": f"Bearer {AUTH}",
+		"x-csrf-token": session.cookies.get("ct0", ""),
+		"x-twitter-active-user": "yes",
+		"x-twitter-auth-type": "OAuth2Session",
+		"x-twitter-client-language": "en"
+		})
+
 def get_episodes(html, url):
+	init_api_session()
 	name = re.search(r"twitter\.com/([^/]+)", url).group(1)
 	if name != "i":
 		variables = {
@@ -60,7 +67,7 @@ def get_episodes(html, url):
 			"https://twitter.com/i/api/graphql/LPilCJ5f-bs3MjJJNcuuOw/UserByScreenName",
 			{"variables": json.dumps(variables)}
 		)
-		result = grab_json(u)
+		result = grabber(u).json()
 		uid = result["data"]["user"]["result"]["rest_id"]
 		
 		endpoint = user_media_graph if is_media(url) else user_tweets_graph
@@ -68,7 +75,8 @@ def get_episodes(html, url):
 		return
 		
 	if any(k in url for k in ["UserTweets", "UserMedia"]):
-		instructions = html["data"]["user"]["result"]["timeline"]["timeline"]["instructions"]
+		data = json.loads(html)
+		instructions = data["data"]["user"]["result"]["timeline"]["timeline"]["instructions"]
 		for instruction in reversed(instructions):
 			# FIXME: we have to process pin entry first
 			if instruction["type"] == "TimelinePinEntry":
@@ -223,9 +231,9 @@ def tweet_detail_graph(**kwargs):
 
 def errorhandler(err, crawler):
 	if is_http(err, 404):
-		tid = re.search("status/(\d+)", crawler.ep.current_url).group(1)
+		tid = re.search(r"status/(\d+)", crawler.ep.current_url).group(1)
 		u = tweet_detail_graph(focalTweetId=tid)
-		r = grab_json(u)
+		r = grabber(u).json()
 		if r.get("errors", None):
 			if "No status found" in r["errors"][0]["message"]:
 				raise SkipEpisodeError(always=True)

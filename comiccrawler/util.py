@@ -5,16 +5,12 @@ from pathlib import Path
 
 import uncurl
 
-from .config import setting
-from .io import content_write
-from .profile import get as profile
-
 def dump(html):
 	Path("dump.html").write_text(html, encoding="utf-8")
 
 def extract_curl(cmd):
 	if not cmd:
-		return
+		raise ValueError("Empty curl")
 	try:
 		context = uncurl.parse_context(cmd)
 	except SystemExit:
@@ -52,10 +48,6 @@ def safefilepath(s):
 		s = s.translate(dot_table)
 	return s
 
-def debug_log(*args):
-	if setting.getboolean("errorlog"):
-		content_write(profile("debug.log"), ", ".join(args) + "\n", append=True)
-
 def url_extract_filename(url):
 	filename = url.rpartition("/")[2]
 	filename = re.sub(r"\.\w{3,4}$", "", filename)
@@ -64,7 +56,7 @@ def url_extract_filename(url):
 def clean_tags(html):
 	html = re.sub("<script.+?</script>", "", html)
 	html = re.sub("<.+?>", "", html)
-	html = re.sub("\s+", " ", html)
+	html = re.sub(r"\s+", " ", html)
 	return html.strip()
 
 @total_ordering	

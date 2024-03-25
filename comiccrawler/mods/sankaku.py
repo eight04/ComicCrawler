@@ -2,8 +2,7 @@
 
 import re
 from html import unescape
-from urllib.parse import urlparse, parse_qs, quote, urljoin
-# from itertools import chain
+from urllib.parse import urljoin
 
 from ..core import Episode
 from ..error import PauseDownloadError, SkipEpisodeError
@@ -19,6 +18,11 @@ config = {
 }
 autocurl = True
 
+def after_request(crawler, response):
+	if "redirect.png" in response.url:
+		crawler.init_images()
+		raise ValueError("Redirected to chan.sankakucomplex.com")
+
 def valid_id(pid):
 	if pid in ["upload", "update"]:
 		return False
@@ -33,8 +37,6 @@ def get_title(html, url):
 	title = re.search(r"<title>/?(.+?) \|", html).group(1)
 	return "[sankaku] " + unescape(title)
 	
-next_page_cache = {}
-
 def get_episodes(html, url):
 	login_check(html)
 	s = []
