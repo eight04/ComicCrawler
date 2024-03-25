@@ -265,7 +265,8 @@ def get_checksum(b):
 
 def get_file_checksum(file):
 	with Path(file).open("rb") as f:
-		digest = hashlib.file_digest(f, "md5")
+		# NOTE: this only works with python 3.11+
+		digest = hashlib.file_digest(f, "md5") # pylint: disable=no-member
 		return digest.hexdigest()
 
 def download(mission, savepath):

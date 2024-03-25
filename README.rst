@@ -16,7 +16,7 @@ python 後，可以直接用 pip 指令自動安裝。
 Install Python
 ~~~~~~~~~~~~~~
 
-你需要 Python 3.8 以上。安裝檔可以從它的
+你需要 Python 3.11 以上。安裝檔可以從它的
 `官方網站 <https://www.python.org/>`__ 下載。
 
 安裝時記得要選「Add python.exe to path」，才能使用 pip 指令。
