@@ -12,9 +12,10 @@ from .image import Image
 from .error import LastPageError, PauseDownloadError, SkipEpisodeError, is_http, SkipPageError, ComicCrawlerError
 
 from .io import content_read, content_write
-from .util import url_extract_filename, debug_log
+from .util import url_extract_filename
 from .channel import download_ch, mission_ch
 from .safeprint import print
+from .logger import debug_log
 
 VALID_FILE_TYPES = (
 	# images
@@ -91,6 +92,8 @@ class Crawler:
 			def on_opened(response):
 				if response.history:
 					self.handle_redirect(response)
+				if after_request := getattr(self.mod, "after_request", None):
+					after_request(self, response)
 
 			result = self.downloader.img(
 				self.image.url,

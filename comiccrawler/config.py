@@ -7,6 +7,9 @@ from configparser import ConfigParser
 from os.path import expanduser, dirname, isdir, normpath
 from os import makedirs
 
+import yt_dlp.cookies
+
+from .session_manager import session_manager
 from .profile import get as profile
 
 class CaseSensitiveConfigParser(ConfigParser):
@@ -22,7 +25,9 @@ class Config:
 		"errorlog": "false",
 		"lastcheckupdate": "0",
 		"selectall": "true",
-		"mission_conflict_action": "update"
+		"mission_conflict_action": "update",
+		"browser": "",
+		"browser_profile": "",
 	}
 	def __init__(self, path):
 		self.path = expanduser(path)
@@ -45,6 +50,11 @@ class Config:
 		self.config['DEFAULT'].update(self.default)
 		
 		self.config['DEFAULT']["savepath"] = normpath(self.config['DEFAULT']["savepath"])
+
+		if self.config["default"]["browser"]:
+			jar = yt_dlp.cookies.extract_cookies_from_browser(
+				self.config["DEFAULT"]["browser"], self.config["DEFAULT"]["browser_profile"])
+			session_manager.set_default_cookie(jar)
 		
 	def save(self):
 		if not isdir(dirname(self.path)):

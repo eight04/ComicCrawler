@@ -5,10 +5,6 @@ from pathlib import Path
 
 import uncurl
 
-from .config import setting
-from .io import content_write
-from .profile import get as profile
-
 def dump(html):
 	Path("dump.html").write_text(html, encoding="utf-8")
 
@@ -51,10 +47,6 @@ def safefilepath(s):
 	if s[-1] == ".":
 		s = s.translate(dot_table)
 	return s
-
-def debug_log(*args):
-	if setting.getboolean("errorlog"):
-		content_write(profile("debug.log"), ", ".join(args) + "\n", append=True)
 
 def url_extract_filename(url):
 	filename = url.rpartition("/")[2]

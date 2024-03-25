@@ -360,11 +360,28 @@ Starting from version 2016.4.21, you can add your own module to ``~/comiccrawler
         if "/api/" in URL:
            kwargs["headers"] = {"some-api-header": "some-value"}
            return grab_method(url, **kwargs)
+
+    def after_request(crawler, response):
+        """Called after the request is made."""
+        if response.url.endswith("404.jpg"):
+            raise Exception("Something went wrong")
+
+    def session_key(url):
+        """Return a key to identify the session. If the key is the same, the
+        session would be shared. Otherwise, a new session would be created.
+
+        For example, you may want to separate the session between the main site
+        and the API endpoint.
+
+        Return None to pass the URL to next key function.
+        """
+        r = urlparse(url)
+        if r.path.startswith("/api/"):
+           return (r.scheme, r.netloc, "api")
         
 Todos
 -----
 
--  Make grabber be able to return verbose info?
 -  Need a better error log system.
 -  Support pool in Sankaku.
 -  Add module.get_episode_id to make the module decide how to compare episodes.
@@ -372,6 +389,17 @@ Todos
 
 Changelog
 ---------
+
+- 2024.3.25
+
+  - Change: set referer and origin header in analyzer.
+  - Change: wait 3 seconds after analyze error.
+  - Add: .clip to valid file extensions.
+  - Add: ability to write partial data to disk.
+  - Add: browser and browser_profile settings which are used to extract cookies.
+  - Change: skip episodes without images in kemono.
+  - Add: after_request, session_key hooks.
+  - Add: session_manager for better control of api sessions.
 
 - 2024.1.4
 

@@ -3,9 +3,10 @@ import hashlib
 import threading
 
 from .io import json_load, json_dump, move, remove
-from .util import safefilepath, debug_log
+from .util import safefilepath
 from .profile import get as profile_get
 from .episode import Episode
+from .logger import debug_log
 
 def get_mission_id(mission):
 	"""Use title and sha1 of URL as mission id"""

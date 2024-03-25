@@ -22,6 +22,7 @@ def setup_session(mod):
 			if key.startswith("curl") and value:
 				session_manager.update_by_curl(value)
 
+	# FIXME: we should assign module cookie to a session key instead of making it global
 	# if cookie := getattr(mod, "cookie", {}):
 	# 	for key, value in cookie.items():
 	# 		if value:

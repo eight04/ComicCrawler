@@ -23,7 +23,8 @@ from .mission import create_mission
 from .crawler import download
 from .profile import get as profile
 from .error import PauseDownloadError
-from .util import safefilepath, debug_log
+from .util import safefilepath
+from .logger import debug_log
 
 from .mission_manager import mission_manager
 from .channel import download_ch

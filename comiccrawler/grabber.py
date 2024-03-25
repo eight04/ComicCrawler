@@ -234,24 +234,21 @@ def iter_content(r):
 def grabimg(*args, on_opened=None, tempfile=None, header=None, **kwargs):
 	"""Grab the image. Return ImgResult"""
 	kwargs["stream"] = True
+	loaded = 0
 	if tempfile:
 		try:
 			loaded = Path(tempfile).stat().st_size
 		except FileNotFoundError:
-			loaded = 0
-		if loaded:
-			if not header:
-				header = {}
-			header["Range"] = f"bytes={loaded}-"
-	else:
-		loaded = 0
+			pass
+	if loaded:
+		if not header:
+			header = {}
+		header["Range"] = f"bytes={loaded}-"
 	r = grabber(*args, header=header, **kwargs)
 	if on_opened:
 		on_opened(r)
 	if r.status_code == 200:
 		loaded = 0
-		if tempfile:
-			Path(tempfile).unlink(missing_ok=True)
 	total = int(r.headers.get("Content-Length", "0")) or None
 	content_list = []
 	try:
@@ -261,7 +258,8 @@ def grabimg(*args, on_opened=None, tempfile=None, header=None, **kwargs):
 			with pb_manager.counter(total=total, unit="b", leave=False) as counter:
 				if tempfile:
 					Path(tempfile).parent.mkdir(parents=True, exist_ok=True)
-					with open(tempfile, "ab") as f:
+					mode = "ab" if loaded else "wb"
+					with open(tempfile, mode=mode) as f:
 						for chunk in iter_content(r):
 							f.write(chunk)
 							counter.update(len(chunk))

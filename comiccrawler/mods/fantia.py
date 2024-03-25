@@ -43,16 +43,19 @@ def get_episodes(html, url):
 		result.append(Episode(url=urljoin(url, ep_url), title=title))
 	return result[::-1]
 
-def get_images(html, url):
-	post_id = re.search(r"posts/(\d+)", url).group(1)
-
-	csrf_token = re.search('csrf-token" content="([^"]+)', html).group(1)
+def init_api_session(html):
 	session = session_manager.get("https://fantia.jp/api/v1/posts/")
+	if "X-CSRF-Token" in session.headers:
+		return
+	csrf_token = re.search('csrf-token" content="([^"]+)', html).group(1)
 	session.headers.update({
 		"X-CSRF-Token": csrf_token,
 		"X-Requested-With": "XMLHttpRequest",
 		})
 
+def get_images(html, url):
+	post_id = re.search(r"posts/(\d+)", url).group(1)
+	init_api_session(html)
 	result = grabber(f"https://fantia.jp/api/v1/posts/{post_id}", referer=url).json()
 	thumb = result["post"].get("thumb", {}).get("original")
 	if thumb:
