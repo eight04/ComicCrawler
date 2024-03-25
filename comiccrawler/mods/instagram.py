@@ -121,9 +121,6 @@ def get_images(html, url):
 	pid = re.search(r"https://www\.instagram\.com/p/([^/]+)/", url).group(1)
 	result = []
 	key = "xdt_api__v1__media__shortcode__web_info"
-	# breakpoint()
-	from pathlib import Path
-	Path("test.html").write_text(html)
 	for data in extract_json(html, filter=lambda s: key in s):
 		for web_info in extract_json_value(data, key):
 			for item in web_info["items"]:
