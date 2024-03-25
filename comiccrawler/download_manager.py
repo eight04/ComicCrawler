@@ -13,7 +13,7 @@ from threading import Lock
 from os.path import join as path_join
 from time import time
 
-from worker import Worker, current, await_, create_worker, async_, sleep
+from worker import Worker, current, await_, create_worker, async_
 
 from .analyzer import Analyzer
 from .safeprint import print

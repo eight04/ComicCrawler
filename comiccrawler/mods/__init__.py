@@ -16,10 +16,16 @@ from ..profile import get as profile
 from ..grabber import cooldown
 from ..session_manager import session_manager
 
-def setup_curl(mod):
-	for key, value in mod.config.items():
-		if key.startswith("curl") and value:
-			session_manager.update_by_curl(value)
+def setup_session(mod):
+	if getattr(mod, "autocurl", False):
+		for key, value in mod.config.items():
+			if key.startswith("curl") and value:
+				session_manager.update_by_curl(value)
+
+	# if cookie := getattr(mod, "cookie", {}):
+	# 	for key, value in cookie.items():
+	# 		if value:
+	# 			session_manager.update_cookie(key, value)
 
 def import_module_file(ns, file):
 	# pylint: disable=import-outside-toplevel
@@ -127,8 +133,7 @@ class ModLoader:
 			if hasattr(mod, "load_config"):
 				mod.load_config()
 
-			# if getattr(mod, "autocurl", False):
-			# 	setup_curl(mod)
+			setup_session(mod)
 	
 mod_loader = ModLoader()
 list_domain = mod_loader.list_domain

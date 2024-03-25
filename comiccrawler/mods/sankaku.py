@@ -6,7 +6,6 @@ from urllib.parse import urljoin
 
 from ..core import Episode
 from ..error import PauseDownloadError, SkipEpisodeError
-from ..grabber import grabhtml
 
 domain = ["chan.sankakucomplex.com"]
 name = "Sankaku"
