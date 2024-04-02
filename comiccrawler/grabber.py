@@ -2,7 +2,6 @@
 
 from contextlib import contextmanager
 from email.message import EmailMessage
-from mimetypes import guess_extension
 from pathlib import Path
 from pprint import pformat
 from threading import Lock
@@ -27,6 +26,17 @@ cooldown = {}
 grabber_pool = {}
 grabber_pool_lock = Lock()
 pb_manager = enlighten.get_manager()
+
+mime_dict = {
+	t.mime_type: t for t in puremagic.magic_header_array
+	}
+
+def ext_from_mime(mime):
+	mime = mime.lower().strip()
+	try:
+		return mime_dict[mime].extension
+	except KeyError:
+		return None
 
 @contextmanager
 def get_request_lock(url):
@@ -195,22 +205,24 @@ def _get_ext(r, b, tempfile):
 		if "octet-stream" in mime:
 			mime = None
 
-	# FIXME: should we read b from disk?
-	if not mime:
-		if b:
-			filename = urlsplit(r.url).path
-			mime = puremagic.from_string(b, mime=True, filename=filename)
-		elif tempfile:
-			mime = puremagic.from_file(tempfile, mime=True)
-
 	if mime:
-		ext = guess_extension(mime)
+		ext = ext_from_mime(mime)
 		if ext:
 			return ext
-		# guess_extension doesn't handle video/x-m4v
+
+		# FIXME: is it safe to handle x-? like this?
+		# video/x-m4v
 		match = re.match(r"\w+/x-(\w+)$", mime)
 		if match:
 			return f".{match.group(1)}"
+
+	if b:
+		filename = urlsplit(r.url).path
+		return puremagic.from_string(b, filename=filename)
+
+	if tempfile:
+		return puremagic.from_file(tempfile)
+
 
 def get_ext(r, b, tempfile):
 	"""Get file extension"""
