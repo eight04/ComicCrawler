@@ -45,7 +45,7 @@ def get_images(html, url):
 		"String": String,
 		"RegExp": RegExp
 	};
-	location = {
+	const location = {
 		"hostname": "www.iibq.com"
 	};
 	"""

@@ -139,8 +139,8 @@ def get_images(html, url):
 	utils = re.search(r"SMH\.(utils=[\s\S]+?);SMH\.imgData=", corejs).group(1)
 	
 	js = """
-	var location = {
-		protocol: "http:"
+	const location = {
+		protocol: "https:"
 	};
 	""" + utils + """;
 	function getFiles(path, files, host) {

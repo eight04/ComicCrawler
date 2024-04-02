@@ -42,7 +42,7 @@ def build_ctx(url):
 			},
 			domainEl = {};
 			
-		location = {
+		const location = {
 			href: "",
 			hostname: ""
 		};
