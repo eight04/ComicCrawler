@@ -397,6 +397,11 @@ Todos
 Changelog
 ---------
 
+- 2024.4.2
+
+  - Fix: wrong protocol in seemh.
+  - Fix: failed downloading webp images.
+
 - 2024.3.25
 
   - Fix: skip episodes without images in kemono.
