@@ -26,7 +26,7 @@ def get_title(html, url):
 	return f"[fanbox] {(name)}"
 	
 def get_episodes(html, url):
-	if match := re.search(r'https://(\w+)\.fanbox\.cc/posts', url):
+	if match := re.search(r'https://([\w-]+)\.fanbox\.cc/posts', url):
 		author = match.group(1)
 		next_page_cache[url] = f"https://api.fanbox.cc/post.paginateCreator?creatorId={author}"
 		raise SkipPageError
@@ -52,7 +52,7 @@ def get_episodes(html, url):
 	raise TypeError(f"Unknown URL: {url}")
 
 def get_images(html, url):
-	if match := re.search(r'https://(\w+)\.fanbox\.cc/posts/(\d+)', url):
+	if match := re.search(r'https://([\w-]+)\.fanbox\.cc/posts/(\d+)', url):
 		# author = match.group(1)
 		post_id = match.group(2)
 		next_page_cache[url] = f"https://api.fanbox.cc/post.info?postId={post_id}"
