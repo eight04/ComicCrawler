@@ -298,7 +298,7 @@ class EventMixin:
 		self.btn_addurl["command"] = addurl
 
 		def startdownload():
-			download_manager.start_download()
+			download_manager.thread.fire("START_DOWNLOAD")
 		self.btn_start["command"] = startdownload
 
 		def stopdownload():
@@ -440,7 +440,7 @@ class EventMixin:
 				self.messagebox("error", "Comic Crawler", "沒有新更新的任務")
 				return
 			mission_manager.add("view", *missions)
-			download_manager.start_download()
+			download_manager.thread.fire("START_DOWNLOAD")
 			self.notebook.select(0)
 		self.btn_download_update["command"] = lib_download_update
 

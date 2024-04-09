@@ -5,7 +5,7 @@ from email.message import EmailMessage
 from pathlib import Path
 from pprint import pformat
 from threading import Lock
-from urllib.parse import quote, urlsplit, urlunsplit
+from urllib.parse import quote, urlsplit, urlunsplit, urlparse
 import re
 import socket
 import time
@@ -271,7 +271,8 @@ def grabimg(*args, on_opened=None, tempfile=None, header=None, **kwargs):
 		@await_
 		def _():
 			nonlocal loaded
-			with pb_manager.counter(total=total, unit="b", leave=False) as counter:
+			u = urlparse(r.url)
+			with pb_manager.counter(total=total, unit="b", leave=False, desc=u.hostname) as counter:
 				counter.update(loaded)
 				if tempfile:
 					Path(tempfile).parent.mkdir(parents=True, exist_ok=True)

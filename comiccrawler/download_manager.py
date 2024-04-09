@@ -66,10 +66,16 @@ class DownloadManager:
 		self.library_thread = None
 		self.library_err_count = None
 		self.batch_analyzer = None
-		
+
 		thread = current()
+		self.thread = thread
 		
 		download_ch.sub(thread)
+
+		@thread.listen("START_DOWNLOAD")
+		def _(event):
+			"""Start download."""
+			self.start_download()
 		
 		@thread.listen("DOWNLOAD_ERROR")
 		def _(event):
@@ -119,15 +125,17 @@ class DownloadManager:
 		def _(event):
 			"""After download, continue next mission"""
 			with self.lock:
-				if event.target not in self.crawlers.values():
+				mod = self.crawlers.inverse.pop(event.target, None)
+				if not mod:
 					return
-				mod = self.crawlers.inverse.pop(event.target)
-				max_errors = int(mod.config.get("max_errors", 3))
-				if self.mod_errors[mod] >= max_errors:
-					print(f"{mod.name} 失敗 {max_errors} 次，停止下載")
-					self.mod_errors[mod] = 0
-					return
-				self.start_download(mod=mod)
+
+			max_errors = int(mod.config.get("max_errors", 3))
+			if self.mod_errors[mod] >= max_errors:
+				print(f"{mod.name} 失敗 {max_errors} 次，停止下載")
+				self.mod_errors[mod] = 0
+				return
+
+			self.start_download(mod=mod)
 
 		@thread.listen("DOWNLOAD_INVALID")
 		def _(event):
@@ -155,15 +163,13 @@ class DownloadManager:
 
 	def start_download_mod(self, mod):
 		"""Start downloading from a specific mod."""
+		mission = mission_manager.get("view", lambda m: m.module == mod and m.state in ("ANALYZED", "PAUSE", "ERROR", "UPDATE"))
+		if not mission:
+			return
+
 		with self.lock:
 			if mod in self.crawlers:
 				return
-
-			mission = mission_manager.get("view", lambda m: m.module == mod and m.state in ("ANALYZED", "PAUSE", "ERROR", "UPDATE"))
-			if not mission:
-				return
-
-			print(f"Start downloading {mission.title}")
 
 			def do_download():
 				debug_log("do_download")
