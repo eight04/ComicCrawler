@@ -28,6 +28,7 @@ class Config:
 		"mission_conflict_action": "update",
 		"browser": "",
 		"browser_profile": "",
+		"max_errors": "10"
 	}
 	def __init__(self, path):
 		self.path = expanduser(path)

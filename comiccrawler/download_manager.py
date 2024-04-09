@@ -2,18 +2,20 @@
 
 """Download Manager"""
 
-from collections import deque
+from collections import deque, defaultdict
 import re
 import subprocess # nosec
 import shlex
 import sys
 import traceback
 from threading import Lock
+from types import ModuleType
 
 from os.path import join as path_join
 from time import time
 
 from worker import Worker, current, await_, create_worker, async_
+from bidict import bidict
 
 from .analyzer import Analyzer
 from .safeprint import print
@@ -57,12 +59,13 @@ class DownloadManager:
 
 	def __init__(self):
 		"""Construct."""
-		self.download_thread = None
+		self.lock = Lock()
+		self.crawlers: bidict[ModuleType, Worker] = bidict()
+		self.mod_errors: dict[ModuleType, int] = defaultdict(int)
 		self.analyze_threads = ThreadSafeSet()
 		self.library_thread = None
 		self.library_err_count = None
 		self.batch_analyzer = None
-		self.continued_failure = 0
 		
 		thread = current()
 		
@@ -72,15 +75,15 @@ class DownloadManager:
 		def _(event):
 			_err, mission = event.data
 			mission_manager.drop("view", mission)
-			self.continued_failure += 1
+			self.mod_errors[mission.module] += 1
 
 		@thread.listen("DOWNLOAD_FINISHED")
 		def _(event):
 			"""After download, execute command."""
-			self.continued_failure = 0
-			
-			if event.target is not self.download_thread:
-				return
+			with self.lock:
+				if event.target not in self.crawlers.values():
+					return
+				self.mod_errors[event.data.module] = 0
 				
 			cmd = event.data.module.config.get("runafterdownload")
 			default_cmd = setting.get("runafterdownload")
@@ -115,46 +118,71 @@ class DownloadManager:
 		@thread.listen("DOWNLOAD_ERROR")
 		def _(event):
 			"""After download, continue next mission"""
-			if event.target is not self.download_thread:
-				return
-			self.download_thread = None
-			if self.continued_failure >= len(mission_manager.get_all("view", lambda m: m.state != "FINISHED")):
-				print(f"連續失敗 {self.continued_failure} 次，停止下載")
-				return
-			self.start_download(continued=True)
-				
+			with self.lock:
+				if event.target not in self.crawlers.values():
+					return
+				mod = self.crawlers.inverse.pop(event.target)
+				max_errors = int(mod.config.get("max_errors", 3))
+				if self.mod_errors[mod] >= max_errors:
+					print(f"{mod.name} 失敗 {max_errors} 次，停止下載")
+					self.mod_errors[mod] = 0
+					return
+				self.start_download(mod=mod)
+
 		@thread.listen("DOWNLOAD_INVALID")
 		def _(event):
 			"""Something bad happened"""
-			if event.target is self.download_thread:
-				self.download_thread = None
-				print("停止下載")
+			with self.lock:
+				mod = self.crawlers.inverse.pop(event.target, None)
+				if mod:
+					print(f"{mod.name} 停止下載")
 
-	def start_download(self, continued=False):
+	def start_download(self, mod=None):
 		"""Start downloading."""
-		if self.download_thread:
+		if mod:
+			self.start_download_mod(mod)
+		else:
+			self.start_download_all()
+
+	def start_download_all(self):
+		missions = mission_manager.get_all("view", lambda m: m.state in ("ANALYZED", "PAUSE", "ERROR", "UPDATE"))
+		if not missions:
+			print("所有任務已下載完成")
 			return
 
-		if not continued:
-			self.continued_failure = 0
-			
-		mission = mission_manager.get("view", lambda m: m.state in ("ANALYZED", "PAUSE", "ERROR", "UPDATE"))
-		if mission:
-			print("Start download " + mission.title)
+		for mission in missions:
+			self.start_download_mod(mission.module)
+
+	def start_download_mod(self, mod):
+		"""Start downloading from a specific mod."""
+		with self.lock:
+			if mod in self.crawlers:
+				return
+
+			mission = mission_manager.get("view", lambda m: m.module == mod and m.state in ("ANALYZED", "PAUSE", "ERROR", "UPDATE"))
+			if not mission:
+				return
+
+			print(f"Start downloading {mission.title}")
+
 			def do_download():
 				debug_log("do_download")
 				with load_episodes(mission):
 					download(mission, profile(mission.module.config["savepath"]))
-					
-			self.download_thread = Worker(do_download).start()
-		else:
-			print("所有任務已下載完成")
+
+			self.crawlers[mod] = Worker(do_download).start()
 
 	def stop_download(self):
 		"""Stop downloading."""
-		if self.download_thread:
-			self.download_thread.stop()
-			self.download_thread = None
+		with self.lock:
+			if not self.crawlers:
+				return
+
+			for crawler in self.crawlers.values():
+				crawler.stop()
+
+			# FIXME: shouldn't we wait for thread stop?
+			self.crawlers.clear()
 			print("Stop downloading")
 			
 	def start_analyze(self, mission, on_finished=None):
@@ -287,6 +315,7 @@ class DownloadManager:
 			self.library_thread = None
 
 	def is_downloading(self):
-		return self.download_thread is not None
+		with self.lock:
+			return bool(self.crawlers)
 		
 download_manager = DownloadManager()
