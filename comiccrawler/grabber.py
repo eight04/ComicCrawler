@@ -114,6 +114,7 @@ def grabber(url, header=None, *, referer=None, cookie=None,
 	return r
 
 RETRYABLE_HTTP_CODES = (423, 429, 503)
+SUCCESS_CODES = (200, 206)
 
 def do_request(s, url, proxies, retry, **kwargs):
 	sleep_time = 5
@@ -123,7 +124,7 @@ def do_request(s, url, proxies, retry, **kwargs):
 				 proxies=proxies, **kwargs)
 		grabber_log(url, r.url, r.status_code, r.request.headers, r.headers)
 
-		if r.status_code == 200:
+		if r.status_code in SUCCESS_CODES:
 			content_length = r.headers.get("Content-Length")
 			if not kwargs.get("stream", False) and content_length and int(content_length) != r.raw.tell():
 				raise ValueError(
@@ -264,13 +265,14 @@ def grabimg(*args, on_opened=None, tempfile=None, header=None, **kwargs):
 		on_opened(r)
 	if r.status_code == 200:
 		loaded = 0
-	total = int(r.headers.get("Content-Length", "0")) or None
+	total = int(r.headers.get("Content-Length", "0")) + loaded or None
 	content_list = []
 	try:
 		@await_
 		def _():
 			nonlocal loaded
 			with pb_manager.counter(total=total, unit="b", leave=False) as counter:
+				counter.update(loaded)
 				if tempfile:
 					Path(tempfile).parent.mkdir(parents=True, exist_ok=True)
 					mode = "ab" if loaded else "wb"
