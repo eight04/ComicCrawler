@@ -400,6 +400,8 @@ Changelog
 - 2024.4.10
 
   - Fix: limit retry delay to 10 minutes at most.
+  - Fix: failed handling http 206 response.
+  - Fix: username may conatain dash in fanbox.
   - Add: ``max_errors`` setting.
   - Add: ability to run multiple crawlers. One for each host.
 
