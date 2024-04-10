@@ -373,7 +373,7 @@ def crawlpage(crawler):
 		crawler.next_image()
 
 	def download_error(er, count):
-		t = 5 * 2 ** count
+		t = min(5 * 2 ** count, 600)
 		print(f"wait {t} seconds...")
 		if is_http(er, code=429):
 			# retry doesn't work with 429 error

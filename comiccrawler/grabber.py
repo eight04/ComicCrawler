@@ -91,9 +91,6 @@ def grabber(url, header=None, *, referer=None, cookie=None,
 	"""Request url, return text or bytes of the content."""
 	s = session_manager.get(url)
 
-	if header:
-		s.headers.update(header)
-
 	if referer:
 		s.headers['referer'] = quote_unicode(referer)
 
@@ -106,7 +103,7 @@ def grabber(url, header=None, *, referer=None, cookie=None,
 	else:
 		proxies = proxy
 
-	r = await_(do_request, s, url, proxies, retry, **kwargs)
+	r = await_(do_request, s, url, proxies, retry, headers=header, **kwargs)
 
 	if done:
 		done(s, r)
