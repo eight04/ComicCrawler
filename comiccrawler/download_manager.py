@@ -140,12 +140,9 @@ class DownloadManager:
 				if mod:
 					print(f"{mod.name} 停止下載")
 
-	def start_download(self, mod=None):
+	def start_download(self):
 		"""Start downloading."""
-		if mod:
-			self.start_download_mod(mod)
-		else:
-			self.start_download_all()
+		self.start_download_all()
 
 	def start_download_all(self):
 		missions = mission_manager.get_all("view", lambda m: m.state in ("ANALYZED", "PAUSE", "ERROR", "UPDATE"))
