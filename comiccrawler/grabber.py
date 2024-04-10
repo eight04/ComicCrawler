@@ -5,7 +5,7 @@ from email.message import EmailMessage
 from pathlib import Path
 from pprint import pformat
 from threading import Lock
-from urllib.parse import quote, urlsplit, urlunsplit
+from urllib.parse import quote, urlsplit, urlunsplit, urlparse
 import re
 import socket
 import time
@@ -91,9 +91,6 @@ def grabber(url, header=None, *, referer=None, cookie=None,
 	"""Request url, return text or bytes of the content."""
 	s = session_manager.get(url)
 
-	if header:
-		s.headers.update(header)
-
 	if referer:
 		s.headers['referer'] = quote_unicode(referer)
 
@@ -106,7 +103,7 @@ def grabber(url, header=None, *, referer=None, cookie=None,
 	else:
 		proxies = proxy
 
-	r = await_(do_request, s, url, proxies, retry, **kwargs)
+	r = await_(do_request, s, url, proxies, retry, headers=header, **kwargs)
 
 	if done:
 		done(s, r)
@@ -271,7 +268,8 @@ def grabimg(*args, on_opened=None, tempfile=None, header=None, **kwargs):
 		@await_
 		def _():
 			nonlocal loaded
-			with pb_manager.counter(total=total, unit="b", leave=False) as counter:
+			u = urlparse(r.url)
+			with pb_manager.counter(total=total, unit="b", leave=False, desc=u.hostname) as counter:
 				counter.update(loaded)
 				if tempfile:
 					Path(tempfile).parent.mkdir(parents=True, exist_ok=True)

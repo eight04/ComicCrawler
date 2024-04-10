@@ -397,6 +397,12 @@ Todos
 Changelog
 ---------
 
+- 2024.4.10
+
+  - Fix: limit retry delay to 10 minutes at most.
+  - Add: ``max_errors`` setting.
+  - Add: ability to run multiple crawlers. One for each host.
+
 - 2024.4.2
 
   - Fix: wrong protocol in seemh.
