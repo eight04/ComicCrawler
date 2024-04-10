@@ -72,11 +72,6 @@ class DownloadManager:
 		
 		download_ch.sub(thread)
 
-		@thread.listen("START_DOWNLOAD")
-		def _(event):
-			"""Start download."""
-			self.start_download()
-		
 		@thread.listen("DOWNLOAD_ERROR")
 		def _(event):
 			_err, mission = event.data
@@ -135,7 +130,7 @@ class DownloadManager:
 				self.mod_errors[mod] = 0
 				return
 
-			self.start_download(mod=mod)
+			self.start_download_mod(mod)
 
 		@thread.listen("DOWNLOAD_INVALID")
 		def _(event):
