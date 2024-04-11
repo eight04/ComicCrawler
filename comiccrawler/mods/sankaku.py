@@ -31,10 +31,10 @@ def is_redirected(err):
 	return False
 
 def errorhandler(err, crawler):
-	if is_redirected(err):
-		# breakpoint()
-		# crawler.init_images()
-		print("redirected")
+	pass
+	# this shouldn't happen without referer
+	# if is_redirected(err):
+	# 	crawler.init_images()
 
 def valid_id(pid):
 	if pid in ["upload", "update"]:
