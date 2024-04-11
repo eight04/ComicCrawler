@@ -397,6 +397,10 @@ Todos
 Changelog
 ---------
 
+- 2024.4.11
+
+  - Fix: redirect error in sankaku.
+
 - 2024.4.10
 
   - Fix: limit retry delay to 10 minutes at most.
