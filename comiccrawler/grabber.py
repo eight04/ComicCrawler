@@ -81,9 +81,9 @@ def quote_unicode_dict(d):
 	for key, value in d.items():
 		d[key] = quote_unicode(value)
 
-def grabber_log(*args):
+def grabber_log(obj):
 	if setting.getboolean("errorlog"):
-		content = time.strftime("%Y-%m-%dT%H:%M:%S%z") + "\n" + pformat(args) + "\n\n"
+		content = time.strftime("%Y-%m-%dT%H:%M:%S%z") + "\n" + pformat(obj) + "\n\n"
 		content_write(profile("grabber.log"), content, append=True)
 
 def grabber(url, header=None, *, referer=None, cookie=None,
@@ -92,7 +92,7 @@ def grabber(url, header=None, *, referer=None, cookie=None,
 	s = session_manager.get(url)
 
 	if referer:
-		s.headers['referer'] = quote_unicode(referer)
+		s.headers['Referer'] = quote_unicode(referer)
 
 	if cookie:
 		quote_unicode_dict(cookie)
@@ -119,7 +119,7 @@ def do_request(s, url, proxies, retry, **kwargs):
 		with get_request_lock(url):
 			r = s.request(kwargs.pop("method", "GET"), url, timeout=(22, 60),
 				 proxies=proxies, **kwargs)
-		grabber_log(url, r.url, r.status_code, r.request.headers, r.headers)
+		grabber_log(list((r.status_code, r.url, r.request.headers, r.headers) for r in (r.history + [r])))
 
 		if r.status_code in SUCCESS_CODES:
 			content_length = r.headers.get("Content-Length")

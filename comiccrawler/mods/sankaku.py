@@ -5,7 +5,7 @@ from html import unescape
 from urllib.parse import urljoin
 
 from ..core import Episode
-from ..error import PauseDownloadError, SkipEpisodeError
+from ..error import PauseDownloadError, SkipEpisodeError, is_http
 
 domain = ["chan.sankakucomplex.com"]
 name = "Sankaku"
@@ -16,12 +16,25 @@ config = {
 	# curl for v.sankakucomplex.com. Note that you should leave this empty.
 	"curl_v": ""
 }
+no_referer = True
 autocurl = True
 
 def after_request(crawler, response):
 	if "redirect.png" in response.url:
-		crawler.init_images()
 		raise ValueError("Redirected to chan.sankakucomplex.com")
+
+def is_redirected(err):
+	if isinstance(err, ValueError) and "Redirected to chan.sankakucomplex.com" in str(err):
+		return True
+	if is_http(err) and "redirect" in err.response.url:
+		return True
+	return False
+
+def errorhandler(err, crawler):
+	pass
+	# this shouldn't happen without referer
+	# if is_redirected(err):
+	# 	crawler.init_images()
 
 def valid_id(pid):
 	if pid in ["upload", "update"]:
@@ -41,7 +54,13 @@ def get_episodes(html, url):
 	login_check(html)
 	s = []
 
-	for m in re.finditer(r'href="([^"]*posts/([^"]+))', html):
+	# FIXME: is there a way to include popular posts without breaking update check?
+	# since update check stops if it sees an existing episode
+	m = re.search('''id=["']more-popular-link''', html)
+	assert m
+	i = m.start()
+
+	for m in re.finditer(r'''href=["']([^"']*posts/([^"']+))''', html[i:]):
 		ep_url, pid = m.groups()
 		if not valid_id(pid):
 			continue
