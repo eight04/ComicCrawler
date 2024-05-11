@@ -228,6 +228,9 @@ def get_ext(r, b, tempfile):
 	# some mapping
 	if ext in (".jpeg", ".jpe"):
 		return ".jpg"
+	# https://github.com/cdgriffith/puremagic/issues/3
+	if ext == ".docx":
+		return ".zip"
 	return ext
 
 def iter_content(r):
