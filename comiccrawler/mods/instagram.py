@@ -11,6 +11,7 @@ from ..core import Episode
 from ..error import is_http, SkipEpisodeError, SkipPageError
 from ..url import update_qs
 from ..session_manager import session_manager
+from ..util import get_cookie
 
 domain = ["www.instagram.com"]
 name = "Instagram"
@@ -32,7 +33,7 @@ def init_api_session(html):
 	session = session_manager.get("https://www.instagram.com/api/v1/feed")
 	if "X-CSRFToken" in session.headers:
 		return
-	token = session.cookies.get("csrftoken", domain=".instagram.com") or session.cookies.get("csrftoken")
+	token = get_cookie(session.cookies, "csrftoken", domain="www.instagram.com")
 	app_id = re.search(r'"APP_ID":"([^"]+)', html).group(1)
 	session.headers.update({
 		"X-CSRFToken": token,

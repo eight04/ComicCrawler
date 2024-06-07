@@ -13,8 +13,9 @@ from ..grabber import grabber
 from ..url import update_qs
 from ..error import is_http, SkipEpisodeError
 from ..session_manager import session_manager
+from ..util import get_cookie
 
-domain = ["twitter.com"]
+domain = ["twitter.com", "x.com"]
 name = "twitter"
 config = {
 	"curl": ""
@@ -27,7 +28,7 @@ pin_entry_cache = {}
 AUTH = "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
 
 def get_title(html, url):
-	name = re.search("twitter.com/([^/]+)", url).group(1)
+	name = re.search(r"\.com/([^/]+)", url).group(1)
 	if is_media(url):
 		return f"[twitter] {name} (media)"
 	return f"[twitter] {name}"
@@ -38,7 +39,7 @@ def session_key(url):
 		return (r.scheme, r.netloc, "/i/api")
 	
 def is_media(url):
-	if re.search(r"twitter\.com/[^/]+/media", url):
+	if re.search(r"\.com/[^/]+/media", url):
 		return True
 	if re.search(r"graphql/[^/]+/UserMedia", url):
 		return True
@@ -48,7 +49,7 @@ def init_api_session():
 	session = session_manager.get("https://twitter.com/i/api/")
 	session.headers.update({
 		"authorization": f"Bearer {AUTH}",
-		"x-csrf-token": session.cookies.get("ct0", ""),
+		"x-csrf-token": get_cookie(session.cookies, "ct0", domain="twitter.com"),
 		"x-twitter-active-user": "yes",
 		"x-twitter-auth-type": "OAuth2Session",
 		"x-twitter-client-language": "en"
@@ -56,7 +57,7 @@ def init_api_session():
 
 def get_episodes(html, url):
 	init_api_session()
-	name = re.search(r"twitter\.com/([^/]+)", url).group(1)
+	name = re.search(r"\.com/([^/]+)", url).group(1)
 	if name != "i":
 		variables = {
 			"screen_name": name,

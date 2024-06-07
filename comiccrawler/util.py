@@ -2,6 +2,7 @@ import re
 import string
 from functools import total_ordering
 from pathlib import Path
+from requests.cookies import RequestsCookieJar
 
 import uncurl
 
@@ -99,3 +100,21 @@ def balance(s: str, index: int, left="(", right=")", skip=0):
 
 	return s[start:end]
 
+def get_cookie(cookieJar: RequestsCookieJar, name, domain=None) -> str:
+	l = [cookie for cookie in cookieJar if cookie.name == name]
+	def key(cookie):
+		if not domain or not cookie.domain:
+			return 0
+		return common_suffix_len(domain, cookie.domain)
+	l = sorted(l, key=key, reverse=True)
+	if not l:
+		raise ValueError(f"Cookie {name} not found")
+	if not l[0].value:
+		raise ValueError(f"Cookie {name} has no value")
+	return l[0].value
+
+def common_suffix_len(a, b):
+	i = 0
+	while i < len(a) and i < len(b) and a[-1-i] == b[-1-i]:
+		i += 1
+	return i
