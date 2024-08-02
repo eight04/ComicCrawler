@@ -100,8 +100,8 @@ def balance(s: str, index: int, left="(", right=")", skip=0):
 
 	return s[start:end]
 
-def get_cookie(cookieJar: RequestsCookieJar, name, domain=None) -> str:
-	l = [cookie for cookie in cookieJar if cookie.name == name]
+def get_cookie(cookie_jar: RequestsCookieJar, name, domain=None) -> str:
+	l = [cookie for cookie in cookie_jar if cookie.name == name]
 	def key(cookie):
 		if not domain or not cookie.domain:
 			return 0
