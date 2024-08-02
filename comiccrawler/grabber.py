@@ -117,8 +117,7 @@ def do_request(s, url, proxies, retry, **kwargs):
 	sleep_time = 5
 	while True:
 		with get_request_lock(url):
-			r = s.request(kwargs.pop("method", "GET"), url, timeout=(22, 60),
-				 proxies=proxies, **kwargs)
+			r = s.request(kwargs.pop("method", "GET"), url, proxies=proxies, **kwargs)
 		grabber_log(list((r.status_code, r.url, r.request.headers, r.headers) for r in (r.history + [r])))
 
 		if r.status_code in SUCCESS_CODES:

@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 from threading import Lock
 from typing import Callable, Any
 
-from requests import Session
+from requests import Session as RequestsSession
 
 from .util import extract_curl
 
@@ -15,6 +15,14 @@ default_header = {
 def default_key(url: str) -> tuple:
 	r = urlparse(url)
 	return (r.scheme, r.netloc)
+
+class Session(RequestsSession):
+	timeout: Any = (22, 60)
+
+	def request(self, *args, **kwargs):
+		if "timeout" not in kwargs:
+			kwargs["timeout"] = self.timeout
+		return super().request(*args, **kwargs)
 
 class SessionManager:
 	def __init__(self) -> None:
