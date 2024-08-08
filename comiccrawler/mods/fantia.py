@@ -49,7 +49,10 @@ def get_images(html, url):
 	post_id = re.search(r"posts/(\d+)", url).group(1)
 	init_api_session(html)
 	result = grabber(f"https://fantia.jp/api/v1/posts/{post_id}", referer=url).json()
-	thumb = result["post"].get("thumb", {}).get("original")
+	try:
+		thumb = result["post"]["thumb"]["original"]
+	except (TypeError, KeyError): # thumb may be None
+		thumb = None
 	if thumb:
 		yield thumb
 	for content in result["post"]["post_contents"]:
