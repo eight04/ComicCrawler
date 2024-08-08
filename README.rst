@@ -397,6 +397,16 @@ Todos
 Changelog
 ---------
 
+- 2024.8.9
+
+  - Add: jpg4 module.
+  - Fix: domain changed to x.com in twitter.
+  - Fix: failed locating popular posts in sankaku.
+  - Fix: handle empty thumbnail in fantia.
+  - Fix: skip posts without files in fanbox.
+  - Fix: stop detecting zip as docx.
+  - Fix: wrong image URL in bilibili manga.
+
 - 2024.4.11
 
   - Fix: redirect error in sankaku.
