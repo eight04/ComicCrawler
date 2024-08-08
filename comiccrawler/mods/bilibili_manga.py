@@ -115,26 +115,28 @@ def get_images(html, url):
 		json={"ep_id": ep_id}
 		)
 	image_index = json.loads(image_index)
-	image_index_url = urljoin(image_index["data"]["host"], image_index["data"]["path"])
-	image_index_file = grabber(image_index_url).content
-	image_index_file = decoder.decode(id, ep_id, image_index_file)
-	index = read_zip(image_index_file, "index.dat")
-	index = json.loads(index)
-	return [ImageGetter(f) for f in index["pics"]]
+	# image_index_url = urljoin(image_index["data"]["host"], image_index["data"]["path"])
+	# image_index_file = grabber(image_index_url).content
+	# image_index_file = decoder.decode(id, ep_id, image_index_file)
+	# index = read_zip(image_index_file, "index.dat")
+	# index = json.loads(index)
+	return [ImageGetter(i["path"], referer=url) for i in image_index["data"]["images"]]
 
 def read_zip(b, filename):
 	with ZipFile(io.BytesIO(b)) as zip:
 		return zip.read(filename).decode("utf8")
 
 class ImageGetter:
-	def __init__(self, path):
+	def __init__(self, path, **kwargs):
 		self.path = path
+		self.kwargs = kwargs
 
 	def __call__(self):
 		result = grabhtml(
 			"https://manga.bilibili.com/twirp/comic.v1.Comic/ImageToken?device=pc&platform=web",
 			method="POST",
-			json={"urls": json.dumps([self.path])}
+			json={"urls": json.dumps([self.path])},
+			**self.kwargs
 			)
 		result = json.loads(result)
 		return "{}?token={}".format(result["data"][0]["url"], result["data"][0]["token"])
