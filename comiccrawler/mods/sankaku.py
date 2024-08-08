@@ -57,8 +57,7 @@ def get_episodes(html, url):
 	# FIXME: is there a way to include popular posts without breaking update check?
 	# since update check stops if it sees an existing episode
 	m = re.search('''id=["']more-popular-link''', html)
-	assert m
-	i = m.start()
+	i = m.start() if m else 0 # some query has no popular posts
 
 	for m in re.finditer(r'''href=["']([^"']*posts/([^"']+))''', html[i:]):
 		ep_url, pid = m.groups()
