@@ -40,7 +40,7 @@ def get_episodes(html, url):
 		raise SkipPageError
 
 	if url.startswith("https://api.fanbox.cc/post.listCreator"):
-		posts = json.loads(html)["body"]["items"]
+		posts = json.loads(html)["body"]
 		result = []
 		for post in posts:
 			result.append(Episode(
@@ -60,10 +60,11 @@ def get_images(html, url):
 
 	if match := re.search(r'https://api\.fanbox\.cc/post\.info\?postId=(\d+)', url):
 		result = json.loads(html)
-		files = result["body"]["body"].get("files")
-		if not files:
+		try:
+			files = result["body"]["body"]["files"]
+		except (KeyError, TypeError):
 			raise SkipEpisodeError(always=True)
-		return [f["url"] for f in result["body"]["body"]["files"]]
+		return [f["url"] for f in files]
 
 	raise TypeError(f"Unknown URL: {url}")
 				
