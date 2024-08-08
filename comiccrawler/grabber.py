@@ -3,12 +3,12 @@
 from contextlib import contextmanager
 from email.message import EmailMessage
 from pathlib import Path
-from pprint import pformat
 from threading import Lock
 from urllib.parse import quote, urlsplit, urlunsplit, urlparse
 import re
 import socket
 import time
+import json
 
 import enlighten
 import requests
@@ -83,7 +83,7 @@ def quote_unicode_dict(d):
 
 def grabber_log(obj):
 	if setting.getboolean("errorlog"):
-		content = time.strftime("%Y-%m-%dT%H:%M:%S%z") + "\n" + pformat(obj) + "\n\n"
+		content = time.strftime("%Y-%m-%dT%H:%M:%S%z") + "\n" + json.dumps(obj, indent=2, sort_keys=True) + "\n\n"
 		content_write(profile("grabber.log"), content, append=True)
 
 def grabber(url, header=None, *, referer=None, cookie=None,
@@ -118,7 +118,14 @@ def do_request(s, url, proxies, retry, **kwargs):
 	while True:
 		with get_request_lock(url):
 			r = s.request(kwargs.pop("method", "GET"), url, proxies=proxies, **kwargs)
-		grabber_log(list((r.status_code, r.url, r.request.headers, r.headers) for r in (r.history + [r])))
+		for r2 in (r.history + [r]):
+			grabber_log({
+				"status_code": r2.status_code,
+				"url": r2.url,
+				"request_headers": dict(r2.request.headers),
+				"response_headers": dict(r2.headers),
+				"json": kwargs.get("json"),
+				})
 
 		if r.status_code in SUCCESS_CODES:
 			content_length = r.headers.get("Content-Length")
