@@ -11,7 +11,7 @@ from zipfile import ZipFile
 from deno_vm import VM
 
 from ..core import Episode
-from ..grabber import grabhtml, grabber
+from ..grabber import grabhtml
 
 domain = ["manga.bilibili.com"]
 name = "manga.bilibili"
@@ -105,7 +105,7 @@ def get_episodes(html, url):
 		) for ep in reversed(detail["data"]["ep_list"])]
 
 def get_images(html, url):
-	id, ep_id = (int(n) for n in re.search(r'mc(\d+)/(\d+)', url).groups())
+	_id, ep_id = (int(n) for n in re.search(r'mc(\d+)/(\d+)', url).groups())
 	if not decoder.loaded():
 		bili_js = re.search(r'src="([^"]+/bili\.\w+\.js)', html).group(1)
 		decoder.load(urljoin(url, bili_js))
