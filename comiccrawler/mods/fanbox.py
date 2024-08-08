@@ -63,7 +63,7 @@ def get_images(html, url):
 		try:
 			files = result["body"]["body"]["files"]
 		except (KeyError, TypeError):
-			raise SkipEpisodeError(always=True)
+			raise SkipEpisodeError(always=True) from None
 		return [f["url"] for f in files]
 
 	raise TypeError(f"Unknown URL: {url}")
