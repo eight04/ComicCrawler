@@ -46,10 +46,10 @@ def is_media(url):
 	return False
 
 def init_api_session():
-	session = session_manager.get("https://twitter.com/i/api/")
+	session = session_manager.get("https://x.com/i/api/")
 	session.headers.update({
 		"authorization": f"Bearer {AUTH}",
-		"x-csrf-token": get_cookie(session.cookies, "ct0", domain="twitter.com"),
+		"x-csrf-token": get_cookie(session.cookies, "ct0", domain="x.com"),
 		"x-twitter-active-user": "yes",
 		"x-twitter-auth-type": "OAuth2Session",
 		"x-twitter-client-language": "en"
@@ -65,7 +65,7 @@ def get_episodes(html, url):
 			"withSuperFollowsUserFields": False
 		}
 		u = update_qs(
-			"https://twitter.com/i/api/graphql/LPilCJ5f-bs3MjJJNcuuOw/UserByScreenName",
+			"https://x.com/i/api/graphql/LPilCJ5f-bs3MjJJNcuuOw/UserByScreenName",
 			{"variables": json.dumps(variables)}
 		)
 		result = grabber(u).json()
@@ -116,7 +116,7 @@ def tweet_result_to_episode(tweet_result):
 		legacy = result["tweet"]["legacy"]
 	id_str = legacy["id_str"]	
 
-	ep_url = f"https://twitter.com/{screen_name}/status/{id_str}"
+	ep_url = f"https://x.com/{screen_name}/status/{id_str}"
 	
 	return Episode(
 		title=id_str,
@@ -195,7 +195,7 @@ def user_tweets_graph(**kwargs):
 	}
 	variables.update(kwargs)
 	return update_qs(
-		"https://twitter.com/i/api/graphql/PIt4K9PnUM5DP9KW_rAr0Q/UserTweets",
+		"https://x.com/i/api/graphql/PIt4K9PnUM5DP9KW_rAr0Q/UserTweets",
 		{"variables": json.dumps(variables)}
 	)
 	
@@ -218,7 +218,7 @@ def user_media_graph(**kwargs):
 	}
 	variables.update(kwargs)
 	return update_qs(
-		"https://twitter.com/i/api/graphql/JWaFyG5p4-UvSyxGMe15-g/UserMedia",
+		"https://x.com/i/api/graphql/JWaFyG5p4-UvSyxGMe15-g/UserMedia",
 		{"variables": json.dumps(variables)}
 	)
 
@@ -226,7 +226,7 @@ def tweet_detail_graph(**kwargs):
 	variables = {"focalTweetId":"1438138335042564102","with_rux_injections":False,"includePromotedContent":True,"withCommunity":True,"withQuickPromoteEligibilityTweetFields":True,"withTweetQuoteCount":True,"withBirdwatchNotes":False,"withSuperFollowsUserFields":True,"withBirdwatchPivots":False,"withDownvotePerspective":False,"withReactionsMetadata":False,"withReactionsPerspective":False,"withSuperFollowsTweetFields":True,"withVoice":True,"withV2Timeline":False,"__fs_interactive_text":False,"__fs_dont_mention_me_view_api_enabled":False}
 	variables.update(kwargs)
 	return update_qs(
-		"https://twitter.com/i/api/graphql/s2RO46g9Rhw53GX2BEMfiA/TweetDetail",
+		"https://x.com/i/api/graphql/s2RO46g9Rhw53GX2BEMfiA/TweetDetail",
 		{"variables": json.dumps(variables)}
 	)
 
