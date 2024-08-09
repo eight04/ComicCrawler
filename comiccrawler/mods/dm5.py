@@ -15,6 +15,7 @@ from deno_vm import eval
 
 from ..core import Episode, grabhtml
 from ..util import clean_tags
+from ..session_manager import session_manager
 
 cookie = {
 	"isAdult": "1",
@@ -24,13 +25,19 @@ cookie = {
 domain = ["www.dm5.com", "tel.dm5.com", "hk.dm5.com"]
 name = "動漫屋"
 
+def load_config():
+	s = session_manager.get("https://www.dm5.com/")
+	s.headers.update({
+		"Accept-Language": "zh-TW,en-US;q=0.7,en;q=0.3"
+		})
+
 def get_title(html, url):
 	return re.search('DM5_COMIC_MNAME="([^"]+)', html).group(1)
 
 def get_episodes(html, url):
 	s = []
 
-	for match in re.finditer('<li>\s*<a href="(/m\d+/)"[^>]*>(.+?)</a>', html, re.DOTALL):
+	for match in re.finditer(r'<li>\s*<a href="(/m\d+/)"[^>]*>(.+?)</a>', html, re.DOTALL):
 		# https://github.com/eight04/ComicCrawler/issues/165
 		ep_url, title = match.groups()
 		s.append(Episode(
@@ -53,9 +60,9 @@ def get_images(html, url):
 	else:
 		key = ""
 		
-	count = int(re.search("DM5_IMAGE_COUNT=(\d+);", html).group(1))
-	cid = re.search("DM5_CID=(\d+);", html).group(1)
-	mid = re.search("DM5_MID=(\d+);", html).group(1)
+	count = int(re.search(r"DM5_IMAGE_COUNT=(\d+);", html).group(1))
+	cid = re.search(r"DM5_CID=(\d+);", html).group(1)
+	mid = re.search(r"DM5_MID=(\d+);", html).group(1)
 	dt = re.search('DM5_VIEWSIGN_DT="([^"]+)', html).group(1)
 	sign = re.search('DM5_VIEWSIGN="([^"]+)', html).group(1)
 	
