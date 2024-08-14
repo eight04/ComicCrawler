@@ -397,6 +397,11 @@ Todos
 Changelog
 ---------
 
+- 2024.8.14
+
+  - Add: extract file extension from URL.
+  - Fix: 404 error in dm5.
+
 - 2024.8.9
 
   - Add: jpg4 module.
