@@ -185,7 +185,21 @@ def grabimg(*args, on_opened=None, tempfile=None, header=None, **kwargs):
 		if not header:
 			header = {}
 		header["Range"] = f"bytes={loaded}-"
-	r = grabber(*args, header=header, **kwargs)
+	try:
+		r = grabber(*args, header=header, **kwargs)
+	except requests.HTTPError as err:
+		if err.response.status_code != 416:
+			raise err
+		try:
+			content_range_max = int(err.response.headers["Content-Range"].split("/")[-1])
+		except (KeyError, ValueError) as err_no_content_range:
+			raise err from err_no_content_range
+		if content_range_max == loaded:
+			return ImgResult(err.response, tempfile=tempfile)
+		if content_range_max < loaded and tempfile:
+			# FIXME: this should not happen
+			Path(tempfile).unlink()
+		raise err
 	if on_opened:
 		on_opened(r)
 	if r.status_code == 200:
