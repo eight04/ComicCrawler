@@ -29,7 +29,7 @@ def get_title(html, url):
 	except AttributeError:
 		id = re.search("set=([^&]+)", url).group(1)
 	title = re.search("<title[^>]*>([^<]+)", html).group(1)
-	title = re.sub("\s+", " ", title)
+	title = re.sub(r"\s+", " ", title)
 	return unescape("{} ({})".format(title, id))
 
 def get_episodes(html, url):

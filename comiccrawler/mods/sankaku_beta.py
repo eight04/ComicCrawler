@@ -73,7 +73,7 @@ def get_episodes(html, url):
     return eps[::-1]
 
 def get_images(html, url):
-    id = re.search("post/show/(\d+)", url).group(1)
+    id = re.search(r"post/show/(\d+)", url).group(1)
     data = grabhtml("https://capi-v2.sankakucomplex.com/posts?lang=english&page=1&limit=1&tags=id_range:{}".format(id))
     data = json.loads(data)
     return data[0]["file_url"]
