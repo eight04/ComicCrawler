@@ -25,7 +25,10 @@ def session_key(url):
 
 def load_config():
 	s = session_manager.get("https://www.sankakucomplex.com/posts/keyset")
-	access_token = get_cookie(s.cookies, "accessToken", domain="www.sankakucomplex.com")
+	try:
+		access_token = get_cookie(s.cookies, "accessToken", domain="www.sankakucomplex.com")
+	except ValueError:
+		access_token = ""
 	s.headers.update({
 		"Accept": "application/vnd.sankaku.api+json;v=2",
 		"Client-Type": "non-premium",
