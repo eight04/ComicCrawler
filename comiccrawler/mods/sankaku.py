@@ -15,7 +15,7 @@ config = {
 	"curl": "",
 	# curl for v.sankakucomplex.com. Note that you should leave this empty.
 	"curl_v": ""
-}
+	}
 no_referer = True
 autocurl = True
 
@@ -32,7 +32,7 @@ def is_redirected(err):
 
 def errorhandler(err, crawler):
 	pass
-	# this shouldn't happen without referer
+# this shouldn't happen without referer
 	# if is_redirected(err):
 	# 	crawler.init_images()
 
@@ -49,7 +49,7 @@ def login_check(html):
 def get_title(html, url):
 	title = re.search(r"<title>/?(.+?) \|", html).group(1)
 	return "[sankaku] " + unescape(title)
-	
+
 def get_episodes(html, url):
 	login_check(html)
 	s = []
@@ -65,7 +65,7 @@ def get_episodes(html, url):
 			continue
 		e = Episode(pid, urljoin(url, ep_url))
 		s.append(e)
-	
+
 	return s[::-1]
 
 def get_images(html, url):
@@ -87,4 +87,4 @@ def get_next_page(html, url):
 
 def get_next_image_page(html, url):
 	pass
-		
+
