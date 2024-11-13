@@ -397,6 +397,15 @@ Todos
 Changelog
 ---------
 
+- 2024.11.14
+
+   - Fix: add language tag to seemh.
+   - Fix: eight module.
+   - Fix: sankaku.
+   - Fix: handler 416 content range.
+   - Add: new domain in kemono.
+   - Add: try smaller images when 404 on twitter.
+
 - 2024.8.14
 
   - Add: extract file extension from URL.
