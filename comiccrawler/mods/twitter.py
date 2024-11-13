@@ -222,17 +222,26 @@ def user_media_graph(**kwargs):
 		{"variables": json.dumps(variables)}
 	)
 
-def tweet_detail_graph(**kwargs):
-	variables = {"focalTweetId":"1438138335042564102","with_rux_injections":False,"includePromotedContent":True,"withCommunity":True,"withQuickPromoteEligibilityTweetFields":True,"withTweetQuoteCount":True,"withBirdwatchNotes":False,"withSuperFollowsUserFields":True,"withBirdwatchPivots":False,"withDownvotePerspective":False,"withReactionsMetadata":False,"withReactionsPerspective":False,"withSuperFollowsTweetFields":True,"withVoice":True,"withV2Timeline":False,"__fs_interactive_text":False,"__fs_dont_mention_me_view_api_enabled":False}
-	variables.update(kwargs)
+TWEET_DETAIL_URL = "https://x.com/i/api/graphql/MdM6P_0z37tPVjUmvmKgCQ/TweetDetail?variables=%7B%22focalTweetId%22%3A%221856338501761216781%22%2C%22with_rux_injections%22%3Afalse%2C%22rankingMode%22%3A%22Relevance%22%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withQuickPromoteEligibilityTweetFields%22%3Atrue%2C%22withBirdwatchNotes%22%3Atrue%2C%22withVoice%22%3Atrue%7D&features=%7B%22responsive_web_live_screen_enabled%22%3Afalse%2C%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22communities_web_enable_tweet_community_results_fetch%22%3Atrue%2C%22c9s_tweet_anatomy_moderator_badge_enabled%22%3Atrue%2C%22articles_preview_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Atrue%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22creator_subscriptions_quote_tweet_preview_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22rweb_video_timestamps_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D&fieldToggles=%7B%22withArticleRichContentState%22%3Atrue%2C%22withArticlePlainText%22%3Afalse%2C%22withGrokAnalyze%22%3Afalse%2C%22withDisallowedReplyControls%22%3Afalse%7D"
+
+def tweet_detail_graph(focalTweetId):
+	def variables(s):
+		data = json.loads(s)
+		data["focalTweetId"] = focalTweetId
+		return json.dumps(data)
 	return update_qs(
-		"https://x.com/i/api/graphql/s2RO46g9Rhw53GX2BEMfiA/TweetDetail",
-		{"variables": json.dumps(variables)}
+		TWEET_DETAIL_URL,
+		{"variables": variables}
 	)
 
 def errorhandler(err, crawler):
-	if is_http(err, 404):
+	if is_http(err, 404) and crawler.image.url == err.request.url:
+		if match := re.match("(.*):orig", err.request.url):
+			crawler.image.url = match.group(1)
+			return
+
 		tid = re.search(r"status/(\d+)", crawler.ep.current_url).group(1)
+		init_api_session()
 		u = tweet_detail_graph(focalTweetId=tid)
 		r = grabber(u).json()
 		if r.get("errors", None):

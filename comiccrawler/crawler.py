@@ -259,6 +259,7 @@ class Crawler:
 
 		except Exception as err: # pylint: disable=broad-except
 			print("[Crawler] Failed to handle error: {}".format(err))
+			traceback.print_exc()
 			
 def get_checksum(b):
 	return hashlib.md5(b).hexdigest() # nosec
