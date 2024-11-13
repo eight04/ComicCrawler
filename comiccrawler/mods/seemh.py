@@ -23,6 +23,9 @@ grabber_cooldown = {
 	"www.manhuagui.com": 3,
 	"tw.manhuagui.com": 3
 }
+header = {
+	"Accept-Language": "zh-tw,zh;q=0.8,en-us;q=0.5,en;q=0.3",
+	}
 
 class LZString:
 	def __init__(self):
