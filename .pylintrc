@@ -17,6 +17,7 @@ disable=
 	duplicate-code,
 	global-statement,
 	inconsistent-return-statements,
+  invalid-name,
 	missing-docstring, multiple-imports,
   missing-final-newline,
 	redefined-outer-name, redefined-builtin,
