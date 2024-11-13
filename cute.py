@@ -54,7 +54,7 @@ cute(
 	],
 	readme_build = [
 		'python setup.py --long-description | x-pipe build/readme/index.rst',
-		'rst2html5.py --no-raw --exit-status=1 --verbose '
+		'rst2html5 --no-raw --exit-status=1 --verbose '
 			'build/readme/index.rst build/readme/index.html'
 	],
 	readme_pre = "readme_build",

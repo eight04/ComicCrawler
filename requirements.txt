@@ -1,5 +1,5 @@
 certifi==2024.8.30
-docutils==0.20.1
+docutils==0.21.2
 pygments==2.18.0
 pylint==3.3.1
 pyxcute==0.8.1
