@@ -61,7 +61,6 @@ def get_episodes(html, url):
 
 			ep_url = vm.run(cview)
 			# ep_url = vm.run("location.href")
-			print("ep_url", ep_url)
 			title = clean_tags(title)
 
 			e = Episode(title, urljoin(url, ep_url))
@@ -78,19 +77,18 @@ def get_images(html, url):
 		j_js = urljoin(url, j_js)
 		j_js = grabhtml(j_js)
 	
-	try:
-		# http://www.comicbus.com/html/103.html
-		script = re.search(r'(var ch=.+?)spp\(\)', html, re.DOTALL).group(1)
-	except AttributeError:
-		# http://www.comicbus.com/html/7294.html
-		script = re.search('(var chs=.+?)</script>', html, re.DOTALL).group(1)
+	script = re.search('(function request.+?)</script>', html, re.DOTALL).group(1)
 
 	global lazy_js
 	if not lazy_js:
-		lazy_js = re.search(r'src="([^"]*/lazyloadx\.js[^"]*)"', html).group(1)
-		lazy_js = urljoin(url, lazy_js)
-		lazy_js = grabhtml(lazy_js)
-		lazy_js = re.search(r'(var a=[\s\S]*?)o\.setAttribute', lazy_js).group(1)
+		try:
+			lazy_js = re.search(r'src="([^"]*/lazyloadx\.js[^"]*)"', html).group(1)
+		except AttributeError:
+			pass
+		else:
+			lazy_js = urljoin(url, lazy_js)
+			lazy_js = grabhtml(lazy_js)
+			lazy_js = re.search(r'(var a=[\s\S]*?)o\.setAttribute', lazy_js).group(1)
 	
 	js = """
 (() => {
@@ -117,6 +115,7 @@ var url = """ + f"{url!r}" + """,
         style: {},
       };
     },
+	images: []
   },
   navigator = {
     userAgent: "",
@@ -156,6 +155,8 @@ return [...parseSrc()].map(src => {
 
 })();
 """
+	# import pathlib
+	# pathlib.Path("8comic.js").write_text(js)
 	imgs = eval(js)
-	return imgs
+	return [urljoin(url, img) for img in imgs]
 
