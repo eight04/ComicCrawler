@@ -9,7 +9,7 @@ from comiccrawler.error import SkipEpisodeError
 
 from ..core import Episode
 
-domain = ["kemono.party", "kemono.su"]
+domain = ["kemono.party", "kemono.su", "coomer.su"]
 name = "Kemono"
 noepfolder = True
 
