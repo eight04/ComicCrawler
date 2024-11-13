@@ -14,7 +14,7 @@ from deno_vm import VM, eval
 from ..core import Episode, grabhtml
 from ..util import clean_tags
 
-domain = ["www.8comic.com", "www.comicvip.com", "comicbus.com", "www.comicabc.com"]
+domain = ["8comic.com", "www.comicvip.com", "comicbus.com", "www.comicabc.com"]
 name = "無限"
 next_page_cache = {}
 nview = None
