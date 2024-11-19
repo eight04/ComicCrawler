@@ -61,7 +61,7 @@ def get_images(html, url):
 	filename = url_extract_filename(image)
 
 	if get_boolean(config["original"]):
-		match = re.search(r'href="([^"]+?/fullimg\.php[^"]+)', html)
+		match = re.search(r'href="([^"]+?/fullimg[^"]+)', html)
 		if match:
 			image = unescape(match.group(1))
 
