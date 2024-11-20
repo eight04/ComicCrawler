@@ -138,7 +138,7 @@ class Analyzer:
 			print('Analyzing {}...'.format(url))
 			sleep(getattr(self.mission.module, "rest_analyze", 0))
 			r = urlparse(self.mission.url)
-			self.html = self.grabber.html(url, retry=True, header={
+			self.html = self.grabber.html(url, retry=True, headers={
 				"Referer": self.mission.url,
 				"Origin": f"{r.scheme}://{r.netloc}"
 				})

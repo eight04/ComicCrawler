@@ -5,15 +5,15 @@ from pathlib import Path
 from threading import Lock
 from urllib.parse import quote, urlsplit, urlunsplit, urlparse
 import re
-import socket
+# import socket
 import time
 import json
 
 import enlighten
-import requests
 from worker import WorkerExit, async_, await_, sleep, Defer
-from urllib3.util import is_fp_closed
+# from urllib3.util import is_fp_closed
 from urllib3.exceptions import IncompleteRead
+from curl_cffi.requests.exceptions import HTTPError
 
 from .config import setting
 from .io import content_write
@@ -74,24 +74,19 @@ def grabber_log(obj):
 		content = time.strftime("%Y-%m-%dT%H:%M:%S%z") + "\n" + json.dumps(obj, indent=2, sort_keys=True) + "\n\n"
 		content_write(profile("grabber.log"), content, append=True)
 
-def grabber(url, header=None, *, referer=None, cookie=None,
-			retry=False, done=None, proxy=None, **kwargs):
+def grabber(url, *, referer=None, retry=False, done=None, proxy=None, **kwargs):
 	"""Request url, return text or bytes of the content."""
 	s = session_manager.get(url)
 
 	if referer:
 		s.headers['Referer'] = quote_unicode(referer)
 
-	if cookie:
-		quote_unicode_dict(cookie)
-		requests.utils.add_dict_to_cookiejar(s.cookies, cookie)
-
 	if isinstance(proxy, str):
 		proxies = {'http': proxy, 'https': proxy}
 	else:
 		proxies = proxy
 
-	r = await_(do_request, s, url, proxies, retry, headers=header, **kwargs)
+	r = await_(do_request, s, url, proxies, retry, **kwargs)
 
 	if done:
 		done(s, r)
@@ -116,27 +111,13 @@ def do_request(s, url, proxies, retry, **kwargs):
 				})
 
 		if r.status_code in SUCCESS_CODES:
-			content_length = r.headers.get("Content-Length")
-			if not kwargs.get("stream", False) and content_length and int(content_length) != r.raw.tell():
-				raise ValueError(
-					"incomplete response. Content-Length: {content_length}, got: {actual}"
-					.format(content_length=content_length, actual=r.raw.tell())
-					)
 			break
 		if not retry or r.status_code not in RETRYABLE_HTTP_CODES:
 			r.raise_for_status()
 		# 302 error without location header
 		if r.status_code == 302:
 			# pylint: disable=protected-access
-			match = re.search(
-				r"^location:\s*(.+)",
-				str(r.raw._original_response.msg),
-				re.M + re.I
-				)
-			if not match:
-				raise TypeError("status 302 without location header")
-			url = match.group(1)
-			continue
+			raise TypeError("status 302 without location header")
 		print(r)
 		print("retry after {sleep_time} seconds".format(sleep_time=sleep_time))
 		sleep(sleep_time)
@@ -160,19 +141,9 @@ def guess_encoding(r):
 
 def iter_content(r):
 	"""Iterate the content of the response."""
-	# FIXME: requests streaming is so broken wtf
-	# https://github.com/psf/requests/issues/5536
-	# https://github.com/urllib3/urllib3/issues/2123
-	if r.raw.chunked and r.raw.supports_chunked_reads():
-		yield from r.raw.read_chunked(decode_content=True)
-	else:
-		while not is_fp_closed(r.raw._fp) or len(r.raw._decoded_buffer) > 0: # pylint: disable=protected-access
-			b = r.raw.read1(decode_content=True)
-			yield b
-			if not b:
-				sleep(0.1)
+	yield from r.iter_content()
 
-def grabimg(*args, on_opened=None, tempfile=None, header=None, **kwargs):
+def grabimg(*args, on_opened=None, tempfile=None, headers=None, **kwargs):
 	"""Grab the image. Return ImgResult"""
 	kwargs["stream"] = True
 	loaded = 0
@@ -182,12 +153,12 @@ def grabimg(*args, on_opened=None, tempfile=None, header=None, **kwargs):
 		except FileNotFoundError:
 			pass
 	if loaded:
-		if not header:
-			header = {}
-		header["Range"] = f"bytes={loaded}-"
+		if not headers:
+			headers = {}
+		headers["Range"] = f"bytes={loaded}-"
 	try:
-		r = grabber(*args, header=header, **kwargs)
-	except requests.HTTPError as err:
+		r = grabber(*args, headers=headers, **kwargs)
+	except HTTPError as err:
 		if err.response.status_code != 416:
 			raise err
 		try:
@@ -227,8 +198,7 @@ def grabimg(*args, on_opened=None, tempfile=None, header=None, **kwargs):
 						counter.update(len(chunk))
 						loaded += len(chunk)
 	except WorkerExit:
-		socket.close(r.raw._fp.fileno()) # pylint: disable=protected-access
-		r.raw.release_conn()
+		r.close()
 		raise
 	if total and loaded < total:
 		raise IncompleteRead(loaded, total - loaded)

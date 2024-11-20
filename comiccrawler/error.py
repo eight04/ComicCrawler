@@ -1,4 +1,5 @@
-from requests import HTTPError
+# from requests import HTTPError
+from curl_cffi.requests.exceptions import HTTPError
 
 class ComicCrawlerSignal(BaseException):
 	"""Extend BaseException."""
