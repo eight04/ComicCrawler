@@ -124,7 +124,7 @@ or you can use it in your python script:
 設定檔
 ------
 
-::
+.. code:: ini
 
     [DEFAULT]
     ; 設定下載完成後要執行的程式，{target} 會被替換成任務資料夾的絕對路徑
@@ -192,6 +192,19 @@ or you can use it in your python script:
 
       若在執行時，修改設定檔並儲存，接著結束 ComicCrawler，修改會遺失。因為 ComicCrawler 結束前會把設定寫回設定檔。
 -  各別網站的設定不會互相影響。假如在 [DEFAULT] 設 savepath = a；在 [Pixiv] 設 savepath = b，那麼從 pixiv 下載的都會存到 b 資料夾，其它的就用預設值，存到 a 資料夾。
+
+
+關於需要登入的網站
+------------------
+
+只要在設定檔裡指定 ``browser`` 和 ``browser_profile`` ，Comic Crawler 就可以自動從瀏覽器讀取 cookies 並登入。然而最新版的 Chrome 加強了對 Cookie 的保護︰
+
+* https://github.com/yt-dlp/yt-dlp/issues/7271
+* https://github.com/yt-dlp/yt-dlp/issues/10927
+
+所以目前只有 Firefox 可以正常運作。
+
+有些網站可以在設定檔裡指定 cookie 或 curl，但這些設定在未來會逐步淘汰，改用瀏覽器 cookie 自動登入。
 
 Module example
 --------------
