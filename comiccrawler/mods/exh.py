@@ -20,9 +20,6 @@ name = "e紳士"
 noepfolder = True
 rest = 5
 config = {
-	"cookie_ipb_member_id": "請輸入Cookie中的ipb_member_id",
-	"cookie_ipb_pass_hash": "請輸入Cookie中的ipb_pass_hash",
-	"cookie_igneous": "請輸入Cookie中的igneous",
 	"original": "false"
 }
 
@@ -30,7 +27,7 @@ def get_boolean(s):
 	return ConfigParser.BOOLEAN_STATES.get(s.lower())
 	
 def check_login(html):
-	if html[6:10] == "JFIF":
+	if html[6:10] == "JFIF" or ("mytags" not in html and "home.php" not in html):
 		raise PauseDownloadError("You didn't login!")
 
 def get_title(html, url):
@@ -49,12 +46,12 @@ nl = ""
 def get_images(html, url):
 	check_login(html)
 	global nl
-	nl = re.search("nl\('([^)]+)'\)", html).group(1)
+	nl = re.search(r"nl\('([^)]+)'\)", html).group(1)
 	
 	image = re.search("<img id=\"img\" src=\"(.+?)\"", html)
 	image = unescape(image.group(1))
 	# bandwith limit
-	if re.search("509s?\.gif", image) or re.search("403s?\.gif", image):
+	if re.search(r"509s?\.gif", image) or re.search(r"403s?\.gif", image):
 		# pause the download since retry doesn't help but increase view limit.
 		raise PauseDownloadError("Bandwidth limit exceeded!")
 		
