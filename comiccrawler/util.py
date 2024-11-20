@@ -2,9 +2,10 @@ import re
 import string
 from functools import total_ordering
 from pathlib import Path
-from requests.cookies import RequestsCookieJar
+from http.cookiejar import CookieJar
 
 import uncurl
+import curl_cffi.requests.cookies
 
 def dump(html):
 	Path("dump.html").write_text(html, encoding="utf-8")
@@ -100,7 +101,9 @@ def balance(s: str, index: int, left="(", right=")", skip=0):
 
 	return s[start:end]
 
-def get_cookie(cookie_jar: RequestsCookieJar, name, domain=None) -> str:
+def get_cookie(cookie_jar: CookieJar | curl_cffi.requests.cookies.Cookies, name, domain=None) -> str:
+	if hasattr(cookie_jar, "jar"):
+		cookie_jar = cookie_jar.jar
 	l = [cookie for cookie in cookie_jar if cookie.name == name]
 	def key(cookie):
 		if not domain or not cookie.domain:

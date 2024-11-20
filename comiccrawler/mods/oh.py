@@ -13,7 +13,7 @@ from deno_vm import eval
 
 from ..core import Episode, grabhtml
 
-domain = ["www.ohmanhua.com", "www.cocomanhua.com"]
+domain = ["www.ohmanhua.com", "www.cocomanhua.com", "www.colamanga.com"]
 name = "OH漫畫"
 
 def get_title(html, url):
@@ -48,7 +48,7 @@ class ScriptCache:
 scripts = ScriptCache()
 
 def get_images(html, url):
-	cdata = re.search("var C_DATA='[^']+'", html).group(0)
+	cdata = re.search("var C_DATA=('[^']+')", html).group(1)
 	
 	scripts.fetch(html, url, [
 		"\/l\.js",
@@ -58,31 +58,71 @@ def get_images(html, url):
 	])
 	
 	code = """
+const _log = console.log;
+
+Function.prototype.toString = (function(_toString) {
+  return function() {
+    return _toString.apply(this, arguments).replace(/\\r?\\n/g, '');
+  }
+})(Function.prototype.toString);
+
+self.setInterval = function() {};
+
+self.eval = function(_eval) {
+  return function() {
+    _log('eval', arguments[0]);
+    return _eval.apply(this, arguments);
+  };
+}(self.eval);
+
+self.convertWordArrayToUint8Array =
+  self.convertUint8ArrayToWordArray =
+  self.__b_a =
+  self.__cad = 
+  self.__js = 
+  undefined;
+
 	(function() {
 	
+  let _cookies = "";
+
 	function noop(path = "") {
-	  if (path === "document.cookie") return "";
+	  if (path === "document.cookie") return _cookies;
 	  if (path === "$.inArray") return (v, a) => a.indexOf(v);
 	  
 	  return new Proxy(() => {}, {
-		apply: () => noop("?"),
-		get: (target, prop) => noop(`${path}.${prop}`)
+      apply: () => noop(`${path}.called`),
+      get: (target, prop) => {
+        const propPath = typeof prop == "symbol" ? `${path}.${String(prop)}` : `${path}.${prop}`;
+        if (propPath == "document.domain") return "www.colamanga.com";
+        _log("get", propPath);
+        return noop(propPath);
+      },
+      set: (target, prop, value) => {
+        const propPath = `${path}.${prop}`;
+        if (propPath == "document.cookie") {
+          _cookies += value.split(";")[0] + "; ";
+        }
+        _log(propPath, value);
+        return value;
+      }
 	  });
 	}
-	
-	const exports = undefined;
-	const window = global;
-	window.location = {
+
+    self.window = self;
+	self.location = {
     	protocol: "http://",
 		href: '""" + url + """'
 	}
-	const navigator = {
+	self.navigator = {
 	  userAgent: ""
 	};
-	const document = noop("document")
-	const $ = noop("$");
+	self.document = noop("document")
+	self.$ = noop("$");
+    self.devtools = noop("devtools");
+	self.localStorage = noop("localStorage");
 	
-	""" + cdata + "\n" + str(scripts) + """
+	self.C_DATA = """ + cdata + "\n" + str(scripts) + """
 	
 	window.use_domain = {
 	},
@@ -108,8 +148,10 @@ def get_images(html, url):
 		__cr.preLoadImg(i++)
 	} while (dirty);
 	return imgs;
-	}).call(global);
+	}).call(self);
 	"""
 	
+	# import pathlib
+	# pathlib.Path("oh0.mjs").write_text(code, encoding="utf-8")
 	imgs = eval(code)
 	return [urljoin(url, i) for i in imgs]

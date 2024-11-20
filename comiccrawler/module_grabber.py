@@ -1,4 +1,4 @@
-from requests.utils import dict_from_cookiejar
+# from requests.utils import dict_from_cookiejar
 
 from .grabber import grabhtml, grabimg
 
@@ -19,8 +19,8 @@ class ModuleGrabber:
 		
 	def grab(self, grab_method, url=None, **kwargs):
 		new_kwargs = {
-			"header": self.get_header(),
-			"cookie": purify_cookie(self.get_cookie()),
+			"headers": self.get_header(),
+			"cookies": purify_cookie(self.get_cookie()),
 			"done": self.handle_grab,
 			"proxy": self.mod.config.get("proxy"),
 			"verify": self.mod.config.getboolean("verify", True)
@@ -50,13 +50,14 @@ class ModuleGrabber:
 		return cookie
 		
 	def handle_grab(self, session, _response):
-		cookie = dict_from_cookiejar(session.cookies)
-		config = getattr(self.mod, "config", None)
-		if not config:
-			return
-			
-		for key in config:
-			if key.startswith("cookie_"):
-				name = key[7:]
-				if name in cookie:
-					config[key] = cookie[name]
+		pass
+		# cookie = dict_from_cookiejar(session.cookies)
+		# config = getattr(self.mod, "config", None)
+		# if not config:
+		# 	return
+		# 	
+		# for key in config:
+		# 	if key.startswith("cookie_"):
+		# 		name = key[7:]
+		# 		if name in cookie:
+		# 			config[key] = cookie[name]

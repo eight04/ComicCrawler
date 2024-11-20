@@ -31,7 +31,7 @@ def get_episodes(html, url):
 			"order_by": "1",
 			"chapter_type": "1"
 		},
-		header = {
+		headers = {
 			"X-Requested-With": "XMLHttpRequest"
 		}
 	)
@@ -74,7 +74,7 @@ def get_images(html, url):
 			"chapter_id": chapter_id,
 			"page": page
 		},
-		header = {
+		headers = {
 			"X-Requested-With": "XMLHttpRequest"
 		}
 	)

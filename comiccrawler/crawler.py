@@ -220,7 +220,7 @@ class Crawler:
 			self.html = True
 		else:
 			r = urlparse(self.mission.url)
-			self.html = self.downloader.html(self.ep.current_url, header={
+			self.html = self.downloader.html(self.ep.current_url, headers={
 				"Referer": self.mission.url,
 				"Origin": f"{r.scheme}://{r.netloc}"
 				})

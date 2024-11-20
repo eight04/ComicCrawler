@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 from threading import Lock
 from typing import Callable, Any
 
-from requests import Session as RequestsSession
+from curl_cffi.requests import Session as RequestsSession
 
 from .util import extract_curl
 
