@@ -410,6 +410,12 @@ Todos
 Changelog
 ---------
 
+- 2024.12.6
+
+  - Fix: better login check in exh.
+  - Fix: fullimg in exh.
+  - Change: switch to curl_cffi, fix pixiv and oh.
+
 - 2024.11.14
 
    - Fix: add language tag to seemh.
