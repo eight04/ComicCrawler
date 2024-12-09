@@ -410,6 +410,10 @@ Todos
 Changelog
 ---------
 
+- 2024.12.9
+
+  - Fix: login check in exh.
+
 - 2024.12.6
 
   - Fix: better login check in exh.
