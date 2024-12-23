@@ -113,7 +113,13 @@ def do_request(s, url, proxies, retry, **kwargs):
 		if r.status_code in SUCCESS_CODES:
 			break
 		if not retry or r.status_code not in RETRYABLE_HTTP_CODES:
-			r.raise_for_status()
+			try: 
+				# FIXME: https://github.com/lexiforest/curl_cffi/issues/467
+				r.raise_for_status()
+			except HTTPError as err:
+				if not err.response:
+					err.response = r
+					raise err
 		# 302 error without location header
 		if r.status_code == 302:
 			# pylint: disable=protected-access
