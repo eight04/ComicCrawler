@@ -119,7 +119,7 @@ def do_request(s, url, proxies, retry, **kwargs):
 			except HTTPError as err:
 				if not err.response:
 					err.response = r
-					raise err
+				raise err
 		# 302 error without location header
 		if r.status_code == 302:
 			# pylint: disable=protected-access
@@ -172,7 +172,11 @@ def grabimg(*args, on_opened=None, tempfile=None, headers=None, **kwargs):
 		except (KeyError, ValueError) as err_no_content_range:
 			raise err from err_no_content_range
 		if content_range_max == loaded:
-			return ImgResult(err.response, tempfile=tempfile)
+			# NOTE: we create a new request for metadata since the server may return wrong metadata on 416 resopnses
+			h = headers.copy()
+			del h["Range"]
+			r = grabber(*args, headers=h, **kwargs, method="HEAD")
+			return ImgResult(r, tempfile=tempfile)
 		if content_range_max < loaded and tempfile:
 			# FIXME: this should not happen
 			Path(tempfile).unlink()
