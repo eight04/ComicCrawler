@@ -166,6 +166,8 @@ class Crawler:
 			output = self.savepath.full_fn(self.get_filename(), self.image_ext)
 			if self.tempfile:
 				Path(self.tempfile).rename(output)
+				if hasattr(self.mod, "imagehandler"):
+					content_write(output, self.image_bin)
 			else:
 				content_write(output, self.image_bin)
 		except OSError as err:
