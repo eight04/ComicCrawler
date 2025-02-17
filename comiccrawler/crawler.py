@@ -133,8 +133,13 @@ class Crawler:
 		if hasattr(self.mod, "imagehandler"):
 			if not self.image_bin and self.tempfile_complete:
 				self.image_bin = content_read(self.tempfile, raw=True)
-			self.image_ext, self.image_bin = self.mod.imagehandler(
-				self.image_ext, self.image_bin)
+
+			new_image_ext, new_image_bin = self.mod.imagehandler(self.image_ext, self.image_bin)
+			if new_image_ext != self.image_ext or new_image_bin != self.image_bin:
+				self.image_ext = new_image_ext
+				self.image_bin = new_image_bin
+				if self.tempfile:
+					content_write(self.tempfile, content=self.image_bin)
 
 	def save_image(self):
 		"""Write image to save path"""
@@ -166,8 +171,6 @@ class Crawler:
 			output = self.savepath.full_fn(self.get_filename(), self.image_ext)
 			if self.tempfile:
 				Path(self.tempfile).rename(output)
-				if hasattr(self.mod, "imagehandler"):
-					content_write(output, self.image_bin)
 			else:
 				content_write(output, self.image_bin)
 		except OSError as err:
