@@ -1,3 +1,4 @@
+from http.cookiejar import MozillaCookieJar
 from urllib.parse import urlparse
 from threading import Lock
 from typing import Callable, Any
@@ -45,7 +46,13 @@ class SessionManager:
 				self.sessions[key].headers.update(default_header)
 				if self.default_jar:
 					# FIXME: do we have to check cookies' domain?
-					self.sessions[key].cookies.update(self.default_jar)
+					# FIXME: we have to filter with domain since curl_cffi doesn't check them
+					session_cookies = self.default_jar.get_cookies_for_url(url)
+					session_jar = MozillaCookieJar()
+					for cookie in session_cookies:
+						session_jar.set_cookie(cookie)
+					# breakpoint()
+					self.sessions[key].cookies.update(session_jar)
 
 			return self.sessions[key]
 
