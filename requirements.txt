@@ -1,6 +1,6 @@
-certifi==2024.8.30
+certifi==2025.1.31
 docutils==0.21.2
-pygments==2.18.0
-pylint==3.3.1
+pygments==2.19.1
+pylint==3.3.5
 pyxcute==0.8.1
-twine==5.1.1
+twine==6.1.0

@@ -102,8 +102,11 @@ class Analyzer:
 		url = self.mission.url
 		old_eps = EpisodeList(self.mission.episodes or ())
 		new_eps = EpisodeList()
-		
+
+		visited_urls = set()
+
 		while True:
+			visited_urls.add(url)
 			try:
 				eps = list(self.mission.module.get_episodes(self.html, url))
 			except SkipPageError:
@@ -134,6 +137,8 @@ class Analyzer:
 			next_url = self.get_next_page(self.html, url)
 			if not next_url:
 				break
+			if next_url in visited_urls:
+				raise TypeError("Loop detected: {}".format(next_url))
 			url = next_url
 			print('Analyzing {}...'.format(url))
 			sleep(getattr(self.mission.module, "rest_analyze", 0))
