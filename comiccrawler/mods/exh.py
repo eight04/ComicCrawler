@@ -36,6 +36,7 @@ def has_login(html, page="ep"):
 	return True
 	
 def check_login(html, page="ep"):
+	# breakpoint()
 	if not has_login(html, page):
 		raise PauseDownloadError("You didn't login!")
 
