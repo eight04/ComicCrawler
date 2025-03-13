@@ -11,7 +11,7 @@ from urllib.parse import urlparse, parse_qs
 from ..episode import Episode
 from ..grabber import grabber
 from ..url import update_qs
-from ..error import is_http, SkipEpisodeError
+from ..error import is_http, SkipEpisodeError, SkipPageError
 from ..session_manager import session_manager
 from ..util import get_cookie
 
@@ -73,7 +73,7 @@ def get_episodes(html, url):
 		
 		endpoint = user_media_graph if is_media(url) else user_tweets_graph
 		next_page_cache[url] = endpoint(userId=uid)
-		return
+		raise SkipPageError
 		
 	if any(k in url for k in ["UserTweets", "UserMedia"]):
 		data = json.loads(html)
@@ -84,7 +84,7 @@ def get_episodes(html, url):
 				extract_pin_entry(instruction["entry"], url)
 			
 			if instruction["type"] == "TimelineAddEntries":
-				yield from reversed(list(extract_added_entries(instruction["entries"], url)))
+				return reversed(list(extract_added_entries(instruction["entries"], url)))
 				
 def tweet_result_to_episode(tweet_result):
 	try:
