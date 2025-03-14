@@ -13,7 +13,7 @@ from deno_vm import eval
 
 from ..core import Episode, grabhtml
 
-domain = ["www.ohmanhua.com", "www.cocomanhua.com", "www.colamanga.com"]
+domain = ["www.ohmanhua.com", "www.cocomanhua.com"]
 name = "OH漫畫"
 
 def get_title(html, url):
@@ -94,7 +94,6 @@ self.convertWordArrayToUint8Array =
       apply: () => noop(`${path}.called`),
       get: (target, prop) => {
         const propPath = typeof prop == "symbol" ? `${path}.${String(prop)}` : `${path}.${prop}`;
-        if (propPath == "document.domain") return "www.colamanga.com";
         _log("get", propPath);
         return noop(propPath);
       },
