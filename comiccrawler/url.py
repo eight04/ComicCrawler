@@ -26,7 +26,7 @@ def update_qs(url, new_query: dict[str, str | Callable[[str], str]]):
 	query_dict = parse_qs(d["query"])
 	for key, value in new_query.items():
 		if callable(value):
-			value = value(query_dict.get(key, "")[0])
+			value = value(query_dict.get(key, [""])[0])
 		if value is None:
 			query_dict.pop(key, None)
 		else:
