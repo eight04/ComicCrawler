@@ -32,6 +32,8 @@ def get_episodes(html, url):
 	data = json.loads(html)
 	episodes = []
 	for result, attachments in zip(data["results"], data["result_attachments"]):
+		if not attachments:
+			continue
 		ep = Episode(
 			title=f"{result['id']} - {result['title']}",
 			url=f"https://kemono.su/post/{result['id']}",
