@@ -60,8 +60,9 @@ def get_images(html, url):
 	
 	image = re.search("<img id=\"img\" src=\"(.+?)\"", html)
 	image = unescape(image.group(1))
-	# bandwith limit
-	if re.search(r"509s?\.gif", image) or re.search(r"403s?\.gif", image):
+	# bandwidth limit
+    # https://github.com/mikf/gallery-dl/commit/8b76149521638404100dd20511ba08e67f1c1f8a
+	if re.search(r"(hentai\.org/img|ehgt\.org/g)/(509|403)s?\.gif", image):
 		# pause the download since retry doesn't help but increase view limit.
 		raise PauseDownloadError("Bandwidth limit exceeded!")
 		
