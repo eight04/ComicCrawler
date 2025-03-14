@@ -25,7 +25,7 @@ VALID_FILE_TYPES = (
 	# videos
 	".mp4", ".m4v", ".mkv", ".swf", ".webm", ".mov", ".wmv",
 	# audio
-	".mp3", ".aac", ".flac", ".wav",
+	".mp3", ".aac", ".flac", ".wav", ".mpga",
 	# json
 	".json", ".txt"
 )
