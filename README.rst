@@ -413,6 +413,18 @@ Todos
 Changelog
 ---------
 
+- 2025.3.24
+
+  - Add: ``max_threads`` setting.
+  - Add: loop detection in analyzer. Twitter doesn't work anymore.
+  - Add: support colamanga by @Silverbullet069.
+  - Fix: HTTP 416 results in invalid data.
+  - Fix: error object has no response property.
+  - Fix: imagehandler doesn't work with temp files @Silverbullet069.
+  - Fix: improve bandwidth limit detection in eh.
+  - Fix: kemono.
+  - Fix: progress bar crashing the application.
+
 - 2024.12.9
 
   - Fix: login check in exh.
