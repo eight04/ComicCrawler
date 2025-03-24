@@ -235,8 +235,8 @@ def tweet_detail_graph(focalTweetId):
 	)
 
 def errorhandler(err, crawler):
-	if is_http(err, 404) and crawler.image.url == err.request.url:
-		if match := re.match("(.*):orig", err.request.url):
+	if is_http(err, 404) and crawler.image.url == err.response.request.url:
+		if match := re.match("(.*):orig", err.response.request.url):
 			crawler.image.url = match.group(1)
 			return
 

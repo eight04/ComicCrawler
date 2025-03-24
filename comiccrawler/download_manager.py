@@ -61,6 +61,7 @@ class DownloadManager:
 		"""Construct."""
 		self.lock = Lock()
 		self.crawlers: bidict[ModuleType, Worker] = bidict()
+		self.max_threads: int = setting.getint("max_threads", 3)
 		self.mod_errors: dict[ModuleType, int] = defaultdict(int)
 		self.analyze_threads = ThreadSafeSet()
 		self.library_thread = None
@@ -130,7 +131,7 @@ class DownloadManager:
 				self.mod_errors[mod] = 0
 				return
 
-			self.start_download_mod(mod)
+			self.start_download_all(continue_=True)
 
 		@thread.listen("DOWNLOAD_INVALID")
 		def _(event):
@@ -144,10 +145,11 @@ class DownloadManager:
 		"""Start downloading."""
 		self.start_download_all()
 
-	def start_download_all(self):
+	def start_download_all(self, continue_=False):
 		missions = mission_manager.get_all("view", lambda m: m.state in ("ANALYZED", "PAUSE", "ERROR", "UPDATE"))
 		if not missions:
-			print("所有任務已下載完成")
+			if not continue_:
+				print("所有任務已下載完成")
 			return
 
 		for mission in missions:
@@ -161,6 +163,9 @@ class DownloadManager:
 
 		with self.lock:
 			if mod in self.crawlers:
+				return
+
+			if len(self.crawlers) >= self.max_threads:
 				return
 
 			def do_download():
@@ -181,7 +186,7 @@ class DownloadManager:
 
 			# FIXME: shouldn't we wait for thread stop?
 			self.crawlers.clear()
-			print("Stop downloading")
+			print("Stop downloading, download_manager.crawlers cleared")
 			
 	def start_analyze(self, mission, on_finished=None):
 		"""Start analyzing"""

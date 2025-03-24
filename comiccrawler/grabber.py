@@ -207,9 +207,9 @@ def grabimg(*args, on_opened=None, tempfile=None, headers=None, **kwargs):
 						content_list.append(chunk)
 						counter.update(len(chunk))
 						loaded += len(chunk)
-	except WorkerExit:
+	finally:
+		# FIXME: is it safe to always close the connection?
 		r.close()
-		raise
 	if total and loaded < total:
 		raise IncompleteRead(loaded, total - loaded)
 	b = None
