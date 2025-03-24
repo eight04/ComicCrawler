@@ -1,5 +1,6 @@
 #! python3
 
+from collections import namedtuple
 from contextlib import contextmanager
 from pathlib import Path
 from threading import Lock
@@ -9,7 +10,6 @@ import re
 import time
 import json
 
-import enlighten
 from worker import async_, await_, sleep, Defer
 # from urllib3.util import is_fp_closed
 from urllib3.exceptions import IncompleteRead
@@ -20,11 +20,11 @@ from .io import content_write
 from .profile import get as profile
 from .session_manager import session_manager
 from .filename_ext import get_ext
+from .channel import request_ch
 
 cooldown = {}
 grabber_pool = {}
 grabber_pool_lock = Lock()
-pb_manager = enlighten.get_manager()
 
 @contextmanager
 def get_request_lock(url):
@@ -74,6 +74,8 @@ def grabber_log(obj):
 		content = time.strftime("%Y-%m-%dT%H:%M:%S%z") + "\n" + json.dumps(obj, indent=2, sort_keys=True) + "\n\n"
 		content_write(profile("grabber.log"), content, append=True)
 
+inc_request_id = 1
+
 def grabber(url, *, referer=None, retry=False, done=None, proxy=None, **kwargs):
 	"""Request url, return text or bytes of the content."""
 	s = session_manager.get(url)
@@ -90,6 +92,10 @@ def grabber(url, *, referer=None, retry=False, done=None, proxy=None, **kwargs):
 
 	if done:
 		done(s, r)
+
+	global inc_request_id
+	r.request_id = inc_request_id
+	inc_request_id += 1
 
 	return r
 
@@ -149,6 +155,8 @@ def iter_content(r):
 	"""Iterate the content of the response."""
 	yield from r.iter_content()
 
+RequestProgress = namedtuple("RequestProgress", "id loaded total hostname", defaults=(None, None, None))
+
 def grabimg(*args, on_opened=None, tempfile=None, headers=None, **kwargs):
 	"""Grab the image. Return ImgResult"""
 	kwargs["stream"] = True
@@ -192,23 +200,23 @@ def grabimg(*args, on_opened=None, tempfile=None, headers=None, **kwargs):
 		def _():
 			nonlocal loaded
 			u = urlparse(r.url)
-			with pb_manager.counter(total=total, unit="b", leave=False, desc=u.hostname) as counter:
-				counter.update(loaded)
-				if tempfile:
-					Path(tempfile).parent.mkdir(parents=True, exist_ok=True)
-					mode = "ab" if loaded else "wb"
-					with open(tempfile, mode=mode) as f:
-						for chunk in iter_content(r):
-							f.write(chunk)
-							counter.update(len(chunk))
-							loaded += len(chunk)
-				else:
+			request_ch.pub("REQUEST_START", data=RequestProgress(id=r.request_id, loaded=loaded, total=total, hostname=u.hostname))
+			if tempfile:
+				Path(tempfile).parent.mkdir(parents=True, exist_ok=True)
+				mode = "ab" if loaded else "wb"
+				with open(tempfile, mode=mode) as f:
 					for chunk in iter_content(r):
-						content_list.append(chunk)
-						counter.update(len(chunk))
+						f.write(chunk)
 						loaded += len(chunk)
+						request_ch.pub("REQUEST_PROGRESS", data=RequestProgress(id=r.request_id, loaded=loaded))
+			else:
+				for chunk in iter_content(r):
+					content_list.append(chunk)
+					loaded += len(chunk)
+					request_ch.pub("REQUEST_PROGRESS", data=RequestProgress(id=r.request_id, loaded=loaded))
 	finally:
 		# FIXME: is it safe to always close the connection?
+		request_ch.pub("REQUEST_END", data=RequestProgress(id=r.request_id))
 		r.close()
 	if total and loaded < total:
 		raise IncompleteRead(loaded, total - loaded)

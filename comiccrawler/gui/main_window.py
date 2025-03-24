@@ -29,6 +29,7 @@ from .table import Table
 from .dialog import Dialog
 from .core import get_scale, safe_tk, STATE
 from .select_episodes import select_episodes
+from .cli_progress import CLIProgress
 
 def reselect_episodes(root, mission):
 	with load_episodes(mission):
@@ -510,6 +511,8 @@ class MainWindow(ViewMixin, EventMixin):
 			
 		self.update_table(mission_manager.view)
 		self.update_table(mission_manager.library)
+
+		self.cli_progress = CLIProgress()
 		
 		self.save()
 		self.loop.start()
