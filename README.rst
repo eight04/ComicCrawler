@@ -179,6 +179,9 @@ or you can use it in your python script:
     ; 瀏覽器 profile 的名稱
     browser_profile = act3nn7e.default
 
+    ; 並行下載的任務數量。注意︰你無法並行下載單一網站的多個任務，所以這個數字只對多個不同網站的任務有效
+    max_threads = 3
+
 -  設定檔位於 ``~\comiccrawler\setting.ini``。可以在執行時指定 ``--profile`` 選項以變更預設的位置。（在 Windows 中 ``~`` 會被展開為 ``%HOME%`` 或 ``%USERPROFILE%``）
 -  執行一次 ``comiccrawler gui`` 後關閉，設定檔會自動產生。若 Comic Crawler 更新後有新增的設定，在關閉後會自動將新設定加入設定檔。
 -  各別的網站會有自己的設定，通常是要填入一些登入相關資訊
