@@ -10,7 +10,7 @@ import time
 import json
 
 import enlighten
-from worker import WorkerExit, async_, await_, sleep, Defer
+from worker import async_, await_, sleep, Defer
 # from urllib3.util import is_fp_closed
 from urllib3.exceptions import IncompleteRead
 from curl_cffi.requests.exceptions import HTTPError
