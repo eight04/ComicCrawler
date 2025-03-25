@@ -4,6 +4,7 @@ https://www.instagram.com/haneame_cos/?hl=zh-tw
 
 import re
 import json
+from datetime import datetime
 from html import unescape
 from urllib.parse import urlparse
 
@@ -57,6 +58,10 @@ def get_episodes_from_data(data):
 	if timeline["page_info"]["has_next_page"]:
 		end_cursor = timeline["page_info"]["end_cursor"]
 	return reversed(eps), end_cursor
+
+def ts_to_date(ts):
+	dt = datetime.fromtimestamp(ts)
+	return dt.strftime("%y-%m-%d")
 	
 def get_episodes(html, url):
 	if match := re.match(r"https://www\.instagram\.com/([^/]+)/", url):
@@ -71,8 +76,12 @@ def get_episodes(html, url):
 		body = json.loads(html)
 		result = []
 		for item in body["items"]:
+			try:
+				ts = item["taken_at"]
+			except KeyError:
+				ts = item["caption"]["created_at"]
 			result.append(Episode(
-				str(item["code"]),
+				f"{ts_to_date(ts)} {item['code']}",
 				f"https://www.instagram.com/p/{item['code']}/"
 			))
 		
