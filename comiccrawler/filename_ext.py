@@ -6,7 +6,7 @@ import re
 import puremagic
 
 mime_dict = {
-	t.mime_type: t for t in puremagic.magic_header_array
+	t.mime_type: t for t in puremagic.main.magic_header_array
 	}
 
 def ext_from_mime(mime):
