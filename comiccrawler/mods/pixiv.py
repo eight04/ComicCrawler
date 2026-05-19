@@ -14,7 +14,7 @@ from io import BytesIO
 from urllib.parse import urljoin, urlencode, urlparse, parse_qs
 from zipfile import ZipFile
 
-from ..core import Episode, grabhtml
+from ..core import Episode
 from ..error import PauseDownloadError, is_http, SkipEpisodeError, SkipPageError
 from ..safeprint import print
 
@@ -25,13 +25,6 @@ config = {
 	"cookie_PHPSESSID": "請輸入Cookie中的PHPSESSID"
 }
 
-def get_title_from_init_data(html, url):
-	init_data = get_init_data(html)
-	user = next(iter(init_data["preload"]["user"].values()))
-	tag = get_tag_from_url(url)
-	tag = " ({})".format(tag) if tag else ""
-	return "{} - {}{}".format(user["userId"], user["name"], tag)
-	
 def is_search_page(url):
 	return re.match("https://www\.pixiv\.net/tags/", url)
 

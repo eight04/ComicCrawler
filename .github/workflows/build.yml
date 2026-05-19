@@ -8,7 +8,7 @@ jobs:
         with:
           python-version: '3.10'
       - run: pip install -U pip wheel
-      - run: cat requirements.txt | xargs -n 1 pip install || exit 0
+      # - run: cat requirements.txt | xargs -n 1 pip install || exit 0
       # by gemini
       - name: Install Requirements with Compatibility Fallback
         run: |
@@ -53,4 +53,5 @@ jobs:
             
             echo "::endgroup::"
           done < "$REQUIREMENTS_FILE"
+      - run: pip install .
       - run: python cute.py test
