@@ -53,5 +53,5 @@ jobs:
             
             echo "::endgroup::"
           done < "$REQUIREMENTS_FILE"
-      - run: pip install .
+      # - run: pip install .
       - run: python cute.py test
