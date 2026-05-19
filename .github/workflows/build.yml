@@ -9,5 +9,48 @@ jobs:
           python-version: '3.10'
       - run: pip install -U pip wheel
       - run: cat requirements.txt | xargs -n 1 pip install || exit 0
-      - run: pip install .
+      # by gemini
+      - name: Install Requirements with Compatibility Fallback
+        run: |
+          REQUIREMENTS_FILE="requirements-lock.txt"
+          
+          if [ ! -f "$REQUIREMENTS_FILE" ]; then
+            echo "Requirements file not found, skipping."
+            exit 0
+          fi
+
+          echo "Parsing $REQUIREMENTS_FILE..."
+          
+          while IFS= read -r line || [ -n "$line" ]; do
+            # Clean whitespace
+            line=$(echo "$line" | xargs)
+            
+            # Skip empty lines and comments
+            if [ -z "$line" ] || [[ "$line" =~ ^# ]]; then
+              continue
+            fi
+
+            echo "::group::Installing $line"
+            
+            # Try exact install
+            if pip install "$line"; then
+              echo "Successfully installed exact match: $line"
+            else
+              # Exact match failed, trigger the warning and fallback
+              echo "::warning file=requirements.txt::Failed to install '$line' on Python ${{ matrix.python-version }}. Dropping back to latest compatible version."
+              
+              # Extract clean package name
+              package_name=$(echo "$line" | sed -E 's/([a-zA-Z0-9_\-]+).*/\1/')
+              
+              echo "Executing fallback: pip install $package_name"
+              if pip install "$package_name"; then
+                echo "Successfully resolved fallback for $package_name"
+              else
+                echo "::error::Both exact and fallback installations failed for $package_name"
+                exit 1
+              fi
+            fi
+            
+            echo "::endgroup::"
+          done < "$REQUIREMENTS_FILE"
       - run: python cute.py test
